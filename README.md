@@ -9,7 +9,7 @@ Three distinct networks correspond to three different types of inputs:
 
 <center>
 <img alt="Downstream task network with three input types and results comparison of 8 ver-
-ification tasks" src="pics/downstream_networds_and_tasks.png"/>
+ification tasks" src="./pics/downstream_networds_and_tasks.png"/>
 
 Fig. 1 Downstream task network with three input types and results comparison of 8 ver-
 ification tasks.   

@@ -1,0 +1,1 @@
+# Interaction model based on LLM-embedding            

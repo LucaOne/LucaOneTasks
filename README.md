@@ -148,6 +148,7 @@ python get_embedding.py \
     --seq_idx 3 \
     --save_path ../../../embedding/lucaone/test_data/prot/test_prot \
     --embedding_complete \
+    --embedding_complete_seg_overlap \
     --gpu 0   
  
 # for DNA or RNA
@@ -170,6 +171,7 @@ python get_embedding.py \
     --seq_idx 1 \
     --save_path ../../../embedding/lucaone/test_data/gene/test_gene \
     --embedding_complete \
+    --embedding_complete_seg_overlap \
     --gpu 0   
 ```
 
@@ -196,6 +198,7 @@ python get_embedding.py \
     --input_file ../../../data/test_data/prot/test_prot.fasta \
     --save_path ../../../embedding/lucaone/test_data/prot/test_prot \
     --embedding_complete \
+    --embedding_complete_seg_overlap \
     --gpu 0   
 ```
 
@@ -219,6 +222,7 @@ python get_embedding.py \
     --input_file ../../../data/test_data/gene/test_gene.fasta \
     --save_path ../../../embedding/lucaone/test_data/gene/test_gene \
     --embedding_complete \
+    --embedding_complete_seg_overlap \
     --gpu 0   
 ```
 

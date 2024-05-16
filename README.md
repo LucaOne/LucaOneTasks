@@ -140,7 +140,7 @@ python get_embedding.py \
     --llm_step 5600000 \
     --embedding_type matrix \
     --trunc_type right \
-    --truncation_seq_length 4094 \
+    --truncation_seq_length 100000 \
     --matrix_add_special_token \
     --seq_type prot \
     --input_file ../../../data/test_data/prot/test_prot.csv \
@@ -163,7 +163,7 @@ python get_embedding.py \
     --llm_step 5600000 \
     --embedding_type matrix \
     --trunc_type right \
-    --truncation_seq_length 4094 \
+    --truncation_seq_length 100000 \
     --matrix_add_special_token \
     --seq_type gene \
     --input_file ../../../data/test_data/gene/test_gene.csv \
@@ -192,7 +192,7 @@ python get_embedding.py \
     --llm_step 5600000 \
     --embedding_type matrix \
     --trunc_type right \
-    --truncation_seq_length 4094 \
+    --truncation_seq_length 100000 \
     --matrix_add_special_token \
     --seq_type prot \
     --input_file ../../../data/test_data/prot/test_prot.fasta \
@@ -216,7 +216,7 @@ python get_embedding.py \
     --llm_step 5600000 \
     --embedding_type matrix \
     --trunc_type right \
-    --truncation_seq_length 4094 \
+    --truncation_seq_length 100000 \
     --matrix_add_special_token \
     --seq_type gene \
     --input_file ../../../data/test_data/gene/test_gene.fasta \
@@ -243,8 +243,8 @@ python get_embedding.py \
     * seq_type: type of input sequence: `gene` or `prot`, `gene` for nucleic acid(DNA or RNA), `prot` for protein.        
     * input_file: the input file path for embedding(format: csv or fasta). The seq_id in the file must be unique and cannot contain special characters.     
     * save_path: the saving dir for storing the embedding file.     
-    * embedding_complete: if the GPU memory is not enough to infer the entire sequence at once, it is used to determine whether to perform segmented completion (if this parameter is not used, 0.95*len is truncated each time until the CPU can process the length).       
-    * embedding_complete_seg_overlap: when 'embedding_complete=True', whether the method of overlap is applicable to segmentation(overlap sliding window)
+    * embedding_complete: When `embedding_complete` is set, `truncation_seq_length` is invalid. If the GPU memory is not enough to infer the entire sequence at once, it is used to determine whether to perform segmented completion (if this parameter is not used, 0.95*len is truncated each time until the CPU can process the length).
+    * embedding_complete_seg_overlap: When `embedding_complete` is set, whether the method of overlap is applicable to segmentation(overlap sliding window)
     * gpu: the gpu id to use(-1 for cpu).  
 
 3) Optional parameters:      

@@ -650,7 +650,7 @@ class Encoder(object):
                                     self.embedding_complete,
                                     self.embedding_complete_seg_overlap,
                                     self.device
-                               )
+                                )
 
                             break
                         truncation_seq_length = (truncation_seq_length + int(self.prepend_bos) + int(self.append_eos)) * 0.9 - int(self.prepend_bos) - int(self.append_eos)

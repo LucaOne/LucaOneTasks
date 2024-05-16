@@ -733,7 +733,7 @@ def main(model_args):
                 if args.embedding_complete:
                     truncation_seq_length = len(seq)
                 else:
-                    truncation_seq_length = args.truncation_seq_length
+                    truncation_seq_length = min(len(seq), args.truncation_seq_length)
 
                 emb, processed_seq_len = predict_embedding(lucaone_global_model_dirpath,
                                                            [seq_id, seq_type, seq],

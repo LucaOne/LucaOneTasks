@@ -47,7 +47,7 @@ def create_pooler(pooler_type, config, args):
     elif pooling_type == "max":
         return GlobalMaskMaxPooling1D()
     elif pooling_type == "sum":
-        return GlobalMaskSumPooling1D()
+        return GlobalMaskSumPooling1D(axis=1)
     elif pooling_type == "avg":
         return GlobalMaskAvgPooling1D()
     elif pooling_type == "attention":
@@ -161,13 +161,12 @@ class GlobalMaskAvgPooling1D(nn.Module):
 
 
 class GlobalMaskSumPooling1D(nn.Module):
-    def __init__(self, axis, **kwargs):
+    def __init__(self, axis):
         '''
         sum pooling
         :param axis: axis=0, add all the rows of the matrix，axis=1, add all the cols of the matrix
-        :param kwargs:
         '''
-        super(GlobalMaskSumPooling1D, self).__init__(**kwargs)
+        super(GlobalMaskSumPooling1D, self).__init__()
         self.axis = axis
 
     def forward(self, x, mask=None):

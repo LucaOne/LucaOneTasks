@@ -485,7 +485,7 @@ def complete_embedding_matrix(seq_id, seq_type, seq, truncation_seq_length, init
             print("updated window: %d" % sliding_window)
             # 第一个已经处理，滑动窗口
             if model_args.trunc_type == "right":
-                last_end = 0
+                last_end = cur_segment_len
                 seg_idx = 0
                 for pos_idx in range(cur_segment_len, ori_seq_len - sliding_window, sliding_window):
                     seg_idx += 1
@@ -526,7 +526,7 @@ def complete_embedding_matrix(seq_id, seq_type, seq, truncation_seq_length, init
                     else:
                         complete_emb = np.concatenate((complete_emb, seg_emb[-remain:]), axis=0)
             else:
-                last_start = -cur_segment_len - sliding_window
+                last_start = -cur_segment_len
                 seg_idx = 0
                 for pos_idx in range(-cur_segment_len, -ori_seq_len + sliding_window, -sliding_window):
                     seg_idx += 1

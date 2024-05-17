@@ -70,7 +70,7 @@ def complete_embedding_matrix(seq_id,
                 try:
                     # 第一个已经处理，滑动窗口
                     if trunc_type == "right":
-                        last_end = 0
+                        last_end = init_cur_segment_len
                         seg_idx = 0
                         for pos_idx in range(init_cur_segment_len, ori_seq_len - sliding_window, sliding_window):
                             seg_idx += 1
@@ -108,7 +108,7 @@ def complete_embedding_matrix(seq_id,
                             else:
                                 append_emb = np.concatenate((append_emb, seg_emb[-remain:]), axis=0)
                     else:
-                        last_start = -init_cur_segment_len - sliding_window
+                        last_start = -init_cur_segment_len
                         seg_idx = 0
                         for pos_idx in range(-init_cur_segment_len, -ori_seq_len + sliding_window, -sliding_window):
                             seg_idx += 1

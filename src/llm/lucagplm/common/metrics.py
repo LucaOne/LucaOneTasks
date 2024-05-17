@@ -129,7 +129,7 @@ def metrics_multi_class_for_pred(targets, preds, probs=None, average="macro", sa
     '''
     metrcis for multi-class classification
     :param targets: 1d-array class index (n_samples, )
-    :param prebs:  1d-array class index (n_samples, )
+    :param preds:  1d-array class index (n_samples, )
     :return:
     '''
     if targets.ndim == 2:
@@ -166,7 +166,7 @@ def metrics_regression(targets, preds):
     '''
     metrcis for regression
     :param targets: 1d-array class index (n_samples, )
-    :param prebs:  1d-array class index (n_samples, )
+    :param preds:  1d-array class index (n_samples, )
     :return:
     '''
     mae = mean_absolute_error(targets, preds)

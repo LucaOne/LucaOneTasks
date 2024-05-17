@@ -350,11 +350,11 @@ def prepare_inputs(model_type, embedding_type, batch):
             "token_type_ids_a": batch[2],
             "struct_input_ids_a": batch[4],
             "struct_contact_map_a": batch[5],
-            "input_ids_a": batch[6],
-            "attention_mask_a": batch[7],
-            "token_type_ids_a": batch[8],
-            "struct_input_ids_a": batch[10],
-            "struct_contact_map_a": batch[11],
+            "input_ids_b": batch[6],
+            "attention_mask_b": batch[7],
+            "token_type_ids_b": batch[8],
+            "struct_input_ids_b": batch[10],
+            "struct_contact_map_b": batch[11],
             "labels": batch[-1]
         }
     else:

@@ -127,7 +127,7 @@ def csv_reader(handle, header=True, header_filter=True):
             handle.close()
 
 
-def txt_writer(dataset, filepath, header=None):
+def txt_writer(dataset, handle, header=None):
     '''
     txt 写
     :param dataset: 数据
@@ -152,7 +152,7 @@ def txt_writer(dataset, filepath, header=None):
         if not handle.closed:
             handle.close()
     '''
-    with open(filepath, "w") as wfp:
+    with open(handle, "w") as wfp:
         if header:
             if isinstance(header, list):
                 wfp.write(",".join(header) + "\n")
@@ -201,6 +201,7 @@ def fasta_reader(handle, width=None):
     handle = handle if isinstance(handle, io.TextIOWrapper) else open(handle, 'r')
     width = width if isinstance(width, int) and width > 0 else None
     try:
+        header = None
         for is_header, group in itertools.groupby(handle, lambda line: line.startswith(">")):
             if is_header:
                 header = group.__next__().strip()

@@ -88,7 +88,7 @@ source ~/.bashrc
 conda create -n lucaone_tasks python=3.9.13
 
 
-#### 4) activate lucaone
+#### 4) activate lucaone_tasks
 conda activate lucaone_tasks
 
 ### step3:  install other requirements

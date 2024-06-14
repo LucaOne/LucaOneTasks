@@ -17,7 +17,13 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 csv.field_size_limit(sys.maxsize)
-common_amino_acid_set = set(['R', 'X', 'S', 'G', 'W', 'I', 'Q', 'A', 'T', 'V', 'K', 'Y', 'C', 'N', 'L', 'F', 'D', 'M', 'P', 'H', 'E'])
+
+
+common_nucleotide_set = {'A', 'T', 'C', 'G', 'U', 'N'}
+
+# not {'O', 'U', 'Z', 'J', 'B'}
+# Common amino acids
+common_amino_acid_set = {'R', 'X', 'S', 'G', 'W', 'I', 'Q', 'A', 'T', 'V', 'K', 'Y', 'C', 'N', 'L', 'F', 'D', 'M', 'P', 'H', 'E'}
 
 
 def clean_seq(protein_id, seq):

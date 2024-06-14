@@ -37,9 +37,13 @@ except ImportError:
     from src.common.multi_label_metrics import prob_2_pred, relevant_indexes, metrics_multi_label
     from src.common.metrics import metrics_multi_class, metrics_binary, metrics_regression
 
+
+
+common_nucleotide_set = {'A', 'T', 'C', 'G', 'U', 'N'}
+
 # not {'O', 'U', 'Z', 'J', 'B'}
 # Common amino acids
-common_amino_acid_set = set(['R', 'X', 'S', 'G', 'W', 'I', 'Q', 'A', 'T', 'V', 'K', 'Y', 'C', 'N', 'L', 'F', 'D', 'M', 'P', 'H', 'E'])
+common_amino_acid_set = {'R', 'X', 'S', 'G', 'W', 'I', 'Q', 'A', 'T', 'V', 'K', 'Y', 'C', 'N', 'L', 'F', 'D', 'M', 'P', 'H', 'E'}
 
 
 def to_device(device, batch):

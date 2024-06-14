@@ -547,10 +547,10 @@ def run(sequences, llm_truncation_seq_length, model_path, dataset_name, dataset_
 
 def run_args():
     parser = argparse.ArgumentParser(description="Prediction")
-    parser.add_argument("--seq_id", default=None, type=str,  help="the protein id")
-    parser.add_argument("--seq", default=None, type=str,  help="the protein sequence")
-    parser.add_argument("--seq_type", default="protein", type=str, choices=["prot", "gene"], help="seq type.")
-    parser.add_argument("--fasta", default=None, type=str, help="the protein sequence")
+    parser.add_argument("--seq_id", default=None, type=str,  help="the seq id")
+    parser.add_argument("--seq", default=None, type=str,  help="the sequence")
+    parser.add_argument("--seq_type", default="prot", type=str, choices=["prot", "gene"], help="seq type.")
+    parser.add_argument("--fasta", default=None, type=str, help="the sequences fasta file")
     parser.add_argument("--llm_truncation_seq_length", default=4096, type=int, required=True, help="truncation seq length for llm")
     parser.add_argument("--topk", default=None, type=int, help="topk for multi-class")
     parser.add_argument("--model_path", default=None, type=str, help="the model dir. default: None")

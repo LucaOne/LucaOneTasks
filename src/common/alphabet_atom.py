@@ -121,11 +121,6 @@ class AlphabetAtom(object):
         with open(os.path.join(save_dir, "alphabet_atom.pkl"), 'wb') as outp:
             pickle.dump(self, outp, pickle.HIGHEST_PROTOCOL)
 
-    def save_pretrained(self, save_dir):
-        import os, pickle
-        with open(os.path.join(save_dir, "alphabet_atom.pkl"), 'wb') as outp:
-            pickle.dump(self, outp, pickle.HIGHEST_PROTOCOL)
-
     def tokenize(self, smi, prepend_bos, append_eos) -> List[str]:
         seq = AlphabetAtom.smiles_2_atom_seq(smi)
         if prepend_bos:

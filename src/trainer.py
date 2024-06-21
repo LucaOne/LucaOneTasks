@@ -392,7 +392,8 @@ def train(args, train_dataloader, model_config, model, seq_tokenizer, parse_row_
         log_fp.write("Total Time: %f, Avg time per epoch(%d epochs): %f\n" % (run_end_time - run_begin_time, real_epoch, avg_time_per_epoch))
         log_fp.flush()
 
-    cleanup()
+    if args.n_gpu > 1:
+        cleanup()
 
     if args.local_rank in [0, -1]:
         return global_step, total_loss / global_step, best_metric_model_info

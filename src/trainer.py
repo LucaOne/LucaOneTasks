@@ -31,11 +31,11 @@ import torch.distributed as dist
 try:
     from .evaluator import evaluate
     from .tester import test
-    from .utils import prepare_inputs, sample_size, to_device, get_lr, writer_info_tb, print_batch, lcm
+    from .utils import sample_size, to_device, get_lr, writer_info_tb, print_batch, lcm
 except ImportError:
     from src.evaluator import evaluate
     from src.tester import test
-    from src.utils import prepare_inputs, sample_size, to_device, get_lr, writer_info_tb, print_batch, lcm
+    from src.utils import sample_size, to_device, get_lr, writer_info_tb, print_batch, lcm
 
 logger = logging.getLogger(__name__)
 

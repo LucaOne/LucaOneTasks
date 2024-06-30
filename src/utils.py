@@ -282,8 +282,8 @@ def subprocess_popen(statement):
             return result
 
 
-def prepare_inputs(model_type, embedding_type, batch):
-    if model_type == "sequence":
+def prepare_inputs(input_type, embedding_type, batch):
+    if input_type == "sequence":
         inputs = {
             "input_ids_a": batch[0],
             "attention_mask_a": batch[1],
@@ -293,7 +293,7 @@ def prepare_inputs(model_type, embedding_type, batch):
             "token_type_ids_b": batch[6],
             "labels": batch[-1]
         }
-    elif model_type == "embedding":
+    elif input_type == "embedding":
         if embedding_type not in ["vector", "bos"]:
             inputs = {
                 "embedding_info_a": batch[0],
@@ -310,7 +310,7 @@ def prepare_inputs(model_type, embedding_type, batch):
                 "embedding_attention_mask_b": None,
                 "labels": batch[-1]
             }
-    elif model_type == "structure":
+    elif input_type == "structure":
         inputs = {
             "struct_input_ids_a": batch[0],
             "struct_contact_map_a": batch[1],
@@ -318,7 +318,7 @@ def prepare_inputs(model_type, embedding_type, batch):
             "struct_contact_map_b": batch[3],
             "labels": batch[-1]
         }
-    elif model_type == "sefn":
+    elif input_type == "sefn":
         if embedding_type not in ["vector", "bos"]:
             inputs = {
                 "input_ids_a": batch[0],
@@ -347,7 +347,7 @@ def prepare_inputs(model_type, embedding_type, batch):
                 "embedding_attention_mask_b": None,
                 "labels": batch[-1],
             }
-    elif model_type == "ssfn":
+    elif input_type == "ssfn":
         inputs = {
             "input_ids_a": batch[0],
             "attention_mask_a": batch[1],

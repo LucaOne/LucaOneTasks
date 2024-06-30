@@ -33,6 +33,24 @@ except ImportError as e:
     from src.llm.dnaberts.inference_embedding import predict_embedding as predict_embedding_dnaberts
 
 
+def calc_emb_filename_by_seq_id(seq_id, embedding_type):
+    """
+    根据seq_id得到emb_filename
+    :param seq_id:
+    :param embedding_type:
+    :return:
+    """
+    if "|" in seq_id:
+        strs = seq_id.split("|")
+        if len(strs) > 1:
+            emb_filename = embedding_type + "_" + strs[1].strip() + ".pt"
+        else:
+            emb_filename = embedding_type + "_" + seq_id.replace(" ", "").replace("/", "_") + ".pt"
+    else:
+        emb_filename = embedding_type + "_" + seq_id.replace(" ", "").replace("/", "_") + ".pt"
+    return emb_filename
+
+
 def complete_embedding_matrix(seq_id,
                               seq_type,
                               seq,
@@ -370,14 +388,7 @@ class Encoder(object):
                 print(e)
                 embedding_info = None
         elif embedding_type in ["bos", "vector"] and self.vector_dirpath is not None or embedding_type not in ["bos", "vector"] and self.matrix_dirpath is not None:
-            if "|" in seq_id:
-                strs = seq_id.split("|")
-                if len(strs) > 3:
-                    emb_filename = embedding_type + "_" + strs[1].strip() + ".pt"
-                else:
-                    emb_filename = embedding_type + "_" + seq_id.replace(" ", "").replace("/", "_") + ".pt"
-            else:
-                emb_filename = embedding_type + "_" + seq_id.replace(" ", "").replace("/", "_") + ".pt"
+            emb_filename = calc_emb_filename_by_seq_id(seq_id=seq_id, embedding_type=embedding_type)
             embedding_path = os.path.join(self.vector_dirpath if embedding_type in ["bos", "vector"] else self.matrix_dirpath, emb_filename)
             if os.path.exists(embedding_path):
                 try:
@@ -719,15 +730,7 @@ class Encoder(object):
                         truncation_seq_length = int(truncation_seq_length)
                         print("truncation_seq_length: %d->%d" % (cur_seq_len, truncation_seq_length))
             if embedding_type in ["bos", "vector"] and self.vector_dirpath is not None or embedding_type not in ["bos", "vector"] and self.matrix_dirpath is not None:
-                if "|" in seq_id:
-                    strs = seq_id.split("|")
-                    if len(strs) > 3:
-                        emb_filename = embedding_type + "_" + strs[1].strip() + ".pt"
-                    else:
-                        emb_filename = embedding_type + "_" + seq_id.replace(" ", "").replace("/", "_") + ".pt"
-                else:
-                    emb_filename = embedding_type + "_" + seq_id.replace(" ", "").replace("/", "_") + ".pt"
-                # emb_filename = embedding_type + "_" + seq_id.replace(" ", "").replace("/", "_") + ".pt"
+                emb_filename = calc_emb_filename_by_seq_id(seq_id=seq_id, embedding_type=embedding_type)
                 embedding_filepath = os.path.join(self.vector_dirpath if embedding_type in ["bos", "vector"] else self.matrix_dirpath, emb_filename)
                 # print("seq_len: %d" % len(seq))
                 # print("emb shape:", embedding_info.shape)

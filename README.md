@@ -114,7 +114,7 @@ Copy the **TrainedCheckPoint Files(`models/` + `logs/`)** from <href> http://47.
 
 
 ## 5. Usage of Downstream Models Inference
-The directory includes the trained models of 10 downstream tasks(presented in the paper, all metrics in `TableS5`), all these trained models are based on LucaOne's embedding.        
+The <a href='http://47.93.21.181/lucaone/DownstreamTasksTrainedModels/'> FTP</a> includes the trained models of 10 downstream tasks(presented in the paper, all metrics in `TableS5`), all these trained models are based on LucaOne's embedding.        
 Use the script `src/predict.py` or `src/predict.sh` to load the trained model and predict.
 
 **Notice**    

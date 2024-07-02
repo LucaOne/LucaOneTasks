@@ -84,7 +84,7 @@ class LucaGPLM(nn.Module):
             self.loss_fct = {}
             self.loss_fct_list = []
 
-            print("Pretrain Tasks:")
+            # print("Pretrain Tasks:")
             for cur_item in self.pretrain_tasks.items():
                 cur_task_level_type = cur_item[0]
                 if cur_task_level_type not in self.cls:
@@ -96,7 +96,7 @@ class LucaGPLM(nn.Module):
                     self.output[cur_task_level_type] = {}
                     self.loss_fct[cur_task_level_type] = {}
                 for cur_task_level_name in cur_item[1]:
-                    print(cur_task_level_type + "/" + cur_task_level_name)
+                    # print(cur_task_level_type + "/" + cur_task_level_name)
                     cur_classifier_dropout, cur_hidden_layer, cur_hidden_act, cur_classifier, cur_output, cur_loss_fct \
                         = create_output_loss_lucagplm(cur_task_level_type, cur_task_level_name, config, args)
 

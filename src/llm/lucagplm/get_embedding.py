@@ -77,6 +77,7 @@ def load_model(log_filepath, model_dirpath):
                 except Exception as e:
                     args_info = json.loads(line.strip())
                 break
+    print("------LLM Model Info ------")
     print("Model dirpath: %s" % model_dirpath)
     assert model_dirpath is not None and os.path.exists(model_dirpath)
     # create tokenizer
@@ -157,6 +158,7 @@ def load_model(log_filepath, model_dirpath):
             model.load_state_dict(new_state_dict)
     # print(model)
     model.eval()
+    print("-" * 50)
     return args_info, model_config, model, tokenizer
 
 

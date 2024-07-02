@@ -60,9 +60,6 @@ except ImportError:
     from src.batch_converter import BatchConverter
     from src.multi_files_stream_dataloader import *
 
-# import torch.multiprocessing as mp
-# mp.set_start_method('spawn', force=True)
-from peft import LoraConfig, TaskType
 
 logger = logging.getLogger(__name__)
 
@@ -825,13 +822,8 @@ def main():
                     x["matrix_filename_b"] if "matrix_filename_b" in x else None,
                     x["label"] if "label" in x else None,
                 ),
-                batched=False,
-                remove_columns=[
-                    "seq_id_a", "seq_id_b", "seq_type_a", "seq_type_b", "seq_a", "seq_b",
-                    "label"
-                ]
+                batched=False
             )
-             # "vector_filename_a", "vector_filename_b", "matrix_filename_a", "matrix_filename_b"
         else:
             print("Has Pair: False")
             train_dataset = train_dataset.map(
@@ -843,10 +835,8 @@ def main():
                     x["matrix_filename"] if "matrix_filename" in x else None,
                     x["label"] if "label" in x else None,
                 ),
-                batched=False,
-                remove_columns=["seq_id", "seq_type", "seq", "label"]
+                batched=False
             )
-            # "vector_filename", "matrix_filename"
         train_dataset = split_dataset_by_node(train_dataset, rank=args.local_rank, world_size=dist.get_world_size()) \
             .shuffle(buffer_size=args.buffer_size, seed=args.seed)
         train_dataset = train_dataset.with_format("torch")

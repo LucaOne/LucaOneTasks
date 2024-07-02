@@ -80,7 +80,7 @@ class LucaGPLM(nn.Module):
             self.loss_fct = {}
             self.loss_fct_list = []
 
-            print("Pretrain Tasks:")
+            # print("Pretrain Tasks:")
             for cur_item in self.pretrain_tasks.items():
                 cur_task_level_type = cur_item[0]
                 if cur_task_level_type not in self.cls:
@@ -92,7 +92,7 @@ class LucaGPLM(nn.Module):
                     self.output[cur_task_level_type] = {}
                     self.loss_fct[cur_task_level_type] = {}
                 for cur_task_level_name in cur_item[1]:
-                    print(cur_task_level_type + "/" + cur_task_level_name)
+                    # print(cur_task_level_type + "/" + cur_task_level_name)
                     cur_classifier_dropout, cur_hidden_layer, cur_hidden_act, cur_classifier, cur_output, cur_loss_fct \
                         = create_output_loss_lucagplm(cur_task_level_type, cur_task_level_name, config, args)
 
@@ -605,45 +605,3 @@ class LucaGPLM(nn.Module):
 
     def predict_contacts(self, input_ids, position_ids=None, token_type_ids=None):
         return self(input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, return_contacts=True)["contacts"]
-
-
-if __name__ == "__main__":
-
-    model = LucaGPLM(config=None, args=None)
-    print(model)
-    print("Model parameters: %d \n" % sum(p.numel() for p in model.parameters()))
-
-    standard_toks = ['1', '2', '3', '4', '5',
-                     'L', 'A', 'G', 'V', 'S', 'E', 'R', 'T', 'I', 'D', 'P', 'K', 'Q', 'N', 'F', 'Y', 'M', 'H', 'W', 'C', 'X', 'B', 'U', 'Z', 'O', 'J', '.', '-', '*']
-
-    alphabet = Alphabet.from_architecture("gene_prot")
-    from ....batch_converter import BatchConverter
-    batch_convert = BatchConverter(alphabet, False, False, 8)
-
-    labels, strs, input_ids, position_ids, token_type_ids = batch_convert([
-        ["1", "prot", "ABAAB", {"token_level": {"prot_mask": [-100, "B", -100, -100, -100]}}],
-        ["2", "prot", "ABAAB", {"token_level": {"prot_mask": [-100, "B", -100, -100, -100]}}],
-        ["3", "prot", "ABA", {"token_level": {"prot_mask": [-100, "B", -100, -100, -100]}}],
-    ])
-    batch = {
-        "input_ids": input_ids,
-        "position_ids": position_ids,
-        "token_type_ids": token_type_ids,
-        "repr_layers": [-1],
-        "need_head_weights": True,
-        "return_contacts": True,
-        "return_dict": True
-    }
-    output = model(**batch)
-    print(output)
-    if isinstance(output, list):
-        for item in output:
-            print(item[1])
-            if torch.is_tensor(item[1]):
-                print(item[1].shape)
-    else:
-        for item in output.items():
-            print(item[0] + ":")
-            # print(item[1])
-            if torch.is_tensor(item[1]):
-                print(item[1].shape)

@@ -844,6 +844,18 @@ def download_trained_checkpoint_lucaone(
         llm_step="5600000",
         base_url="http://47.93.21.181/lucaone/TrainedCheckPoint"
 ):
+    """
+    donwload trained checkpoint of LucaOne
+    :param llm_dir:
+    :param llm_type:
+    :param llm_version:
+    :param llm_task_level:
+    :param llm_time_str:
+    :param llm_step:
+    :param base_url:
+    :return:
+    """
+    print("------Download Trained LLM(LucaOne)------")
     try:
         logs_file_names = ["logs.txt"]
         models_file_names = ["config.json", "pytorch.pth", "training_args.bin", "tokenizer/alphabet.pkl"]
@@ -875,10 +887,88 @@ def download_trained_checkpoint_lucaone(
                 os.makedirs(models_local_dir)
             models_base_url = os.path.join(base_url, models_path)
             download_folder(models_base_url, models_file_names, models_local_dir)
-            print("LucaOne Downloaded.")
+            print("LucaOne Download Succeed.")
             print("*" * 50)
     except Exception as e:
         print(e)
         print("Download automatically LucaOne Trained CheckPoint failed!")
         print("You can manually download 'logs/' and 'models/' into local directory: %s/ from %s" % (os.path.abspath(llm_dir), os.path.join(base_url, "TrainedCheckPoint/")))
         raise Exception(e)
+
+
+def download_trained_checkpoint_downstream_tasks(
+        save_dir="../",
+        dataset_name=["CentralDogma", "GenusTax", "InfA", "ncRNAFam", "ncRPI", "PPI", "ProtLoc", "ProtStab", "SpeciesTax", "SupKTax"],
+        dataset_type=["gene_protein", "gene", "gene_gene", "gene", "gene_protein", "protein", "protein", "protein", "gene", "gene"],
+        task_type=["binary_class", "multi_class", "binary_class", "multi_class", "binary_class", "binary_class", "multi_class", "regression", "multi_class", "multi_class"],
+        model_type=["lucappi2", "luca_base", "lucappi", "luca_base", "lucappi2", "lucappi", "luca_base", "luca_base", "luca_base", "luca_base"],
+        input_type=["matrix", "matrix", "matrix", "matrix", "matrix", "matrix", "matrix", "matrix", "matrix", "matrix"],
+        time_str=["20240406173806", "20240412100337", "20240214105653", "20240414155526", "20240404105148", "20240216205421", "20240412140824", "20240404104215", "20240411144916", "20240212202328"],
+        step=[64000, 24500, 9603, 1958484, 716380, 52304, 466005, 70371, 24000, 37000],
+        base_url="http://47.93.21.181/lucaone/DownstreamTasksTrainedModels"
+):
+    """
+    donwload trained downstream task models
+    :param save_dir: 本地保存路径
+    :param dataset_name:
+    :param dataset_type:
+    :param task_type:
+    :param model_type:
+    :param input_type:
+    :param time_str:
+    :param step:
+    :param base_url:
+    :return:
+    """
+    assert len(dataset_name) == len(dataset_type) == len(task_type) == \
+           len(model_type) == len(input_type) == len(time_str) == len(step)
+    assert isinstance(dataset_name, list)
+    assert isinstance(dataset_type, list)
+    assert isinstance(task_type, list)
+    assert isinstance(model_type, list)
+    assert isinstance(input_type, list)
+    assert isinstance(time_str, list)
+    assert isinstance(step, list)
+    download_succeed_task_num = 0
+    print("------Download Trained Models------")
+    for idx in range(len(dataset_name)):
+        try:
+            logs_file_names = ["logs.txt", "label.txt"]
+            models_file_names = ["config.json", "pytorch_model.bin", "training_args.bin", "tokenizer/alphabet.pkl"]
+            logs_path = "logs/%s/%s/%s/%s/%s/%s" % (dataset_name[idx], dataset_type[idx], task_type[idx], model_type[idx], input_type[idx], time_str[idx])
+            models_path = "models/%s/%s/%s/%s/%s/%s/checkpoint-%s" % (dataset_name[idx], dataset_type[idx], task_type[idx], model_type[idx], input_type[idx], time_str[idx], str(step[idx]))
+            logs_local_dir = os.path.join(save_dir, logs_path)
+            exists = True
+            for logs_file_name in logs_file_names:
+                if not os.path.exists(os.path.join(logs_local_dir, logs_file_name)):
+                    exists = False
+                    break
+            models_local_dir = os.path.join(save_dir, models_path)
+            if exists:
+                for models_file_name in models_file_names:
+                    if not os.path.exists(os.path.join(models_local_dir, models_file_name)):
+                        exists = False
+                        break
+            if not exists:
+                print("*" * 20 + "Downloading" + "*" * 20)
+                print("Downloading Downstream Task: %s TrainedCheckPoint: %s-%s-%s ..." % (dataset_name[idx], dataset_name[idx], time_str[idx], str(step[idx])))
+                print("Wait a moment, please.")
+                # download logs
+                if not os.path.exists(logs_local_dir):
+                    os.makedirs(logs_local_dir)
+                logs_base_url = os.path.join(base_url, dataset_name[idx], logs_path)
+                download_folder(logs_base_url, logs_file_names, logs_local_dir)
+                # download models
+                if not os.path.exists(models_local_dir):
+                    os.makedirs(models_local_dir)
+                models_base_url = os.path.join(base_url, dataset_name[idx], models_path)
+                download_folder(models_base_url, models_file_names, models_local_dir)
+                print("Downstream Task: %s Trained Model Download Succeed." % dataset_name[idx])
+                print("*" * 50)
+            download_succeed_task_num += 1
+        except Exception as e:
+            print(e)
+            print("Download automatically LucaDownstream Task: %s Trained CheckPoint failed!" %  dataset_name[idx])
+            print("You can manually download 'logs/' and 'models/' into local directory: %s/ from %s" % (os.path.abspath(save_dir), os.path.join(base_url, dataset_name[idx])))
+            raise Exception(e)
+    print("%d Downstream Task Trained Model Download Succeed." % download_succeed_task_num)

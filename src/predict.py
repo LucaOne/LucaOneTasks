@@ -26,7 +26,8 @@ sys.path.append(".")
 sys.path.append("..")
 sys.path.append("../src")
 try:
-    from .utils import to_device, device_memory, available_gpu_id, load_labels
+    from .utils import to_device, device_memory, available_gpu_id, load_labels, \
+        download_trained_checkpoint_lucaone, download_trained_checkpoint_downstream_tasks
     from .common.multi_label_metrics import relevant_indexes
     from .encoder import Encoder
     from .batch_converter import BatchConverter
@@ -36,7 +37,8 @@ try:
     from .ppi.models.LucaPPI import LucaPPI
     from .ppi.models.LucaPPI2 import LucaPPI2
 except ImportError:
-    from src.utils import to_device, device_memory, available_gpu_id, load_labels
+    from src.utils import to_device, device_memory, available_gpu_id, load_labels, \
+        download_trained_checkpoint_lucaone, download_trained_checkpoint_downstream_tasks
     from src.common.multi_label_metrics import relevant_indexes
     from src.encoder import Encoder
     from src.batch_converter import BatchConverter
@@ -254,8 +256,19 @@ def predict_seq_level_multi_label(args, encoder, batch_convecter, label_id_2_nam
 
 
 def predict_seq_level_regression(args, encoder, batch_convecter, label_id_2_name, model, row):
-    # to do
-    pass
+    batch_info, probs, seq_lens = predict_probs(args, encoder, batch_convecter, model, row)
+    res = []
+    for idx, info in enumerate(batch_info):
+        if args.input_mode == "pair":
+            cur_res = [info[0], info[1], info[2], info[3], float(probs[idx][0]), str(probs[idx][0])]
+            if len(info) > 4:
+                cur_res += info[4:]
+        else:
+            cur_res = [info[0], info[1], float(probs[idx][0]), str(probs[idx][0])]
+            if len(info) > 2:
+                cur_res += info[2:]
+        res.append(cur_res)
+    return res
 
 
 def load_tokenizer(args, model_dir, seq_tokenizer_class):
@@ -349,6 +362,7 @@ def create_encoder_batch_convecter(model_args, seq_subword, seq_tokenizer):
             "atom_seq_max_length": None,
             "vector_dirpath": model_args.vector_dirpath,
             "matrix_dirpath": model_args.matrix_dirpath,
+            "matrix_add_special_token": model_args.matrix_add_special_token,
             "local_rank": model_args.gpu_id,
             "max_sentence_length": model_args.max_sentence_length if hasattr(model_args, "max_sentence_length") else None,
             "max_sentences": model_args.max_sentences if hasattr(model_args, "max_sentences") else None,
@@ -414,7 +428,7 @@ def run(sequences, llm_truncation_seq_length, model_path, dataset_name, dataset_
                                                 time_str)
 
     model_args = torch.load(os.path.join(model_dir, "training_args.bin"))
-    print("------model args------")
+    print("------Trained Model Args------")
     print(model_args.__dict__)
     print("-" * 50)
     model_args.llm_truncation_seq_length = llm_truncation_seq_length
@@ -437,6 +451,8 @@ def run(sequences, llm_truncation_seq_length, model_path, dataset_name, dataset_
         model_args.embedding_complete = False
     if not hasattr(model_args, "embedding_complete_seg_overlap"):
         model_args.embedding_complete_seg_overlap = False
+    if not hasattr(model_args, "matrix_add_special_token"):
+        model_args.matrix_add_special_token = False
 
     if not hasattr(model_args, "non_ignore"):
         model_args.non_ignore = True
@@ -450,14 +466,14 @@ def run(sequences, llm_truncation_seq_length, model_path, dataset_name, dataset_
     if gpu_id is None:
         gpu_id = available_gpu_id()
         model_args.gpu_id = gpu_id
-    print("gpu_id: %d" % gpu_id)
+    print("------Before loading the model:------")
+    print("GPU ID: %d" % gpu_id)
     model_args.device = torch.device("cuda:%d" % gpu_id if gpu_id > -1 else "cpu")
-    print("Before loading the model:")
     device_memory(None if gpu_id == -1 else gpu_id)
 
     # Step2: loading the tokenizer and model
     model_config, seq_subword, seq_tokenizer, trained_model = load_model(model_args, model_type, model_dir)
-    print("After loading the model:")
+    print("------After loaded the model:------")
     
     device_memory(None if gpu_id == -1 else gpu_id)
     encoder, batch_convecter = create_encoder_batch_convecter(model_args, seq_subword, seq_tokenizer)
@@ -484,7 +500,8 @@ def run(sequences, llm_truncation_seq_length, model_path, dataset_name, dataset_
     else:
         raise Exception("task type or task level type error")
     results = []
-    print("device:", model_args.device)
+    print()
+    print("Device:", model_args.device)
     if hasattr(model_args, "input_mode") and model_args.input_mode in ["pair"]:
         for item in sequences:
             seq_id_a = item[0]
@@ -547,38 +564,77 @@ def run(sequences, llm_truncation_seq_length, model_path, dataset_name, dataset_
 
 def run_args():
     parser = argparse.ArgumentParser(description="Prediction")
+    # for one seq sample of the input
     parser.add_argument("--seq_id", default=None, type=str,  help="the seq id")
-    parser.add_argument("--seq", default=None, type=str,  help="the sequence")
     parser.add_argument("--seq_type", default="prot", type=str, choices=["prot", "gene"], help="seq type.")
-    parser.add_argument("--fasta", default=None, type=str, help="the sequences fasta file")
-    parser.add_argument("--llm_truncation_seq_length", default=4096, type=int, required=True, help="truncation seq length for llm")
-    parser.add_argument("--topk", default=None, type=int, help="topk for multi-class")
-    parser.add_argument("--model_path", default=None, type=str, help="the model dir. default: None")
+    parser.add_argument("--seq", default=None, type=str,  help="the sequence")
+    # for one seq-seq sample of the input
+    parser.add_argument("--seq_id_a", default=None, type=str,  help="the seq id a")
+    parser.add_argument("--seq_type_a", default="prot", type=str, choices=["prot", "gene"], help="seq type.")
+    parser.add_argument("--seq_a", default=None, type=str,  help="the sequence a")
+    parser.add_argument("--seq_id_b", default=None, type=str,  help="the seq id b")
+    parser.add_argument("--seq_type_b", default="prot", type=str, choices=["prot", "gene"], help="seq type b.")
+    parser.add_argument("--seq_b", default=None, type=str,  help="the sequence b")
+    # for many samples
+    parser.add_argument("--input_file", default=None, type=str, 
+                        help="the fasta or csv format file for single-seq model,"
+                             " or the csv format file for pair-seq model")
+    # for trained model
+    parser.add_argument("--llm_truncation_seq_length", default=4096, type=int, required=True, 
+                        help="the max seq-length for llm embedding")
+    parser.add_argument("--model_path", default=None, type=str, 
+                        help="the model dir. default: None")
+    parser.add_argument("--emb_dir", default=None, type=str, 
+                        help="the llm embedding save dir. default: None, not to save")
+    parser.add_argument("--dataset_name", default=None, type=str, required=True,
+                        help="the dataset name for model building.")
+    parser.add_argument("--dataset_type", default=None, type=str, required=True, 
+                        help="the dataset type for model building.")
+    parser.add_argument("--task_type", default=None, type=str, required=True, 
+                        choices=["multi_label", "multi_class", "binary_class", "regression"], 
+                        help="the task type for model building.")
+    parser.add_argument("--task_level_type", default=None, type=str, required=True, 
+                        choices=["seq_level", "token_level"], 
+                        help="the task level type for model building.")
+    parser.add_argument("--model_type", default=None, type=str, required=True,
+                        choices=["luca_base", "lucappi", "lucappi2"], 
+                        help="the model type.")
+    parser.add_argument("--input_type", default=None, type=str, required=True, 
+                        choices=["seq", "matrix", "vector", "seq-matrix", "seq-vector"], 
+                        help="the input type.")
+    parser.add_argument("--input_mode", default=None, type=str, required=True, 
+                        choices=["single", "pair"],
+                        help="the input mode.")
+    parser.add_argument("--time_str", default=None, type=str, required=True, 
+                        help="the running time string(yyyymmddHimiss) of model building.")
+    parser.add_argument("--step", default=None, type=str, required=True, 
+                        help="the training global checkpoint step of model finalization.")
+
+    parser.add_argument("--topk", default=None, type=int, help="the topk results for multi-class")
+    parser.add_argument("--threshold",  default=0.5, type=float, 
+                        help="sigmoid threshold for binary-class or multi-label classification, "
+                             "None for multi-class classification or regression, defualt: 0.5.")
+    parser.add_argument("--ground_truth_idx", default=None, type=int, 
+                        help="the ground truth idx, when the input file contains")
+    # for results(csv format, contain header)
     parser.add_argument("--save_path", default=None, type=str, help="the result save path")
-    parser.add_argument("--emb_dir", default=None, type=str, help="the structural embedding save dir. default: None")
-    parser.add_argument("--dataset_name", default=None, type=str, required=True, help="the dataset name for model buliding.")
-    parser.add_argument("--dataset_type", default=None, type=str, required=True, help="the dataset type for model buliding.")
-    parser.add_argument("--task_type", default=None, type=str, required=True, choices=["multi_label", "multi_class", "binary_class"], help="the task type for model buliding.")
-    parser.add_argument("--task_level_type", default=None, type=str, required=True, choices=["seq_level", "token_level"], help="the task level type for model buliding.")
-    parser.add_argument("--model_type", default=None, type=str, required=True, help="model type.")
-    parser.add_argument("--input_type", default=None, type=str, required=True, help="input type.")
-    parser.add_argument("--input_mode", default=None, type=str, required=True, help="input mode.")
-    parser.add_argument("--ground_truth_idx", default=None, type=int, help="ground truth idx")
-    parser.add_argument("--per_num", default=10000, type=int, help="per num to print")
-    parser.add_argument("--time_str", default=None, type=str, required=True, help="the running time string(yyyymmddHimiss) of model building.")
-    parser.add_argument("--step", default=None, type=str, required=True, help="the training global step of model finalization.")
-    parser.add_argument("--gpu_id", default=None, type=int, help="gpu_id.")
-    parser.add_argument("--threshold",  default=0.5, type=float, help="sigmoid threshold for binary-class or multi-label classification, None for multi-class classification, defualt: 0.5.")
+    # for print info
+    parser.add_argument("--print_per_num", default=10000, type=int, help="per num to print")
+    parser.add_argument("--gpu_id", default=None, type=int, help="the used gpu index, -1 for cpu")
     args = parser.parse_args()
     return args
 
 
 if __name__ == "__main__":
     args = run_args()
-    print("------run args------")
+    print("------Run Args------")
     print(args.__dict__)
     print("-" * 50)
-    if args.fasta is not None and os.path.exists(args.fasta):
+    # download LLM(LucaOne)
+    download_trained_checkpoint_lucaone(llm_dir=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "llm/"))
+    # download trained downstream task models
+    download_trained_checkpoint_downstream_tasks(save_dir=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    if args.input_file is not None and os.path.exists(args.input_file):
         exists_ids = set()
         exists_res = []
         if os.path.exists(args.save_path):
@@ -620,11 +676,12 @@ if __name__ == "__main__":
             batch_data = []
             batch_ground_truth = []
             had_done = 0
-            reader = file_reader(args.fasta) if args.fasta.endswith(".csv") or args.fasta.endswith(".tsv") else fasta_reader(args.fasta)
+            reader = file_reader(args.input_file) if args.input_file.endswith(".csv") or args.input_file.endswith(".tsv") else fasta_reader(args.input_file)
             for row in reader:
                 if args.input_mode == "pair":
                     if row[0] + "_" + row[1] in exists_ids:
                         continue
+                    # seq_id_a, seq_id_b, seq_type_a, seq_type_b, seq_a, seq_b
                     batch_data.append([row[0], row[1], row[2], row[3], row[4], row[5]])
                     if args.ground_truth_idx is not None and args.ground_truth_idx >= 0:
                         batch_ground_truth.append(row[args.ground_truth_idx])
@@ -632,15 +689,17 @@ if __name__ == "__main__":
                     if row[0] in exists_ids:
                         continue
                     if len(row) == 2:
+                        # default: seq_type='prot'
                         batch_data.append([row[0], "prot" if args.seq_type is None else args.seq_type, args.row[1]])
                     elif len(row) > 2:
                         if args.ground_truth_idx is not None and args.ground_truth_idx >= 0:
                             batch_ground_truth.append(row[args.ground_truth_idx])
+                        # seq_id, seq_type, seq
                         batch_data.append([row[0], row[1], row[2]])
                     else:
                         continue
 
-                if len(batch_data) % args.per_num == 0:
+                if len(batch_data) % args.print_per_num == 0:
                     batch_results = run(batch_data,
                                         args.llm_truncation_seq_length,
                                         args.model_path,
@@ -688,6 +747,27 @@ if __name__ == "__main__":
                 batch_ground_truth = []
     elif args.seq_id is not None and args.seq is not None:
         data = [[args.seq_id, "prot" if args.seq_type is None else args.seq_type, args.seq]]
+        results = run(data,
+                      args.llm_truncation_seq_length,
+                      args.model_path,
+                      args.dataset_name,
+                      args.dataset_type,
+                      args.task_type,
+                      args.task_level_type,
+                      args.model_type,
+                      args.input_type,
+                      args.time_str,
+                      args.step,
+                      args.gpu_id,
+                      args.threshold,
+                      topk=args.topk)
+        print("results:")
+        print("seq_id=%s" % args.seq_id)
+        print("seq=%s" % args.seq)
+        print("prob=%f" % results[0][2])
+        print("label=%s" % results[0][3])
+    elif args.seq_id_a is not None and args.seq_a is not None and args.seq_id_b is not None and args.seq_b is not None:
+        data = [[args.seq_id_a, args.seq_id_b, "prot" if args.seq_type_a is None else args.seq_type_a, "prot" if args.seq_type_b is None else args.seq_type_b, args.seq_a, args.seq_b]]
         results = run(data,
                       args.llm_truncation_seq_length,
                       args.model_path,

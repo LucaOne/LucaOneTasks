@@ -266,6 +266,7 @@ class Encoder(object):
                  matrix_dirpath=None,
                  local_rank=-1,
                  **kwargs):
+        print("------Encoder------")
         self.llm_type = llm_type
         self.llm_dirpath = llm_dirpath
         self.input_type = input_type
@@ -282,7 +283,7 @@ class Encoder(object):
         if "matrix_add_special_token" in kwargs and kwargs["matrix_add_special_token"]:
             self.matrix_add_special_token = kwargs["matrix_add_special_token"]
 
-        print("Encoder: prepend_bos=", self.prepend_bos, ",append_eos=", self.append_eos)
+        print("Encoder: prepend_bos=%r, append_eos=%r" % (self.prepend_bos, self.append_eos))
         if self.matrix_add_special_token:
             self.prepend_bos = True
             self.append_eos = True
@@ -311,7 +312,8 @@ class Encoder(object):
             device = torch.device("cpu")
         self.device = device
         self.seq_id_2_emb_filename = {}
-        print("Encoder: prepend_bos=", self.prepend_bos, ",append_eos=", self.append_eos)
+        print("Encoder: prepend_bos=%r, append_eos=%r" % (self.prepend_bos, self.append_eos))
+        print("-" * 50)
 
     def encode_single(self,
                       seq_id,

@@ -113,7 +113,46 @@ When downloading automatically failed, you can manually download:
 Copy the **TrainedCheckPoint Files(`models/` + `logs/`)** from <href> http://47.93.21.181/lucaone/TrainedCheckPoint/* </href> into the directory `./llm/`
 
 
-## 5. Using   
+## 5. Usage of Downstream Models Inference
+The directory includes the trained models of 10 downstream tasks(presented in the paper, all metrics in `TableS5`), all these trained models are based on LucaOne's embedding.        
+Use the script `src/predict.py` or `src/predict.sh` to load the trained model and predict.
+
+**Notice**    
+The project will download automatically Trained-CheckPoint of all downstream tasks from **FTP**.
+
+When downloading automatically failed, you can manually download:
+
+Copy the **DownstreamTasksTrainedModels Files(`models/` + `logs/`)** from <href> http://47.93.21.181/lucaone/DownstreamTasksTrainedModels/ </href> into the project `LucaOneTasks/`
+
+
+The shell script of all downstream task models for inference in `LucaOneTasks/src/predict.sh`
+
+```shell 
+cd LucaOneTasks/src/
+# input file format(csv, the first row is csv-header), Required columns: seq_id_a, seq_id_b, seq_type_a, seq_type_b, seq_a, seq_b
+# seq_type_a must be gene, seq_type_a must be prot
+export CUDA_VISIBLE_DEVICES="0,1,2,3"
+python predict.py \
+    --input_file ../test/CentralDogma/CentralDogma_prediction.csv \
+    --llm_truncation_seq_length 4096 \
+    --model_path .. \
+    --save_path ../predicts/CentralDogma/CentralDogma_prediction_results.csv \
+    --dataset_name CentralDogma \
+    --dataset_type gene_protein \
+    --task_type binary_class \
+    --task_level_type seq_level \
+    --model_type lucappi2 \
+    --input_type matrix \
+    --input_mode pair \
+    --time_str 20240406173806 \
+    --print_per_num 1000 \
+    --step 64000 \
+    --threshold 0.5 \
+    --gpu_id 0
+```
+
+
+## 6. Usage of LucaOne Embedding(also can use LucaOneApp project)      
 Methods of using embedding:    
 In this project, the sequence is embedded during the training downstream task(`./src/encoder.py`).   
 
@@ -251,7 +290,7 @@ python get_embedding.py \
     * id_idx & seq_idx: when the input file format is csv file, need to use `id_idx` and `seq_idx` to specify the column index in the csv (starting with 0).   
 
 
-## 6. Downstream Tasks        
+## 7. Downstream Tasks        
 The running scripts of 10 downstream tasks in three directories:      
 
 1) `src/training/lucaone` :     
@@ -264,9 +303,10 @@ The running scripts of 10 downstream tasks in three directories:
 
 
 3) `src/training/lucaone_separated` :      
-   The task script with the embedding based on the LucaOne of separated nucleic acid and protein training(LucaOne-Gene/LucaOne-Prot). **(Fig. 3 in our paper)**.          
+   The task script with the embedding based on the LucaOne of separated nucleic acid and protein training(LucaOne-Gene/LucaOne-Prot). **(Fig. 3 in our paper)**.      
 
-## 7. Data and Code Availability
+
+## 8. Data and Code Availability
 **FTP:**   
 Pre-training data, code, and trained checkpoint of LucaOne, embedding inference code, downstream validation tasks data & code, and other materials are available: <a href='http://47.93.21.181/lucaone/'>FTP</a>.
 
@@ -284,17 +324,19 @@ The pre-training dataset of LucaOne is opened at: <a href='http://47.93.21.181/l
 
 The datasets of downstream tasks are available at: <a href='http://47.93.21.181/lucaone/DownstreamTasksDataset/'> DownstreamTasksDataset </a>.
 
+The trained models of downstream tasks are available at: <a href='http://47.93.21.181/lucaone/DownstreamTasksTrainedModels/'> DownstreamTasksTrainedModels </a>.
+
 Other supplementary materials are available at: <a href='http://47.93.21.181/lucaone/Others/'> Others </a>.
 
 
 
-## 8. Contributor        
+## 9. Contributor        
 <a href="https://scholar.google.com.hk/citations?user=RDbqGTcAAAAJ&hl=en" title="Yong He">Yong He</a>,
 <a href="https://scholar.google.com/citations?user=lT3nelQAAAAJ&hl=en" title="Zhaorong Li">Zhaorong Li</a>,
 <a href="https://scholar.google.com/citations?user=ODcOX4AAAAAJ&hl=zh-CN" title="Pan Fang">Pan Fang</a>     
 
 
-## 8. Citation          
+## 10. Citation          
 @article {LucaOne,        
 author = {Yong He and Pan Fang and Yongtao Shan and Yuanfei Pan and Yanhong Wei and Yichang Chen and Yihao Chen and Yi Liu and Zhenyu Zeng and Zhan Zhou and Feng Zhu and Edward C. Holmes and Jieping Ye and Jun Li and Yuelong Shu and Mang Shi and Zhaorong Li},     
 title = {LucaOne: Generalized Biological Foundation Model with Unified Nucleic Acid and Protein Language},      

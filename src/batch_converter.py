@@ -51,6 +51,7 @@ class BatchConverter(object):
                  prepend_bos=None,
                  append_eos=None,
                  **kwargs):
+        print("------BatchConverter------")
         print("BatchConverter, kwargs:")
         print(kwargs)
         self.task_level_type = task_level_type
@@ -142,8 +143,8 @@ class BatchConverter(object):
                 self.atom_all_special_token_idx_list = [self.padding_idx, self.unk_idx, self.cls_idx, self.eos_idx, self.mask_idx]
             self.atom_append_len = int(self.atom_prepend_bos) + int(self.atom_append_eos)
 
-        print("BatchConverter: prepend_bos=", self.prepend_bos, ",append_eos=", self.append_eos)
-        print("BatchConverter: atom_prepend_bos=", self.atom_prepend_bos, ",atom_append_eos=", self.atom_append_eos)
+        print("BatchConverter: prepend_bos=%r, append_eos=%r" % (self.prepend_bos, self.append_eos))
+        print("BatchConverter: atom_prepend_bos=%r, atom_append_eos=%r" % (self.atom_prepend_bos, self.atom_append_eos))
         self.matrix_add_special_token = False
         if "matrix_add_special_token" in kwargs and kwargs["matrix_add_special_token"]:
             self.matrix_add_special_token = kwargs["matrix_add_special_token"]
@@ -184,8 +185,9 @@ class BatchConverter(object):
 
         self.no_position_embeddings = no_position_embeddings
         self.no_token_type_embeddings = no_token_type_embeddings
-        print("BatchConverter: prepend_bos=", self.prepend_bos, ",append_eos=", self.append_eos)
-        print("BatchConverter: atom_prepend_bos=", self.atom_prepend_bos, ",atom_append_eos=", self.atom_append_eos)
+        print("BatchConverter: prepend_bos=%r, append_eos=%r" % (self.prepend_bos, self.append_eos))
+        print("BatchConverter: atom_prepend_bos=%r, atom_append_eos=%r" % (self.atom_prepend_bos, self.atom_append_eos))
+        print("-" * 50)
 
     def __parse_label__(self, max_length, task_level_type, label_size, output_mode, label):
         if isinstance(label, str):
@@ -718,7 +720,7 @@ class BatchConverter(object):
         '''
         该函数不加特殊字符[CLS]与[SEP]的向量
         :param batch_size:
-        :param seqs:
+        :param matrices:
         :return:
         '''
         max_len = max(matrix.shape[0] for matrix in matrices)
@@ -755,7 +757,7 @@ class BatchConverter(object):
         '''
         该函数不加特殊字符[CLS]与[SEP]的向量
         :param batch_size:
-        :param seqs:
+        :param matrices:
         :return:
         '''
         max_len = max(matrix.shape[0] for matrix in matrices)
@@ -792,7 +794,7 @@ class BatchConverter(object):
         '''
         该函数不加特殊字符[CLS]与[SEP]的向量
         :param batch_size:
-        :param seqs:
+        :param matrices:
         :return:
         '''
         max_sentence_num = max(len(cur_matrix) for cur_matrix in matrices)

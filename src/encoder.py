@@ -18,37 +18,19 @@ sys.path.append(".")
 sys.path.append("../")
 sys.path.append("../src")
 try:
-    from .utils import clean_seq, device_memory
+    from .utils import clean_seq, device_memory, calc_emb_filename_by_seq_id
     from .common.alphabet import Alphabet
     from .llm.lucagplm.get_embedding import predict_embedding as predict_embedding_luca
     from .llm.esm.predict_embedding import predict_embedding as predict_embedding_esm
     from .llm.dnabert2.inference_embedding import predict_embedding as predict_embedding_dnabert2
     from .llm.dnaberts.inference_embedding import predict_embedding as predict_embedding_dnaberts
 except ImportError as e:
-    from src.utils import clean_seq, device_memory
+    from src.utils import clean_seq, device_memory, calc_emb_filename_by_seq_id
     from src.common.alphabet import Alphabet
     from src.llm.lucagplm.get_embedding import predict_embedding as predict_embedding_luca
     from src.llm.esm.predict_embedding import predict_embedding as predict_embedding_esm
     from src.llm.dnabert2.inference_embedding import predict_embedding as predict_embedding_dnabert2
     from src.llm.dnaberts.inference_embedding import predict_embedding as predict_embedding_dnaberts
-
-
-def calc_emb_filename_by_seq_id(seq_id, embedding_type):
-    """
-    根据seq_id得到emb_filename
-    :param seq_id:
-    :param embedding_type:
-    :return:
-    """
-    if "|" in seq_id:
-        strs = seq_id.split("|")
-        if len(strs) > 1:
-            emb_filename = embedding_type + "_" + strs[1].strip() + ".pt"
-        else:
-            emb_filename = embedding_type + "_" + seq_id.replace(" ", "").replace("/", "_") + ".pt"
-    else:
-        emb_filename = embedding_type + "_" + seq_id.replace(" ", "").replace("/", "_") + ".pt"
-    return emb_filename
 
 
 def complete_embedding_matrix(seq_id,

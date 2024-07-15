@@ -273,7 +273,7 @@ def predict_seq_level_regression(args, encoder, batch_convecter, label_id_2_name
 
 def load_tokenizer(args, model_dir, seq_tokenizer_class):
     seq_subword, seq_tokenizer = None, None
-    if not hasattr("args", "has_seq_encoder") or args.has_seq_encoder:
+    if not hasattr(args, "has_seq_encoder") or args.has_seq_encoder:
         if args.seq_subword:
             if os.path.exists(os.path.join(model_dir, "sequence")):
                 seq_tokenizer = seq_tokenizer_class.from_pretrained(os.path.join(model_dir, "sequence"), do_lower_case=args.do_lower_case)

@@ -793,7 +793,7 @@ def main():
             input_type=args.input_type,
             output_mode=args.output_mode,
             label_size=args.label_size,
-            datatset_type="train",
+            dataset_type="train",
             vector_dirpath=args.vector_dirpath,
             matrix_dirpath=args.matrix_dirpath,
             inference=False,

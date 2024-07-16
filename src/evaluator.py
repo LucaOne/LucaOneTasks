@@ -53,7 +53,7 @@ def evaluate(args, model, parse_row_func, batch_data_func, prefix="", log_fp=Non
                                             input_type=args.input_type,
                                             output_mode=args.output_mode,
                                             label_size=args.label_size,
-                                            datatset_type="dev",
+                                            dataset_type="dev",
                                             vector_dirpath=args.vector_dirpath,
                                             matrix_dirpath=args.matrix_dirpath,
                                             inference=False,

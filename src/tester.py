@@ -61,7 +61,7 @@ def test(args, model, parse_row_func, batch_data_func, prefix="", log_fp=None):
                                                  input_type=args.input_type,
                                                  output_mode=args.output_mode,
                                                  label_size=args.label_size,
-                                                 datatset_type="test",
+                                                 dataset_type="test",
                                                  vector_dirpath=args.vector_dirpath,
                                                  matrix_dirpath=args.matrix_dirpath,
                                                  inference=False,

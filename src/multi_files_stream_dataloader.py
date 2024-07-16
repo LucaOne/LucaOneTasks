@@ -36,7 +36,7 @@ class MultiFilesStreamLoader(object):
                  input_type,
                  output_mode,
                  label_size,
-                 datatset_type="train",
+                 dataset_type="train",
                  vector_dirpath=None,
                  matrix_dirpath=None,
                  inference=False,
@@ -68,7 +68,7 @@ class MultiFilesStreamLoader(object):
         self.inference = inference
         self.label_size = label_size
         self.shuffle = shuffle
-        self.datatset_type = datatset_type
+        self.dataset_type = dataset_type
         if self.shuffle:
             for _ in range(5):
                 random.shuffle(self.filepaths)
@@ -231,7 +231,7 @@ class MultiFilesStreamLoader(object):
                 return self.get_batch(start, end)
             elif self.epoch_over:
                 # init for next epoch only for train dataset
-                if self.datatset_type == "train":
+                if self.dataset_type == "train":
                     self.reload_buffer()
                     self.epoch_over = False
                 # print("ok2:", self.epoch_over, self.ptr, len(self.buffer))
@@ -261,7 +261,7 @@ class MultiFilesStreamLoader(object):
                 return self.get_batch(start, end)
             else:
                 # init for next epoch only for train dataset
-                if self.datatset_type == "train":
+                if self.dataset_type == "train":
                     self.reload_buffer()
                 # print("ok2:", self.epoch_over, self.ptr, len(self.buffer))
                 raise StopIteration

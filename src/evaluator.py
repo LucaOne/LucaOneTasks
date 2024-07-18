@@ -134,8 +134,8 @@ def evaluate(args, model, parse_row_func, batch_data_func, prefix="", log_fp=Non
 
     with open(os.path.join(save_output_dir, "dev_metrics.txt"), "w") as writer:
         writer.write("***** Dev results {} *****\n".format(prefix))
-        writer.write("Test average loss = %0.6f" % avg_loss)
-        writer.write("Test total loss = %0.6f" % eval_loss)
+        writer.write("Test average loss = %0.6f\n" % avg_loss)
+        writer.write("Test total loss = %0.6f\n" % eval_loss)
         for key in sorted(all_result.keys()):
             writer.write("%s = %s\n" % (key, str(all_result[key])))
     return all_result

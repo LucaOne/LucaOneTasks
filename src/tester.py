@@ -154,11 +154,11 @@ def test(args, model, parse_row_func, batch_data_func, prefix="", log_fp=None):
         writer.write("***** Test results {} *****\n".format(prefix))
         for idx in range(len(test_dataloader_list)):
             if idx == 0:
-                writer.write("Test average loss = %0.6f" % all_result["avg_loss"])
-                writer.write("Test total loss = %0.6f" % all_result["total_loss"])
+                writer.write("Test average loss = %0.6f\n" % all_result["avg_loss"])
+                writer.write("Test total loss = %0.6f\n" % all_result["total_loss"])
             else:
-                writer.write("Test average loss = %0.6f" % all_result["avg_loss_%d" % (idx + 1)])
-                writer.write("Test total loss = %0.6f" % all_result["total_loss_%d" % (idx + 1)])
+                writer.write("Test average loss(idx=%d) = %0.6f\n" % (idx, all_result["avg_loss_%d" % (idx + 1)]))
+                writer.write("Test total loss(idx=%d) = %0.6f\n" % (idx, all_result["total_loss_%d" % (idx + 1)]))
         for key in sorted(all_result.keys()):
             writer.write("%s = %s\n" % (key, str(all_result[key])))
     return all_result

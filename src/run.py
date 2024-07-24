@@ -498,7 +498,7 @@ def get_model(args):
     model_config.self_atten = args.self_atten
     model_config.cross_atten = args.cross_atten
 
-    model_config.max_position_embeddings = args.seq_max_length
+    model_config.max_position_embeddings = args.seq_max_length + int(args.prepend_bos) + int(args.append_eos)
 
     if args.classifier_size:
         model_config.classifier_size = args.classifier_size
@@ -516,8 +516,8 @@ def get_model(args):
     if args.seq_subword:
         seq_tokenizer_class = BertTokenizer
         seq_tokenizer = BertTokenizer(args.seq_vocab_path, do_lower_case=args.do_lower_case)
-        bpe_codes_prot = codecs.open(args.codes_file)
-        seq_subword = BPE(bpe_codes_prot, merges=-1, separator='')
+        bpe_codes = codecs.open(args.codes_file)
+        seq_subword = BPE(bpe_codes, merges=-1, separator='')
         model_config.cls_token_id = seq_tokenizer.cls_token_id
         model_config.sep_token_id = seq_tokenizer.sep_token_id
     else:

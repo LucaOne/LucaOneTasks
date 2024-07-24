@@ -304,36 +304,42 @@ class Encoder(object):
                       vector_filename=None,
                       matrix_filename=None,
                       label=None):
+        seq_type = seq_type.strip().lower()
+        # for embedding vector
         vector = None
         if self.input_type in ["vector", "seq_vector"]:
-            if isinstance(vector_filename, str):
-                vector = torch.load(os.path.join(self.vector_dirpath, vector_filename))
-            elif vector_filename is None:
+            if vector_filename is None:
                 if seq is None:
                     raise Exception("seq is none and vector_filename is none")
                 elif seq_type == "molecule":
                     raise Exception("now not support embedding of the seq_type=%s" % seq_type)
                 else:
                     vector = self.__get_embedding__(seq_id, seq_type, seq, "vector")
+            elif isinstance(vector_filename, str):
+                vector = torch.load(os.path.join(self.vector_dirpath, vector_filename))
             elif isinstance(vector_filename, np.ndarray):
                 vector = vector_filename
             else:
                 raise Exception("vector is not filepath-str and np.ndarray")
+
+        # for embedding matrix
         matrix = None
         if self.input_type in ["matrix", "seq_matrix"]:
-            if isinstance(matrix_filename, str):
-                matrix = torch.load(os.path.join(self.matrix_dirpath, matrix_filename))
-            elif matrix_filename is None:
+            if matrix_filename is None:
                 if seq is None:
                     raise Exception("seq is none and matrix_filename is none")
                 elif seq_type == "molecule":
                     raise Exception("now not support embedding of the seq_type=%s" % seq_type)
                 else:
                     matrix = self.__get_embedding__(seq_id, seq_type, seq, "matrix")
+            elif isinstance(matrix_filename, str):
+                matrix = torch.load(os.path.join(self.matrix_dirpath, matrix_filename))
             elif isinstance(matrix_filename, np.ndarray):
                 matrix = matrix_filename
             else:
                 raise Exception("matrix is not filepath-str and np.ndarray")
+
+        # for seq
         if seq_type == "molecule":
             # to do
             pass
@@ -735,7 +741,9 @@ class Encoder(object):
                     matrix_filename_b=None,
                     label=None
                     ):
-
+        seq_type_a = seq_type_a.strip().lower()
+        seq_type_b = seq_type_b.strip().lower()
+        # for embedding vector
         vector_a, vector_b = None, None
         if self.input_type in ["vector", "seq_vector"]:
             if vector_filename_a is None:
@@ -747,8 +755,11 @@ class Encoder(object):
                     vector_a = self.__get_embedding__(seq_id_a, seq_type_a, seq_a, "vector")
             elif isinstance(vector_filename_a, str):
                 vector_a = torch.load(os.path.join(self.vector_dirpath, vector_filename_a))
-            else:
+            elif isinstance(vector_filename_a, np.ndarray):
                 vector_a = vector_filename_a
+            else:
+                raise Exception("vector_a is not filepath-str and np.ndarray")
+
             if vector_filename_b is None:
                 if seq_b is None:
                     raise Exception("seq_b is none and vector_filename_b is none")
@@ -758,8 +769,12 @@ class Encoder(object):
                     vector_b = self.__get_embedding__(seq_id_b, seq_type_b, seq_b, "vector")
             elif isinstance(vector_filename_b, str):
                 vector_b = torch.load(os.path.join(self.vector_dirpath, vector_filename_b))
-            else:
+            elif isinstance(vector_filename_b, np.ndarray):
                 vector_b = vector_filename_b
+            else:
+                raise Exception("vector_b is not filepath-str and np.ndarray")
+
+        # for embedding matrix
         matrix_a, matrix_b = None, None
         if self.input_type in ["matrix", "seq_matrix"]:
             if matrix_filename_a is None:
@@ -769,8 +784,10 @@ class Encoder(object):
                     matrix_a = self.__get_embedding__(seq_id_a, seq_type_a, seq_a, "matrix")
             elif isinstance(matrix_filename_a, str):
                 matrix_a = torch.load(os.path.join(self.matrix_dirpath, matrix_filename_a))
-            else:
+            elif isinstance(matrix_filename_a, np.ndarray):
                 matrix_a = matrix_filename_a
+            else:
+                raise Exception("matrix_a is not filepath-str and np.ndarray")
             if matrix_filename_b is None:
                 if seq_b is None:
                     raise Exception("seq_b is none and matrix_filename_b is none")
@@ -778,8 +795,12 @@ class Encoder(object):
                     matrix_b = self.__get_embedding__(seq_id_b, seq_type_b, seq_b, "matrix")
             elif isinstance(matrix_filename_b, str):
                 matrix_b = torch.load(os.path.join(self.matrix_dirpath, matrix_filename_b))
-            else:
+            elif isinstance(matrix_filename_b, np.ndarray):
                 matrix_b = matrix_filename_b
+            else:
+                raise Exception("matrix_b is not filepath-str and np.ndarray")
+
+        # for seq
         if seq_type_a == "molecule":
             # to do
             pass

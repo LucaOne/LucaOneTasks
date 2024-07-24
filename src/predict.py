@@ -279,8 +279,8 @@ def load_tokenizer(args, model_dir, seq_tokenizer_class):
                 seq_tokenizer = seq_tokenizer_class.from_pretrained(os.path.join(model_dir, "sequence"), do_lower_case=args.do_lower_case)
             else:
                 seq_tokenizer = seq_tokenizer_class.from_pretrained(os.path.join(model_dir, "tokenizer"), do_lower_case=args.do_lower_case)
-            bpe_codes_prot = codecs.open(args.codes_file)
-            seq_subword = BPE(bpe_codes_prot, merges=-1, separator='')
+            bpe_codes = codecs.open(args.codes_file)
+            seq_subword = BPE(bpe_codes, merges=-1, separator='')
         else:
             seq_subword = None
             seq_tokenizer = seq_tokenizer_class.from_predefined(args.seq_vocab_path)
@@ -613,7 +613,7 @@ def run_args():
     parser.add_argument("--topk", default=None, type=int, help="the topk results for multi-class")
     parser.add_argument("--threshold",  default=0.5, type=float, 
                         help="sigmoid threshold for binary-class or multi-label classification, "
-                             "None for multi-class classification or regression, defualt: 0.5.")
+                             "None for multi-class classification or regression, default: 0.5.")
     parser.add_argument("--ground_truth_idx", default=None, type=int, 
                         help="the ground truth idx, when the input file contains")
     # for results(csv format, contain header)

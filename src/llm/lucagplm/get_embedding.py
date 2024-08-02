@@ -645,7 +645,7 @@ def get_args():
     parser.add_argument("--seq_idx", type=int, default=None, help="seq col idx(0 start)")
     parser.add_argument("--embedding_complete",  action="store_true", help="when the seq len > inference_max_len, then the embedding matrix is completed by segment")
     parser.add_argument("--embedding_complete_seg_overlap",  action="store_true", help="overlap segment(overlap sliding window)")
-    parser.add_argument('--gpu', type=int, default=-1, help="the gpu id to use.")
+    parser.add_argument('--gpu_id', type=int, default=-1, help="the gpu id to use.")
 
     input_args = parser.parse_args()
     return input_args
@@ -689,8 +689,8 @@ def main(model_args):
         lucaone_global_log_filepath = cur_log_filepath
         lucaone_global_model_dirpath = cur_model_dirpath
         lucaone_global_args_info, lucaone_global_model_config, lucaone_global_model, lucaone_global_tokenizer = load_model(lucaone_global_log_filepath, lucaone_global_model_dirpath)
-    if args.gpu >= 0:
-        gpu_id = args.gpu
+    if args.gpu_id >= 0:
+        gpu_id = args.gpu_id
     else:
         gpu_id = available_gpu_id()
         print("gpu_id: ", gpu_id)

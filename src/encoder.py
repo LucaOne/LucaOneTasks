@@ -383,6 +383,7 @@ class Encoder(object):
             if os.path.exists(embedding_path):
                 try:
                     embedding_info = torch.load(embedding_path)
+                    self.seq_id_2_emb_filename[seq_id] = emb_filename
                 except Exception as e:
                     print(e)
                     embedding_info = None

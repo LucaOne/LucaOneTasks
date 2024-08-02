@@ -188,7 +188,7 @@ python get_embedding.py \
     --save_path ../../../embedding/lucaone/test_data/prot/test_prot \
     --embedding_complete \
     --embedding_complete_seg_overlap \
-    --gpu 0   
+    --gpu_id 0   
  
 # for DNA or RNA
 cd ./src/llm/lucagplm
@@ -211,7 +211,7 @@ python get_embedding.py \
     --save_path ../../../embedding/lucaone/test_data/gene/test_gene \
     --embedding_complete \
     --embedding_complete_seg_overlap \
-    --gpu 0   
+    --gpu_id 0   
 ```
 
 ### 2) the **fasta** file format of input       
@@ -238,7 +238,7 @@ python get_embedding.py \
     --save_path ../../../embedding/lucaone/test_data/prot/test_prot \
     --embedding_complete \
     --embedding_complete_seg_overlap \
-    --gpu 0   
+    --gpu_id 0   
 ```
 
 
@@ -262,7 +262,7 @@ python get_embedding.py \
     --save_path ../../../embedding/lucaone/test_data/gene/test_gene \
     --embedding_complete \
     --embedding_complete_seg_overlap \
-    --gpu 0   
+    --gpu_id 0   
 ```
 
 ### 3) Parameters       
@@ -284,7 +284,7 @@ python get_embedding.py \
     * save_path: the saving dir for storing the embedding file.     
     * embedding_complete: When `embedding_complete` is set, `truncation_seq_length` is invalid. If the GPU memory is not enough to infer the entire sequence at once, it is used to determine whether to perform segmented completion (if this parameter is not used, 0.95*len is truncated each time until the CPU can process the length).
     * embedding_complete_seg_overlap: When `embedding_complete` is set, whether the method of overlap is applicable to segmentation(overlap sliding window)
-    * gpu: the gpu id to use(-1 for cpu).  
+    * gpu_id: the gpu id to use(-1 for cpu).  
 
 3) Optional parameters:      
     * id_idx & seq_idx: when the input file format is csv file, need to use `id_idx` and `seq_idx` to specify the column index in the csv (starting with 0).   

@@ -176,6 +176,7 @@ def train(args, train_dataloader, model_config, model, seq_tokenizer, parse_row_
         cur_epoch_loss = 0.0
         cur_epoch_time = 0.0
         done_sample_num = 0
+        no_grad_gradient_accumulation_step = False
         for step, batch in enumerate(train_dataloader):
             model.train()
             if args.local_rank in [-1, 0]:
@@ -200,6 +201,7 @@ def train(args, train_dataloader, model_config, model, seq_tokenizer, parse_row_
                     scaled_loss.backward()
             else:
                 loss.backward()
+            no_grad_gradient_accumulation_step = False
             if args.n_gpu > 1:
                 reduced_loss = reduce_tensor(loss.data, dist.get_world_size())
             else:
@@ -266,19 +268,27 @@ def train(args, train_dataloader, model_config, model, seq_tokenizer, parse_row_
                         log_fp.flush()
                         writer_info_tb(tb_writer, {"updated_lr": updated_lr}, global_step, prefix="logging")
                 optimizer.zero_grad()
+                no_grad_gradient_accumulation_step = True
                 # print("lr: ", get_lr(optimizer))
             if args.local_rank in [-1, 0] and args.save_steps > 0 and global_step % args.save_steps == 0:
                 output_dir = os.path.join(args.output_dir, "checkpoint-step{}".format(global_step))
                 save_check_point(args, model, model_config, seq_tokenizer, output_dir)
-        optimizer.step()
-        optimizer.zero_grad()
+
+        # 一个epoch完成
+        if not no_grad_gradient_accumulation_step:
+            optimizer.step()
+            optimizer.zero_grad()
+            print("Has retained gard: rank=%d" % args.local_rank)
+
         if args.lr_update_strategy == "epoch":
             scheduler.step()
             if args.local_rank in [-1, 0]:
                 updated_lr = scheduler.get_last_lr()[0]
                 writer_info_tb(tb_writer, {"updated_lr": updated_lr}, global_step, prefix="logging")
+        '''
         if args.n_gpu > 1:
             dist.barrier()
+        '''
         if args.local_rank in [-1, 0]:
             logs = {}
             update_flag = False
@@ -372,10 +382,10 @@ def train(args, train_dataloader, model_config, model, seq_tokenizer, parse_row_
                 cur_lr = get_lr(optimizer)
             print("Epoch: %d, batch total: %d, lr: %0.10f" % (epoch + 1, cur_epoch_step, cur_lr))
             real_epoch += 1
-
+        '''
         if args.n_gpu > 1:
             dist.barrier()
-
+        '''
         # early stop
         if early_stop_flag:
             print("Early Stop at Epoch: %d " % (epoch + 1))

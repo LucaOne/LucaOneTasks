@@ -631,7 +631,9 @@ if __name__ == "__main__":
     print(args.__dict__)
     print("-" * 50)
     # download LLM(LucaOne)
-    download_trained_checkpoint_lucaone(llm_dir=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "llm/"))
+    if not hasattr(args, "llm_step"):
+        args.llm_step = "5600000"
+    download_trained_checkpoint_lucaone(llm_dir=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "llm/"), llm_step=args.llm_step)
     # download trained downstream task models
     download_trained_checkpoint_downstream_tasks(save_dir=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     if args.input_file is not None and os.path.exists(args.input_file):

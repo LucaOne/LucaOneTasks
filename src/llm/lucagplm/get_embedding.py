@@ -68,7 +68,14 @@ def load_model(log_filepath, model_dirpath):
     '''
     strs = model_dirpath.split("llm/models/")
     if len(strs) > 1:
-        download_trained_checkpoint_lucaone(os.path.join(strs[0], "llm/"))
+        llm_step = None
+        for s in strs:
+            if "checkpoint-" in s:
+                llm_step = s.replace("checkpoint-", "")
+                break
+        if llm_step is None:
+            llm_step = "5600000"
+        download_trained_checkpoint_lucaone(os.path.join(strs[0], "llm/"), llm_step=llm_step)
     with open(log_filepath, "r") as rfp:
         for line_idx, line in enumerate(rfp):
             if line_idx == 0:
@@ -658,7 +665,7 @@ def main(model_args):
     print("*" * 50)
     if model_args.llm_dir is None:
         model_args.llm_dir = "../../.."
-    download_trained_checkpoint_lucaone(os.path.join(model_args.llm_dir, "llm/"))
+    download_trained_checkpoint_lucaone(os.path.join(model_args.llm_dir, "llm/"), llm_step=model_args.llm_step)
     global lucaone_global_log_filepath, lucaone_global_model_dirpath, lucaone_global_args_info, \
         lucaone_global_model_config, lucaone_global_model, lucaone_global_tokenizer
     cur_log_filepath = "%s/llm/logs/lucagplm/%s/%s/%s/%s/logs.txt" % (

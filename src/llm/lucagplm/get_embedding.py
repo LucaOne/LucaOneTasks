@@ -25,7 +25,7 @@ try:
     from ....args import Args
     from ....file_operator import fasta_reader, csv_reader
     from ....utils import set_seed, to_device, get_labels, get_parameter_number, \
-        gene_seq_replace, clean_seq, available_gpu_id, download_trained_checkpoint_lucaone
+        gene_seq_replace, clean_seq, available_gpu_id, download_trained_checkpoint_lucaone, calc_emb_filename_by_seq_id
     from ....batch_converter import BatchConverter
     from .v0_2.lucaone_gplm import LucaGPLM as LucaGPLMV0_2
     from .v0_2.lucaone_gplm_config import LucaGPLMConfig as LucaGPLMConfigV0_2
@@ -38,7 +38,7 @@ except ImportError as e:
     from src.args import Args
     from src.file_operator import fasta_reader, csv_reader
     from src.utils import set_seed, to_device, get_labels, get_parameter_number, \
-        gene_seq_replace, clean_seq, available_gpu_id, download_trained_checkpoint_lucaone
+        gene_seq_replace, clean_seq, available_gpu_id, download_trained_checkpoint_lucaone, calc_emb_filename_by_seq_id
     from src.batch_converter import BatchConverter
     from src.llm.lucagplm.v0_2.lucaone_gplm import LucaGPLM as LucaGPLMV0_2
     from src.llm.lucagplm.v0_2.lucaone_gplm_config import LucaGPLMConfig as LucaGPLMConfigV0_2
@@ -729,16 +729,9 @@ def main(model_args):
                     seq_id, seq = row[0].strip(), row[1].upper()
             else:
                 seq_id, seq = row[args.id_idx].strip(), row[args.seq_idx].upper()
-            if " " in seq_id or "/" in seq_id:
-                emb_filename = seq_id.replace(" ", "").replace("/", "_") + ".pt"
-            else:
-                emb_filename = seq_id + ".pt"
+            emb_filename = calc_emb_filename_by_seq_id(seq_id=seq_id, embedding_type=embedding_type)
             embedding_filepath = os.path.join(emb_save_path, emb_filename)
             if not os.path.exists(embedding_filepath):
-                '''
-                print("ori seq:")
-                print(seq)
-                '''
                 if args.embedding_complete:
                     truncation_seq_length = len(seq)
                 else:

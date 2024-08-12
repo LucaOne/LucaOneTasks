@@ -766,7 +766,7 @@ def main(model_args):
             done += 1
             if done % 1000 == 0:
                 print("embedding done: %d" % done)
-
+        print("embedding over, done: %d" % done)
     elif args.seq:
         print("input seq length: %d" % len(args.seq))
         emb, processed_seq_len = get_embedding(lucaone_global_args_info,

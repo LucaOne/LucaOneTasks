@@ -274,7 +274,7 @@ def main(args):
             done += 1
             if done % 1000 == 0:
                 print("embedding done: %d" % done)
-
+        print("embedding over, done: %d" % done)
     elif args.seq:
         print("input seq length: %d" % len(args.seq))
         emb, processed_seq_len = predict_embedding([args.seq_id, seq_type, args.seq],

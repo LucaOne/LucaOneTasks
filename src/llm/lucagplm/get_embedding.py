@@ -70,8 +70,8 @@ def load_model(log_filepath, model_dirpath):
     if len(strs) > 1:
         llm_step = None
         for s in strs:
-            if "checkpoint-" in s:
-                llm_step = s.replace("checkpoint-", "")
+            if "checkpoint-step" in s:
+                llm_step = s.replace("checkpoint-step", "")
                 break
         if llm_step is None:
             llm_step = "5600000"

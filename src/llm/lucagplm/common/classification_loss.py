@@ -122,7 +122,7 @@ class MaskedAsymmetricLoss(_MaskedLoss):
     """Masked AsymmetricLoss"""
     def __init__(self, gamma_neg=4, gamma_pos=1, clip=0.05, eps=1e-8, disable_torch_grad_focal_loss=False, reduction='mean', ignore_nans=True, ignore_value=-100):
         super().__init__(reduction=reduction, ignore_nans=ignore_nans, ignore_value=ignore_value)
-        self.criterion = AsymmetricLoss(gamma_neg, gamma_pos, clip, eps, disable_torch_grad_focal_loss, reduction='none')
+        self.criterion = AsymmetricLoss(gamma_neg, gamma_pos, clip, eps, disable_torch_grad_focal_loss)
 
 
 class AsymmetricLoss(nn.Module):
@@ -177,7 +177,7 @@ class MaskedAsymmetricLossOptimized(_MaskedLoss):
     """Masked ASLSingleLabel loss"""
     def __init__(self, gamma_neg=4, gamma_pos=1, clip=0.05, eps=1e-8, disable_torch_grad_focal_loss=False, reduction='mean', ignore_nans=True, ignore_value=-100):
         super().__init__(reduction=reduction, ignore_nans=ignore_nans, ignore_value=ignore_value)
-        self.criterion = AsymmetricLossOptimized(gamma_neg, gamma_pos, clip, eps, disable_torch_grad_focal_loss, reduction='none')
+        self.criterion = AsymmetricLossOptimized(gamma_neg, gamma_pos, clip, eps, disable_torch_grad_focal_loss)
 
 
 class AsymmetricLossOptimized(nn.Module):
@@ -349,5 +349,5 @@ if __name__ == "__main__":
     import torch
     label = torch.Tensor([[[1], [1], [-100]], [[1], [-100], [0]]])
     pred = torch.Tensor([[[2], [1], [3]], [[2], [1], [3]]])
-    loss = MaskedBCEWithLogitsLoss(reduction2="mean")
+    loss = MaskedBCEWithLogitsLoss(reduction="mean")
     print(loss(pred, label))

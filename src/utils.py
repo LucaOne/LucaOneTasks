@@ -798,6 +798,8 @@ def lcm(x, y):
 
 
 def device_memory(gpu_id):
+    if gpu_id is None or gpu_id < 0:
+        return
     pynvml.nvmlInit()
     device_cnt = pynvml.nvmlDeviceGetCount()
     for idx in range(device_cnt):

@@ -18,14 +18,14 @@ sys.path.append(".")
 sys.path.append("../")
 sys.path.append("../src")
 try:
-    from .utils import clean_seq, device_memory, calc_emb_filename_by_seq_id
+    from .utils import clean_seq, calc_emb_filename_by_seq_id
     from .common.alphabet import Alphabet
     from .llm.lucagplm.get_embedding import predict_embedding as predict_embedding_luca
     from .llm.esm.predict_embedding import predict_embedding as predict_embedding_esm
     from .llm.dnabert2.inference_embedding import predict_embedding as predict_embedding_dnabert2
     from .llm.dnaberts.inference_embedding import predict_embedding as predict_embedding_dnaberts
 except ImportError as e:
-    from src.utils import clean_seq, device_memory, calc_emb_filename_by_seq_id
+    from src.utils import clean_seq, calc_emb_filename_by_seq_id
     from src.common.alphabet import Alphabet
     from src.llm.lucagplm.get_embedding import predict_embedding as predict_embedding_luca
     from src.llm.esm.predict_embedding import predict_embedding as predict_embedding_esm

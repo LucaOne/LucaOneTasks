@@ -149,15 +149,16 @@ def create_loss_function(config,
                 raise Exception("Not support loss type=%s of %s " % (loss_type, output_mode))
         elif output_mode in ["multi_label", "multi-label"]:
             if loss_type == "bce":
-                if pos_weight and pos_weight > 0:
-                    if isinstance(pos_weight, int):
-                        pos_weight = torch.tensor([pos_weight], dtype=torch.long).to(args.device)
+                if pos_weight:
+                    if isinstance(pos_weight, str) or isinstance(pos_weight, int):
+                        pos_weight = [float(pos_weight)] * num_labels
                     elif isinstance(pos_weight, float):
-                        pos_weight = torch.tensor([pos_weight], dtype=torch.float32).to(args.device)
-                    print("pos_weight:")
+                        pos_weight = [pos_weight] * num_labels
+                    pos_weight = torch.tensor(pos_weight, dtype=torch.float32).to(args.device)
+                    print("multi_label pos_weight:")
                     print(pos_weight)
-                    assert pos_weight.ndim == 1 and pos_weight.shape[0] == 1
-                    print("reduction:")
+                    assert pos_weight.ndim == 1 and pos_weight.shape[0] == num_labels
+                    print("multi_label reduction:")
                     print(reduction)
                     loss_fct = MaskedBCEWithLogitsLoss(pos_weight=pos_weight, reduction=reduction,
                                                        ignore_nans=True, ignore_value=ignore_index)
@@ -175,11 +176,11 @@ def create_loss_function(config,
                                                          ignore_value=ignore_index)
             elif loss_type == "focal_loss":
                 loss_fct = MaskedFocalLossBinaryClass(alpha=args.focal_loss_alpha if hasattr(args, "focal_loss_alpha") else 0.7,
-                                           gamma=args.focal_loss_gamma if hasattr(args, "focal_loss_gamma") else 2.0,
-                                           normalization=True,
-                                           reduction=reduction,
-                                           ignore_nans=True,
-                                           ignore_value=ignore_index)
+                                                      gamma=args.focal_loss_gamma if hasattr(args, "focal_loss_gamma") else 2.0,
+                                                      normalization=True,
+                                                      reduction=reduction,
+                                                      ignore_nans=True,
+                                                      ignore_value=ignore_index)
             elif loss_type == "multilabel_cce":
                 loss_fct = MaskedMultiLabelCCE(normalization=True,
                                                reduction=reduction,
@@ -189,16 +190,17 @@ def create_loss_function(config,
                 raise Exception("Not support loss type=%s of %s " % (loss_type, output_mode))
         elif output_mode in ["binary_class", "binary-class"]:
             if loss_type == "bce":
-                if pos_weight and pos_weight > 0:
+                if pos_weight:
                     # [0.9]
-                    if isinstance(pos_weight, int):
-                        pos_weight = torch.tensor([pos_weight], dtype=torch.long).to(args.device)
+                    if isinstance(pos_weight, int) or isinstance(pos_weight, str):
+                        pos_weight = torch.tensor([float(pos_weight)], dtype=torch.float32).to(args.device)
                     elif isinstance(pos_weight, float):
                         pos_weight = torch.tensor([pos_weight], dtype=torch.float32).to(args.device)
-                    print("pos_weight:")
+                    print("binary_class pos_weight:")
                     print(pos_weight)
                     assert pos_weight.ndim == 1 and pos_weight.shape[0] == 1
-                    loss_fct = MaskedBCEWithLogitsLoss(pos_weight=pos_weight, reduction=reduction, ignore_nans=True, ignore_value=ignore_index)
+                    loss_fct = MaskedBCEWithLogitsLoss(pos_weight=pos_weight, reduction=reduction,
+                                                       ignore_nans=True, ignore_value=ignore_index)
                 else:
                     loss_fct = MaskedBCEWithLogitsLoss(reduction=reduction, ignore_nans=True, ignore_value=ignore_index)
             elif loss_type == "focal_loss":
@@ -215,12 +217,12 @@ def create_loss_function(config,
                 if hasattr(args, "focal_loss_alpha") and args.focal_loss_alpha:
                     alpha = args.focal_loss_alpha
                     # [1, 1, 1, ,1, 1...] length: num_labels
-                    if isinstance(alpha, str):
+                    if isinstance(alpha, str) or isinstance(alpha, int):
                         alpha = [float(alpha)] * num_labels
-                    if isinstance(alpha, float):
+                    elif isinstance(alpha, float):
                         alpha = [alpha] * num_labels
                     alpha = torch.tensor(alpha, dtype=torch.float32).to(args.device)
-                    print("alpha:")
+                    print("multi_class alpha:")
                     print(alpha)
                 else:
                     alpha = torch.tensor([1.0] * num_labels, dtype=torch.float32).to(args.device)
@@ -229,12 +231,12 @@ def create_loss_function(config,
             else:
                 if weight:
                     # [1, 1, 1, ,1, 1...] length: num_labels
-                    if isinstance(weight, str):
+                    if isinstance(weight, str) or isinstance(weight, int):
                         weight = [float(weight)] * num_labels
-                    if isinstance(weight, float):
+                    elif isinstance(weight, float):
                         weight = [weight] * num_labels
                     weight = torch.tensor(weight, dtype=torch.float32).to(args.device)
-                    print("weight:")
+                    print("multi_class weight:")
                     print(weight)
                     assert weight.ndim == 1 and weight.shape[0] == num_labels
                     if ignore_index is None:

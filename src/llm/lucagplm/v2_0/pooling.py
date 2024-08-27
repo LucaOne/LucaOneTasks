@@ -235,7 +235,7 @@ class GlobalMaskTransformerPooling1D(nn.Module):
 
 class GlobalMaxPool1d(nn.Module):
     def __init__(self):
-        super(GlobalMaxPool1d,self).__init__()
+        super(GlobalMaxPool1d, self).__init__()
         self.fc = nn.AdaptiveMaxPool1d(1)
 
     def forward(self, x):
@@ -258,7 +258,7 @@ class GlobalAvgPool1d(nn.Module):
 
 
 class AttentionPool1d(nn.Module):
-    def __init__(self, embed_size, device="cuda"):
+    def __init__(self, embed_size):
         super(AttentionPool1d, self).__init__()
         self.embed_size = embed_size
         self.W = nn.Parameter(torch.Tensor(self.embed_size, self.embed_size))

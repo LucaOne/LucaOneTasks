@@ -341,7 +341,7 @@ class GlobalMaxPool1d(nn.Module):
 
 
 class GlobalAvgPool1d(nn.Module):
-    def __init__(self, ):
+    def __init__(self):
         super(GlobalAvgPool1d, self).__init__()
         self.fc = nn.AdaptiveAvgPool1d(1)
 

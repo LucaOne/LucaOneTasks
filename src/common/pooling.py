@@ -67,7 +67,7 @@ def create_pooler(pooler_type, config, args):
 
 
 class GlobalMaskFirstPooling1D(nn.Module):
-    def __init__(self, ):
+    def __init__(self):
         super(GlobalMaskFirstPooling1D, self).__init__()
 
     def forward(self, x, mask=None):
@@ -85,7 +85,7 @@ class GlobalMaskFirstPooling1D(nn.Module):
 
 
 class GlobalMaskLastPooling1D(nn.Module):
-    def __init__(self, ):
+    def __init__(self):
         super(GlobalMaskLastPooling1D, self).__init__()
 
     def forward(self, x, mask=None):
@@ -121,7 +121,7 @@ class GlobalMaskAttentivePooling1D(nn.Module):
 
 
 class GlobalMaskMaxPooling1D(nn.Module):
-    def __init__(self, ):
+    def __init__(self):
         super(GlobalMaskMaxPooling1D, self).__init__()
 
     def forward(self, x, mask=None):
@@ -135,7 +135,7 @@ class GlobalMaskMaxPooling1D(nn.Module):
 
 
 class GlobalMaskMinPooling1D(nn.Module):
-    def __init__(self, ):
+    def __init__(self):
         super(GlobalMaskMinPooling1D, self).__init__()
 
     def forward(self, x, mask=None):

@@ -26,7 +26,7 @@ except ImportError:
 
 
 class GlobalMaskMaxPooling1D(nn.Module):
-    def __init__(self, ):
+    def __init__(self):
         super(GlobalMaskMaxPooling1D, self).__init__()
 
     def forward(self, x, mask=None):
@@ -40,7 +40,7 @@ class GlobalMaskMaxPooling1D(nn.Module):
 
 
 class GlobalMaskMinPooling1D(nn.Module):
-    def __init__(self, ):
+    def __init__(self):
         super(GlobalMaskMinPooling1D, self).__init__()
 
     def forward(self, x, mask=None):

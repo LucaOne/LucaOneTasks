@@ -367,7 +367,8 @@ def create_encoder_batch_convecter(model_args, seq_subword, seq_tokenizer):
             "max_sentence_length": model_args.max_sentence_length if hasattr(model_args, "max_sentence_length") else None,
             "max_sentences": model_args.max_sentences if hasattr(model_args, "max_sentences") else None,
             "embedding_complete": model_args.embedding_complete,
-            "embedding_complete_seg_overlap": model_args.embedding_complete_seg_overlap
+            "embedding_complete_seg_overlap": model_args.embedding_complete_seg_overlap,
+            "use_cpu": True if model_args.gpu_id < 0 else False
         }
     else:
         assert model_args.seq_max_length is not None
@@ -387,7 +388,8 @@ def create_encoder_batch_convecter(model_args, seq_subword, seq_tokenizer):
             "max_sentence_length": model_args.max_sentence_length if hasattr(model_args, "max_sentence_length") else None,
             "max_sentences": model_args.max_sentences if hasattr(model_args, "max_sentences") else None,
             "embedding_complete": model_args.embedding_complete,
-            "embedding_complete_seg_overlap": model_args.embedding_complete_seg_overlap
+            "embedding_complete_seg_overlap": model_args.embedding_complete_seg_overlap,
+            "use_cpu": True if model_args.gpu_id < 0 else False
         }
     encoder = Encoder(**encoder_config)
 

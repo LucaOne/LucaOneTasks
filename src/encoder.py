@@ -247,6 +247,7 @@ class Encoder(object):
                  vector_dirpath=None,
                  matrix_dirpath=None,
                  local_rank=-1,
+                 use_cpu=False,
                  **kwargs):
         print("------Encoder------")
         self.llm_type = llm_type
@@ -286,12 +287,13 @@ class Encoder(object):
         else:
             self.embedding_complete_seg_overlap = False
 
-        if local_rank == -1 and torch.cuda.is_available():
+        if local_rank == -1 and not use_cpu and torch.cuda.is_available():
             device = torch.device("cuda")
         elif torch.cuda.is_available() and local_rank > -1:
             device = torch.device("cuda", local_rank)
         else:
             device = torch.device("cpu")
+        print("Encoder device: ", device)
         self.device = device
         self.seq_id_2_emb_filename = {}
         print("Encoder: prepend_bos=%r, append_eos=%r" % (self.prepend_bos, self.append_eos))

@@ -13,7 +13,7 @@
 import sys
 import torch
 from typing import Sequence
-
+import random
 sys.path.append(".")
 sys.path.append("..")
 sys.path.append("../src")
@@ -396,7 +396,7 @@ class BatchConverter(object):
 
         return new_label
 
-    def __mask_tokens__(self, input_ids):
+    def __mask_tokens__(self, input_ids, seq_len):
         labels = input_ids.clone()
         probability_matrix = torch.full(labels.shape, self.mlm_probability)
 
@@ -423,9 +423,16 @@ class BatchConverter(object):
         input_ids[indices_random] = random_words[indices_random]
 
         # The rest of the time (10% of the time) we keep the masked input tokens unchanged
-        return input_ids, labels
+        if torch.any(labels != self.ignore_index):
+            return input_ids, labels
+        else:
+            # non [MASK]， random one position, convect to [MASK]
+            rand_idx = random.randint(int(self.prepend_bos), seq_len + int(self.prepend_bos) - 1)
+            labels[rand_idx] = input_ids[rand_idx]
+            input_ids[rand_idx] = self.mask_idx
+            return input_ids, labels
 
-    def __atom_mask_tokens__(self, input_ids):
+    def __atom_mask_tokens__(self, input_ids, seq_len):
         labels = input_ids.clone()
         probability_matrix = torch.full(labels.shape, self.mlm_probability)
 
@@ -450,9 +457,15 @@ class BatchConverter(object):
         indices_random = torch.bernoulli(torch.full(labels.shape, 0.5)).bool() & masked_indices & ~indices_replaced
         random_words = torch.randint(len(self.atom_tokenizer), labels.shape, dtype=torch.long)
         input_ids[indices_random] = random_words[indices_random]
-
         # The rest of the time (10% of the time) we keep the masked input tokens unchanged
-        return input_ids, labels
+        if torch.any(labels != self.ignore_index):
+            return input_ids, labels
+        else:
+            # non [MASK]， random one position, convect to [MASK]
+            rand_idx = random.randint(int(self.prepend_bos), seq_len + int(self.prepend_bos) - 1)
+            labels[rand_idx] = input_ids[rand_idx]
+            input_ids[rand_idx] = self.mask_idx
+            return input_ids, labels
 
     def __seq_encode__(self, batch_size, seqs):
         '''

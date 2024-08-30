@@ -42,6 +42,9 @@ def predict_embedding(sample, trunc_type, embedding_type, repr_layers=[-1], trun
     :param embedding_type: bos or representations
     :param repr_layers: [-1]
     :param truncation_seq_length: [4094,2046,1982,1790,1534,1278,1150,1022]
+    :param device:
+    :param version:
+    :param matrix_add_special_token:
     :return: embedding, processed_seq_len
     '''
     global dnabert2_global_model, dnabert2_global_alphabet, dnabert2_global_version
@@ -64,7 +67,7 @@ def predict_embedding(sample, trunc_type, embedding_type, repr_layers=[-1], trun
         else:
             raise Exception("not support this version=%s" % version)
         dnabert2_global_version = version
-
+    '''
     if torch.cuda.is_available() and device is not None:
         dnabert2_global_model = dnabert2_global_model.to(device)
     elif torch.cuda.is_available():
@@ -73,13 +76,20 @@ def predict_embedding(sample, trunc_type, embedding_type, repr_layers=[-1], trun
     else:
         device = torch.device("cpu")
         print("llm use cpu")
+    '''
+    if device is None:
+        device = next(dnabert2_global_model.parameters()).device
+    else:
+        model_device = next(dnabert2_global_model.parameters()).device
+        if device != model_device:
+            dnabert2_global_model = dnabert2_global_model.to(device)
     dnabert2_global_model.eval()
 
     inputs = dnabert2_global_alphabet(processed_seq, return_tensors='pt')["input_ids"]
     embeddings = {}
     with torch.no_grad():
-        if torch.cuda.is_available():
-            inputs = inputs.to(device=device, non_blocking=True)
+        # if torch.cuda.is_available():
+        inputs = inputs.to(device=device, non_blocking=True)
         try:
             out = dnabert2_global_model(inputs)
             truncate_len = min(truncation_seq_length, inputs.shape[1])

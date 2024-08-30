@@ -67,7 +67,7 @@ def create_pooler(pooler_type, config, args):
 
 
 class GlobalMaskFirstPooling1D(nn.Module):
-    def __init__(self, ):
+    def __init__(self):
         super(GlobalMaskFirstPooling1D, self).__init__()
 
     def forward(self, x, mask=None):
@@ -85,7 +85,7 @@ class GlobalMaskFirstPooling1D(nn.Module):
 
 
 class GlobalMaskLastPooling1D(nn.Module):
-    def __init__(self, ):
+    def __init__(self):
         super(GlobalMaskLastPooling1D, self).__init__()
 
     def forward(self, x, mask=None):
@@ -121,7 +121,7 @@ class GlobalMaskAttentivePooling1D(nn.Module):
 
 
 class GlobalMaskMaxPooling1D(nn.Module):
-    def __init__(self, ):
+    def __init__(self):
         super(GlobalMaskMaxPooling1D, self).__init__()
 
     def forward(self, x, mask=None):
@@ -135,7 +135,7 @@ class GlobalMaskMaxPooling1D(nn.Module):
 
 
 class GlobalMaskMinPooling1D(nn.Module):
-    def __init__(self, ):
+    def __init__(self):
         super(GlobalMaskMinPooling1D, self).__init__()
 
     def forward(self, x, mask=None):
@@ -330,7 +330,7 @@ class GlobalMaskTransformerPooling1D(nn.Module):
 
 class GlobalMaxPool1d(nn.Module):
     def __init__(self):
-        super(GlobalMaxPool1d,self).__init__()
+        super(GlobalMaxPool1d, self).__init__()
         self.fc = nn.AdaptiveMaxPool1d(1)
 
     def forward(self, x):
@@ -341,7 +341,7 @@ class GlobalMaxPool1d(nn.Module):
 
 
 class GlobalAvgPool1d(nn.Module):
-    def __init__(self, ):
+    def __init__(self):
         super(GlobalAvgPool1d, self).__init__()
         self.fc = nn.AdaptiveAvgPool1d(1)
 
@@ -353,7 +353,7 @@ class GlobalAvgPool1d(nn.Module):
 
 
 class AttentionPool1d(nn.Module):
-    def __init__(self, embed_size, device="cuda"):
+    def __init__(self, embed_size):
         super(AttentionPool1d, self).__init__()
         self.embed_size = embed_size
         self.W = nn.Parameter(torch.Tensor(self.embed_size, self.embed_size))

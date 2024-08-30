@@ -66,16 +66,20 @@ def load_model(log_filepath, model_dirpath):
     :param model_dirpath:
     :return:
     '''
+    # download LucaOne from FTP
     strs = model_dirpath.split("llm/models/")
     if len(strs) > 1:
+        llm_dir = os.path.join(strs[0], "llm/")
+        ss = strs[1].split("/")
         llm_step = None
-        for s in strs:
+        for s in ss:
             if "checkpoint-step" in s:
                 llm_step = s.replace("checkpoint-step", "")
                 break
         if llm_step is None:
             llm_step = "5600000"
-        download_trained_checkpoint_lucaone(llm_dir=os.path.join(strs[0], "llm/"), llm_step=llm_step)
+        download_trained_checkpoint_lucaone(llm_dir=llm_dir, llm_step=llm_step)
+
     with open(log_filepath, "r") as rfp:
         for line_idx, line in enumerate(rfp):
             if line_idx == 0:

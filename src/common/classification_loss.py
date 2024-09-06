@@ -251,7 +251,7 @@ class MultiLabelCCE(nn.Module):
         that the corresponding class is a target class, and 0 indicates that the corresponding class is a non-target class.
         """
         if self.normalization:
-            y_pred = torch.sigmoid(inputs, dim=-1)
+            y_pred = torch.sigmoid(inputs)
         else:
             y_pred = inputs
         y_true = targets

@@ -254,6 +254,7 @@ class MultiLabelCCE(nn.Module):
             y_pred = torch.sigmoid(inputs)
         else:
             y_pred = inputs
+
         y_true = targets
         y_pred = (1 - 2 * y_true) * y_pred
         y_pred_neg = y_pred - y_true * 1e12

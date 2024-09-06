@@ -13,10 +13,13 @@
 import itertools
 from typing import Sequence, List
 
+# gene
 gene_standard_toks = ['1', '2', '3', '4', '5', '.', '-', '*']
 
+# prot
 prot_standard_toks = ['L', 'A', 'G', 'V', 'S', 'E', 'R', 'T', 'I', 'D', 'P', 'K', 'Q', 'N', 'F', 'Y', 'M', 'H', 'W', 'C', 'X', 'B', 'U', 'Z', 'O', 'J', '.', '-', '*']
 
+# gene + prot
 gene_prot_standard_toks = ['1', '2', '3', '4', '5', 'L', 'A', 'G', 'V', 'S', 'E', 'R', 'T', 'I', 'D', 'P', 'K', 'Q', 'N', 'F', 'Y', 'M', 'H', 'W', 'C', 'X', 'B', 'U', 'Z', 'O', 'J', '.', '-', '*']
 
 gene_prot_prepend_toks = ['[PAD]', '[UNK]']

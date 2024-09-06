@@ -506,7 +506,7 @@ def get_model(args):
         model_config.pos_weight = args.pos_weight
     if args.weight:
         model_config.weight = [float(v) for v in args.weight.split(",")]
-        args.weight = [float(v) for v in args.weight.split(",")]
+        args.weight = model_config.weight
     if args.loss_reduction:
         if args.loss_reduction in ["meanmean", "meansum"] \
                 and args.task_level_type in ["seq_level"] \

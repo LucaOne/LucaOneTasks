@@ -18,7 +18,7 @@ import logging
 import codecs
 import argparse
 import shutil
-import datetime
+from datetime import timedelta
 from datasets import load_dataset
 import torch.distributed as dist
 from subword_nmt.apply_bpe import BPE
@@ -565,7 +565,7 @@ def create_device(args):
         if args.n_gpu > 1:
             torch.cuda.set_device(args.local_rank)
             device = torch.device("cuda", args.local_rank)
-            dist.init_process_group(backend="nccl", timeout=datetime.timedelta(seconds=54000))
+            dist.init_process_group(backend="nccl", timeout=timedelta(seconds=54000))
             if args.local_rank == 0:
                 print('world size: %d' % dist.get_world_size())
         else:

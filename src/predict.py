@@ -784,8 +784,7 @@ if __name__ == "__main__":
             flag = False
         if flag:
             data = [[args.seq_id_a, args.seq_id_b,
-                     args.seq_type_a,
-                     args.seq_type_b,
+                     args.seq_type_a, args.seq_type_b,
                      args.seq_a, args.seq_b]]
             results = run(data,
                           args.llm_truncation_seq_length,

@@ -807,4 +807,4 @@ if __name__ == "__main__":
             print("prob=%f" % results[0][2])
             print("label=%s" % results[0][3])
     else:
-        raise Exception("input error")
+        raise Exception("input error, usage: --hep")

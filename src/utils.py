@@ -367,6 +367,23 @@ def prepare_inputs(input_type, embedding_type, batch):
     return inputs
 
 
+def seq_is_gene(seq):
+    """
+    判断序列是否是核酸
+    :param seq:
+    :return:
+    """
+    if seq is None:
+        return False
+    seq = seq.strip().upper()
+    for ch in seq:
+        if ch < 'A' or ch > 'Z':
+            continue
+        if ch not in {"A", "T", "C", "G", "U", "N"}:
+            return False
+    return True
+
+
 def gene_seq_replace_re(seq):
     '''
     Nucleic acid 还原

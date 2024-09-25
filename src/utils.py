@@ -382,7 +382,7 @@ def seq_is_gene(seq):
         if ch < 'A' or ch > 'Z':
             continue
         total_num += 1
-        if ch in {"A", "T", "C", "G", "U"}:
+        if ch in {"A", "T", "C", "G", "U", "N"}:
             atcgu_num += 1
     if total_num == atcgu_num or atcgu_num >= 0.8 * total_num:
         return True
@@ -405,7 +405,7 @@ def seq_type_is_match_seq(seq_type, seq):
         if ch < 'A' or ch > 'Z':
             continue
         total_num += 1
-        if ch in {"A", "T", "C", "G", "U"}:
+        if ch in {"A", "T", "C", "G", "U", "N"}:
             atcgu_num += 1
 
     is_gene = False

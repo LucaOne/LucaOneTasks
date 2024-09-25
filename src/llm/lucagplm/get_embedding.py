@@ -739,7 +739,7 @@ def main(model_args):
     print("emb save dir: %s" % emb_save_path)
     if seq_type not in ["gene", "prot"]:
         print("Error! arg: --seq_type=%s is not gene or prot" % seq_type)
-        return
+        sys.exit(-1)
     if not os.path.exists(emb_save_path):
         os.makedirs(emb_save_path)
     if args.input_file:
@@ -758,7 +758,7 @@ def main(model_args):
                 seq_id, seq = row[args.id_idx].strip(), row[args.seq_idx].upper()
             if not seq_type_is_match_seq(seq_type, seq):
                 print("Error! the input seq(seq_id=%s) not match its seq_type=%s: %s" % (seq_id, seq_type, seq))
-                return
+                sys.exit(-1)
             emb_filename = calc_emb_filename_by_seq_id(seq_id=seq_id, embedding_type=embedding_type)
             embedding_filepath = os.path.join(emb_save_path, emb_filename)
             if not os.path.exists(embedding_filepath):
@@ -801,7 +801,7 @@ def main(model_args):
         print("input seq length: %d" % len(args.seq))
         if not seq_type_is_match_seq(args.seq_type, args.seq):
             print("Error! the input seq(seq_id=%s) not match its seq_type=%s: %s" % (args.seq_id, args.seq_type, args.seq))
-            return
+            sys.exit(-1)
         emb, processed_seq_len = get_embedding(lucaone_global_args_info,
                                                lucaone_global_model_config,
                                                lucaone_global_tokenizer,

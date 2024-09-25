@@ -712,7 +712,7 @@ if __name__ == "__main__":
                             sys.exit(-1)
                         batch_data.append([row[0], args.seq_type, args.row[1]])
                     elif len(row) > 2:
-                        if seq_is_gene(row[2]) and (args.seq_type != 'gene' and row[1] != "gene"):
+                        if seq_is_gene(row[2]) and row[1] != "gene":
                             print("Error! the input seq detection of seq_id=%s is gene, but the column: seq_type=%s is not gene" % (row[0], row[1]))
                             sys.exit(-1)
                         if args.ground_truth_idx is not None and args.ground_truth_idx >= 0:

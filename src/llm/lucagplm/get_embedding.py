@@ -332,14 +332,15 @@ def get_embedding(args_info, model_config, tokenizer, model, seq, seq_type, devi
         return None, None
 
 
-def predict_embedding(llm_dirpath,
-                      sample, trunc_type,
-                      embedding_type,
-                      repr_layers=[-1],
-                      truncation_seq_length=4094,
-                      device=None,
-                      matrix_add_special_token=False
-                      ):
+def predict_embedding(
+        llm_dirpath,
+        sample, trunc_type,
+        embedding_type,
+        repr_layers=[-1],
+        truncation_seq_length=4094,
+        device=None,
+        matrix_add_special_token=False
+):
     '''
     use sequence to predict protein embedding matrix or vector(bos)
     :param sample: [protein_id, protein_sequence]

@@ -430,7 +430,7 @@ def run(sequences, llm_truncation_seq_length, model_path, dataset_name, dataset_
                                                 time_str)
 
     model_args = torch.load(os.path.join(model_dir, "training_args.bin"))
-    print("------Trained Model Args------")
+    print("-" * 25 + "Trained Model Args" + "-" * 25)
     print(model_args.__dict__)
     print("-" * 50)
     model_args.llm_truncation_seq_length = llm_truncation_seq_length

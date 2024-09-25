@@ -384,6 +384,30 @@ def seq_is_gene(seq):
     return True
 
 
+def seq_type_is_match_seq(seq_type, seq):
+    """
+    判断序列内容与序列类型是否匹配
+    :param seq_type:
+    :param seq:
+    :return:
+    """
+    if seq_type is None or seq is None:
+        return False
+    is_gene = True
+    seq = seq.strip().upper()
+    for ch in seq:
+        if ch < 'A' or ch > 'Z':
+            continue
+        if ch not in {"A", "T", "C", "G", "U", "N"}:
+            is_gene = False
+            break
+    if is_gene and seq_type == "gene":
+        return True
+    if not is_gene and seq_type == "prot":
+        return True
+    return False
+
+
 def gene_seq_replace_re(seq):
     '''
     Nucleic acid 还原

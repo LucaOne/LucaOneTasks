@@ -376,12 +376,17 @@ def seq_is_gene(seq):
     if seq is None:
         return False
     seq = seq.strip().upper()
+    atcgu_num = 0
+    total_num = 0
     for ch in seq:
         if ch < 'A' or ch > 'Z':
             continue
-        if ch not in {"A", "T", "C", "G", "U", "N"}:
-            return False
-    return True
+        total_num += 1
+        if ch in {"A", "T", "C", "G", "U", "N"}:
+            atcgu_num += 1
+    if total_num == atcgu_num or atcgu_num >= 0.8 * total_num:
+        return True
+    return False
 
 
 def seq_type_is_match_seq(seq_type, seq):
@@ -393,14 +398,20 @@ def seq_type_is_match_seq(seq_type, seq):
     """
     if seq_type is None or seq is None:
         return False
-    is_gene = True
     seq = seq.strip().upper()
+    atcgu_num = 0
+    total_num = 0
     for ch in seq:
         if ch < 'A' or ch > 'Z':
             continue
-        if ch not in {"A", "T", "C", "G", "U", "N"}:
-            is_gene = False
-            break
+        total_num += 1
+        if ch in {"A", "T", "C", "G", "U", "N"}:
+            atcgu_num += 1
+
+    is_gene = False
+    if total_num == atcgu_num or atcgu_num >= 0.8 * total_num:
+        is_gene = True
+
     if is_gene and seq_type == "gene":
         return True
     if not is_gene and seq_type == "prot":

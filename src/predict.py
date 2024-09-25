@@ -26,7 +26,7 @@ sys.path.append(".")
 sys.path.append("..")
 sys.path.append("../src")
 try:
-    from .utils import to_device, device_memory, available_gpu_id, load_labels, seq_is_gene,\
+    from .utils import to_device, device_memory, available_gpu_id, load_labels, seq_type_is_match_seq,\
         download_trained_checkpoint_lucaone, download_trained_checkpoint_downstream_tasks
     from .common.multi_label_metrics import relevant_indexes
     from .encoder import Encoder
@@ -37,7 +37,7 @@ try:
     from .ppi.models.LucaPPI import LucaPPI
     from .ppi.models.LucaPPI2 import LucaPPI2
 except ImportError:
-    from src.utils import to_device, device_memory, available_gpu_id, load_labels, seq_is_gene, \
+    from src.utils import to_device, device_memory, available_gpu_id, load_labels, seq_type_is_match_seq, \
         download_trained_checkpoint_lucaone, download_trained_checkpoint_downstream_tasks
     from src.common.multi_label_metrics import relevant_indexes
     from src.encoder import Encoder
@@ -694,11 +694,11 @@ if __name__ == "__main__":
                     if row[0] + "_" + row[1] in exists_ids:
                         continue
                     # seq_id_a, seq_id_b, seq_type_a, seq_type_b, seq_a, seq_b
-                    if seq_is_gene(row[4]) and row[2] != 'gene':
-                        print("Error! the input seq detection of seq_id_a=%s is gene, but the column: seq_type_a=%s is not gene" % (row[0], row[2]))
+                    if not seq_type_is_match_seq(row[2], row[4]):
+                        print("Error! the input seq_a(seq_id_a=%s) not match its seq_type_a=%s: %s" % (row[0], row[2], row[4]))
                         sys.exit(-1)
-                    if seq_is_gene(row[5]) and row[3] != 'gene':
-                        print("Error! the input seq detection of seq_id_b=%s is gene, but the column: seq_type_b=%s is not gene" % (row[1], row[3]))
+                    if not seq_type_is_match_seq(row[3], row[5]):
+                        print("Error! the input seq_a(seq_id_a=%s) not match its seq_type_a=%s: %s" % (row[1], row[3], row[5]))
                         sys.exit(-1)
                     batch_data.append([row[0], row[1], row[2], row[3], row[4], row[5]])
                     if args.ground_truth_idx is not None and args.ground_truth_idx >= 0:
@@ -707,13 +707,13 @@ if __name__ == "__main__":
                     if row[0] in exists_ids:
                         continue
                     if len(row) == 2:
-                        if seq_is_gene(row[1]) and args.seq_type != 'gene':
-                            print("Error! the input seq detection of seq_id=%s is gene, but arg: --seq_type=%s is not gene" % (row[0], args.seq_type))
+                        if not seq_type_is_match_seq(args.seq_type, row[1]):
+                            print("Error! the input seq(seq_id=%s) not match its seq_type=%s: %s" % (row[0], args.seq_type, row[1]))
                             sys.exit(-1)
                         batch_data.append([row[0], args.seq_type, args.row[1]])
                     elif len(row) > 2:
-                        if seq_is_gene(row[2]) and row[1] != "gene":
-                            print("Error! the input seq detection of seq_id=%s is gene, but the column: seq_type=%s is not gene" % (row[0], row[1]))
+                        if not seq_type_is_match_seq(row[1], row[2]):
+                            print("Error! the input seq(seq_id=%s) not match its seq_type=%s: %s" % (row[0], row[1], row[2]))
                             sys.exit(-1)
                         if args.ground_truth_idx is not None and args.ground_truth_idx >= 0:
                             batch_ground_truth.append(row[args.ground_truth_idx])
@@ -775,61 +775,68 @@ if __name__ == "__main__":
     elif args.seq_id is not None and args.seq is not None:
         if args.seq_type is None:
             print("Please set arg: --seq_type, value: gene or prot")
-        else:
-            data = [[args.seq_id, args.seq_type, args.seq]]
-            results = run(
-                data,
-                args.llm_truncation_seq_length,
-                args.model_path,
-                args.dataset_name,
-                args.dataset_type,
-                args.task_type,
-                args.task_level_type,
-                args.model_type,
-                args.input_type,
-                args.time_str,
-                args.step,
-                args.gpu_id,
-                args.threshold,
-                topk=args.topk
-            )
-            print("predicted_result:")
-            print("seq_id=%s" % args.seq_id)
-            print("seq=%s" % args.seq)
-            print("prob=%f" % results[0][2])
-            print("label=%s" % results[0][3])
+            sys.exit(-1)
+        if not seq_type_is_match_seq(args.seq_type, args.seq):
+            print("Error! the input seq(seq_id=%s) not match its seq_type=%s: %s" % (args.seq_id, args.seq_type, args.seq))
+            sys.exit(-1)
+        data = [[args.seq_id, args.seq_type, args.seq]]
+        results = run(
+            data,
+            args.llm_truncation_seq_length,
+            args.model_path,
+            args.dataset_name,
+            args.dataset_type,
+            args.task_type,
+            args.task_level_type,
+            args.model_type,
+            args.input_type,
+            args.time_str,
+            args.step,
+            args.gpu_id,
+            args.threshold,
+            topk=args.topk
+        )
+        print("predicted_result:")
+        print("seq_id=%s" % args.seq_id)
+        print("seq=%s" % args.seq)
+        print("prob=%f" % results[0][2])
+        print("label=%s" % results[0][3])
     elif args.seq_id_a is not None and args.seq_a is not None and args.seq_id_b is not None and args.seq_b is not None:
-        flag = True
         if args.seq_type_a is None:
             print("Please set arg: --seq_type_a, value: gene or prot")
-            flag = False
+            sys.exit(-1)
         if args.seq_type_b is None:
             print("Please set arg: --seq_type_b, value: gene or prot")
-            flag = False
-        if flag:
-            data = [[args.seq_id_a, args.seq_id_b,
-                     args.seq_type_a, args.seq_type_b,
-                     args.seq_a, args.seq_b]]
-            results = run(
-                data,
-                args.llm_truncation_seq_length,
-                args.model_path,
-                args.dataset_name,
-                args.dataset_type,
-                args.task_type,
-                args.task_level_type,
-                args.model_type,
-                args.input_type,
-                args.time_str,
-                args.step,
-                args.gpu_id,
-                args.threshold,
-                topk=args.topk
-            )
-            print("predicted_result:")
-            print("seq_id=%s" % args.seq_id)
-            print("seq=%s" % args.seq)
-            print("prob=%f" % results[0][2])
-            print("label=%s" % results[0][3])
+            sys.exit(-1)
+        if not seq_type_is_match_seq(args.seq_type_a, args.seq_a):
+            print("Error! the input seq_a(seq_id_a=%s) not match its seq_type_a=%s: %s" % (args.seq_id_a, args.seq_type_a, args.seq_a))
+            sys.exit(-1)
+        if not seq_type_is_match_seq(args.seq_type_b, args.seq_b):
+            print("Error! the input seq_b(seq_id_b=%s) not match its seq_type_b=%s: %s" % (args.seq_id_b, args.seq_type_b, args.seq_b))
+            sys.exit(-1)
+        data = [[args.seq_id_a, args.seq_id_b,
+                 args.seq_type_a, args.seq_type_b,
+                 args.seq_a, args.seq_b]]
+        results = run(
+            data,
+            args.llm_truncation_seq_length,
+            args.model_path,
+            args.dataset_name,
+            args.dataset_type,
+            args.task_type,
+            args.task_level_type,
+            args.model_type,
+            args.input_type,
+            args.time_str,
+            args.step,
+            args.gpu_id,
+            args.threshold,
+            topk=args.topk
+        )
+        print("predicted_result:")
+        print("seq_id=%s" % args.seq_id)
+        print("seq=%s" % args.seq)
+        print("prob=%f" % results[0][2])
+        print("label=%s" % results[0][3])
     else:
         raise Exception("input error, usage: --hep")

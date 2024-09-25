@@ -24,7 +24,7 @@ sys.path.append("../../../src")
 try:
     from ....args import Args
     from ....file_operator import fasta_reader, csv_reader
-    from ....utils import set_seed, to_device, get_labels, get_parameter_number, seq_is_gene, \
+    from ....utils import set_seed, to_device, get_labels, get_parameter_number, seq_type_is_match_seq, \
         gene_seq_replace, clean_seq, available_gpu_id, download_trained_checkpoint_lucaone, calc_emb_filename_by_seq_id
     from ....batch_converter import BatchConverter
     from .v0_2.lucaone_gplm import LucaGPLM as LucaGPLMV0_2
@@ -37,7 +37,7 @@ try:
 except ImportError as e:
     from src.args import Args
     from src.file_operator import fasta_reader, csv_reader
-    from src.utils import set_seed, to_device, get_labels, get_parameter_number, seq_is_gene, \
+    from src.utils import set_seed, to_device, get_labels, get_parameter_number, seq_type_is_match_seq, \
         gene_seq_replace, clean_seq, available_gpu_id, download_trained_checkpoint_lucaone, calc_emb_filename_by_seq_id
     from src.batch_converter import BatchConverter
     from src.llm.lucagplm.v0_2.lucaone_gplm import LucaGPLM as LucaGPLMV0_2
@@ -332,14 +332,15 @@ def get_embedding(args_info, model_config, tokenizer, model, seq, seq_type, devi
         return None, None
 
 
-def predict_embedding(llm_dirpath,
-                      sample, trunc_type,
-                      embedding_type,
-                      repr_layers=[-1],
-                      truncation_seq_length=4094,
-                      device=None,
-                      matrix_add_special_token=False
-                      ):
+def predict_embedding(
+        llm_dirpath,
+        sample, trunc_type,
+        embedding_type,
+        repr_layers=[-1],
+        truncation_seq_length=4094,
+        device=None,
+        matrix_add_special_token=False
+):
     '''
     use sequence to predict protein embedding matrix or vector(bos)
     :param sample: [protein_id, protein_sequence]
@@ -754,8 +755,8 @@ def main(model_args):
                     seq_id, seq = row[0].strip(), row[1].upper()
             else:
                 seq_id, seq = row[args.id_idx].strip(), row[args.seq_idx].upper()
-            if seq_is_gene(seq) and seq_type != 'gene':
-                print("Error! the input seq detection of seq_id=%s is gene, but the arg: --seq_type=%s is not gene" % (seq_id, seq_type))
+            if not seq_type_is_match_seq(seq_type, seq):
+                print("Error! the input seq(seq_id=%s) not match its seq_type=%s: %s" % (seq_id, seq_type, seq))
                 return
             emb_filename = calc_emb_filename_by_seq_id(seq_id=seq_id, embedding_type=embedding_type)
             embedding_filepath = os.path.join(emb_save_path, emb_filename)
@@ -797,8 +798,8 @@ def main(model_args):
         print("embedding over, done: %d" % done)
     elif args.seq:
         print("input seq length: %d" % len(args.seq))
-        if seq_is_gene(args.seq) and args.seq_type != 'gene':
-            print("Error! the input seq detection is gene, but the arg: --seq_type=%s is not gene" % args.seq_type)
+        if not seq_type_is_match_seq(args.seq_type, args.seq):
+            print("Error! the input seq(seq_id=%s) not match its seq_type=%s: %s" % (args.seq_id, args.seq_type, args.seq))
             return
         emb, processed_seq_len = get_embedding(lucaone_global_args_info,
                                                lucaone_global_model_config,

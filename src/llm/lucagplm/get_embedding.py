@@ -334,7 +334,8 @@ def get_embedding(args_info, model_config, tokenizer, model, seq, seq_type, devi
 
 def predict_embedding(
         llm_dirpath,
-        sample, trunc_type,
+        sample,
+        trunc_type,
         embedding_type,
         repr_layers=[-1],
         truncation_seq_length=4094,

@@ -796,7 +796,7 @@ if __name__ == "__main__":
             args.threshold,
             topk=args.topk
         )
-        print("predicted_result:")
+        print("Predicted Result:")
         print("seq_id=%s" % args.seq_id)
         print("seq=%s" % args.seq)
         print("prob=%f" % results[0][2])
@@ -833,7 +833,7 @@ if __name__ == "__main__":
             args.threshold,
             topk=args.topk
         )
-        print("predicted_result:")
+        print("Predicted Result:")
         print("seq_id=%s" % args.seq_id)
         print("seq=%s" % args.seq)
         print("prob=%f" % results[0][2])

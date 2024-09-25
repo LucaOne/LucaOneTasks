@@ -775,70 +775,68 @@ if __name__ == "__main__":
     elif args.seq_id is not None and args.seq is not None:
         if args.seq_type is None:
             print("Please set arg: --seq_type, value: gene or prot")
-        else:
-            if not seq_type_is_match_seq(args.seq_type, args.seq):
-                print("Error! the input seq(seq_id=%s) not match its seq_type=%s: %s" % (args.seq_id, args.seq_type, args.seq))
-                sys.exit(-1)
-            data = [[args.seq_id, args.seq_type, args.seq]]
-            results = run(
-                data,
-                args.llm_truncation_seq_length,
-                args.model_path,
-                args.dataset_name,
-                args.dataset_type,
-                args.task_type,
-                args.task_level_type,
-                args.model_type,
-                args.input_type,
-                args.time_str,
-                args.step,
-                args.gpu_id,
-                args.threshold,
-                topk=args.topk
-            )
-            print("predicted_result:")
-            print("seq_id=%s" % args.seq_id)
-            print("seq=%s" % args.seq)
-            print("prob=%f" % results[0][2])
-            print("label=%s" % results[0][3])
+            sys.exit(-1)
+        if not seq_type_is_match_seq(args.seq_type, args.seq):
+            print("Error! the input seq(seq_id=%s) not match its seq_type=%s: %s" % (args.seq_id, args.seq_type, args.seq))
+            sys.exit(-1)
+        data = [[args.seq_id, args.seq_type, args.seq]]
+        results = run(
+            data,
+            args.llm_truncation_seq_length,
+            args.model_path,
+            args.dataset_name,
+            args.dataset_type,
+            args.task_type,
+            args.task_level_type,
+            args.model_type,
+            args.input_type,
+            args.time_str,
+            args.step,
+            args.gpu_id,
+            args.threshold,
+            topk=args.topk
+        )
+        print("predicted_result:")
+        print("seq_id=%s" % args.seq_id)
+        print("seq=%s" % args.seq)
+        print("prob=%f" % results[0][2])
+        print("label=%s" % results[0][3])
     elif args.seq_id_a is not None and args.seq_a is not None and args.seq_id_b is not None and args.seq_b is not None:
-        flag = True
         if args.seq_type_a is None:
             print("Please set arg: --seq_type_a, value: gene or prot")
-            flag = False
+            sys.exit(-1)
         if args.seq_type_b is None:
             print("Please set arg: --seq_type_b, value: gene or prot")
-            flag = False
-        if flag:
-            if not seq_type_is_match_seq(args.seq_type_a, args.seq_a):
-                print("Error! the input seq_a(seq_id_a=%s) not match its seq_type_a=%s: %s" % (args.seq_id_a, args.seq_type_a, args.seq_a))
-                sys.exit(-1)
-            if not seq_type_is_match_seq(args.seq_type_b, args.seq_b):
-                print("Error! the input seq_b(seq_id_b=%s) not match its seq_type_b=%s: %s" % (args.seq_id_b, args.seq_type_b, args.seq_b))
-                sys.exit(-1)
-            data = [[args.seq_id_a, args.seq_id_b,
-                     args.seq_type_a, args.seq_type_b,
-                     args.seq_a, args.seq_b]]
-            results = run(
-                data,
-                args.llm_truncation_seq_length,
-                args.model_path,
-                args.dataset_name,
-                args.dataset_type,
-                args.task_type,
-                args.task_level_type,
-                args.model_type,
-                args.input_type,
-                args.time_str,
-                args.step,
-                args.gpu_id,
-                args.threshold,
-                topk=args.topk
-            )
-            print("predicted_result:")
-            print("seq_id=%s" % args.seq_id)
-            print("seq=%s" % args.seq)
-            print("prob=%f" % results[0][2])
-            print("label=%s" % results[0][3])
+            sys.exit(-1)
+        if not seq_type_is_match_seq(args.seq_type_a, args.seq_a):
+            print("Error! the input seq_a(seq_id_a=%s) not match its seq_type_a=%s: %s" % (args.seq_id_a, args.seq_type_a, args.seq_a))
+            sys.exit(-1)
+        if not seq_type_is_match_seq(args.seq_type_b, args.seq_b):
+            print("Error! the input seq_b(seq_id_b=%s) not match its seq_type_b=%s: %s" % (args.seq_id_b, args.seq_type_b, args.seq_b))
+            sys.exit(-1)
+        data = [[args.seq_id_a, args.seq_id_b,
+                 args.seq_type_a, args.seq_type_b,
+                 args.seq_a, args.seq_b]]
+        results = run(
+            data,
+            args.llm_truncation_seq_length,
+            args.model_path,
+            args.dataset_name,
+            args.dataset_type,
+            args.task_type,
+            args.task_level_type,
+            args.model_type,
+            args.input_type,
+            args.time_str,
+            args.step,
+            args.gpu_id,
+            args.threshold,
+            topk=args.topk
+        )
+        print("predicted_result:")
+        print("seq_id=%s" % args.seq_id)
+        print("seq=%s" % args.seq)
+        print("prob=%f" % results[0][2])
+        print("label=%s" % results[0][3])
     else:
         raise Exception("input error, usage: --hep")

@@ -26,7 +26,7 @@ sys.path.append(".")
 sys.path.append("..")
 sys.path.append("../src")
 try:
-    from .utils import to_device, device_memory, available_gpu_id, load_labels, \
+    from .utils import to_device, device_memory, available_gpu_id, load_labels, seq_is_gene,\
         download_trained_checkpoint_lucaone, download_trained_checkpoint_downstream_tasks
     from .common.multi_label_metrics import relevant_indexes
     from .encoder import Encoder
@@ -37,7 +37,7 @@ try:
     from .ppi.models.LucaPPI import LucaPPI
     from .ppi.models.LucaPPI2 import LucaPPI2
 except ImportError:
-    from src.utils import to_device, device_memory, available_gpu_id, load_labels, \
+    from src.utils import to_device, device_memory, available_gpu_id, load_labels, seq_is_gene, \
         download_trained_checkpoint_lucaone, download_trained_checkpoint_downstream_tasks
     from src.common.multi_label_metrics import relevant_indexes
     from src.encoder import Encoder
@@ -501,7 +501,7 @@ def run(sequences, llm_truncation_seq_length, model_path, dataset_name, dataset_
         predict_func = predict_token_level_regression
     else:
         raise Exception("task type or task level type error")
-    results = []
+    predicted_results = []
     print()
     print("Device:", model_args.device)
     if hasattr(model_args, "input_mode") and model_args.input_mode in ["pair"]:
@@ -522,9 +522,9 @@ def run(sequences, llm_truncation_seq_length, model_path, dataset_name, dataset_
                                        row,
                                        topk=topk)
                 if topk is not None and topk > 1:
-                    results.append([seq_id_a, seq_id_b, seq_a, seq_b, cur_res[0][4], cur_res[0][5], cur_res[0][6], cur_res[0][7]])
+                    predicted_results.append([seq_id_a, seq_id_b, seq_a, seq_b, cur_res[0][4], cur_res[0][5], cur_res[0][6], cur_res[0][7]])
                 else:
-                    results.append([seq_id_a, seq_id_b, seq_a, seq_b, cur_res[0][4], cur_res[0][5]])
+                    predicted_results.append([seq_id_a, seq_id_b, seq_a, seq_b, cur_res[0][4], cur_res[0][5]])
             else:
                 cur_res = predict_func(model_args,
                                        encoder,
@@ -532,7 +532,7 @@ def run(sequences, llm_truncation_seq_length, model_path, dataset_name, dataset_
                                        label_id_2_name,
                                        trained_model,
                                        row)
-                results.append([seq_id_a, seq_id_b, seq_a, seq_b, cur_res[0][4], cur_res[0][5]])
+                predicted_results.append([seq_id_a, seq_id_b, seq_a, seq_b, cur_res[0][4], cur_res[0][5]])
     else:
         for item in sequences:
             seq_id = item[0]
@@ -549,9 +549,9 @@ def run(sequences, llm_truncation_seq_length, model_path, dataset_name, dataset_
                                        row,
                                        topk=topk)
                 if topk is not None and topk > 1:
-                    results.append([seq_id, seq, cur_res[0][2], cur_res[0][3], cur_res[0][4], cur_res[0][5]])
+                    predicted_results.append([seq_id, seq, cur_res[0][2], cur_res[0][3], cur_res[0][4], cur_res[0][5]])
                 else:
-                    results.append([seq_id, seq, cur_res[0][2], cur_res[0][3]])
+                    predicted_results.append([seq_id, seq, cur_res[0][2], cur_res[0][3]])
             else:
                 cur_res = predict_func(model_args,
                                        encoder,
@@ -559,9 +559,9 @@ def run(sequences, llm_truncation_seq_length, model_path, dataset_name, dataset_
                                        label_id_2_name,
                                        trained_model,
                                        row)
-                results.append([seq_id, seq, cur_res[0][2], cur_res[0][3]])
-    torch.cuda.empty_cache()
-    return results
+                predicted_results.append([seq_id, seq, cur_res[0][2], cur_res[0][3]])
+    # torch.cuda.empty_cache()
+    return predicted_results
 
 
 def run_args():
@@ -613,7 +613,7 @@ def run_args():
     parser.add_argument("--step", default=None, type=str, required=True, 
                         help="the training global checkpoint step of model finalization.")
 
-    parser.add_argument("--topk", default=None, type=int, help="the topk results for multi-class")
+    parser.add_argument("--topk", default=None, type=int, help="the topk labels for multi-class")
     parser.add_argument("--threshold",  default=0.5, type=float, 
                         help="sigmoid threshold for binary-class or multi-label classification, "
                              "None for multi-class classification or regression, default: 0.5.")
@@ -630,9 +630,15 @@ def run_args():
 
 if __name__ == "__main__":
     args = run_args()
-    print("------Run Args------")
+    print("-" * 25 + "Run Args" + "-" * 25)
     print(args.__dict__)
     print("-" * 50)
+    if args.input_mode == "pair" and args.input_file is not None:
+        input_file_suffix = os.path.basename(args.input_file).split(".")[-1]
+        if input_file_suffix not in ["csv", "tsv"]:
+            print("Error! the input file is not in .csv or .tsv format for the pair seqs task.")
+            sys.exit(-1)
+
     # download LLM(LucaOne)
     if not hasattr(args, "llm_step"):
         args.llm_step = "5600000"
@@ -681,12 +687,19 @@ if __name__ == "__main__":
             batch_data = []
             batch_ground_truth = []
             had_done = 0
+
             reader = file_reader(args.input_file) if args.input_file.endswith(".csv") or args.input_file.endswith(".tsv") else fasta_reader(args.input_file)
             for row in reader:
                 if args.input_mode == "pair":
                     if row[0] + "_" + row[1] in exists_ids:
                         continue
                     # seq_id_a, seq_id_b, seq_type_a, seq_type_b, seq_a, seq_b
+                    if seq_is_gene(row[4]) and row[2] != 'gene':
+                        print("Error! the input seq detection of seq_id_a=%s is gene, but the column: seq_type_a=%s is not gene" % (row[0], row[2]))
+                        sys.exit(-1)
+                    if seq_is_gene(row[5]) and row[3] != 'gene':
+                        print("Error! the input seq detection of seq_id_b=%s is gene, but the column: seq_type_b=%s is not gene" % (row[1], row[3]))
+                        sys.exit(-1)
                     batch_data.append([row[0], row[1], row[2], row[3], row[4], row[5]])
                     if args.ground_truth_idx is not None and args.ground_truth_idx >= 0:
                         batch_ground_truth.append(row[args.ground_truth_idx])
@@ -694,9 +707,14 @@ if __name__ == "__main__":
                     if row[0] in exists_ids:
                         continue
                     if len(row) == 2:
-                        # default: seq_type='prot'
-                        batch_data.append([row[0], "prot" if args.seq_type is None else args.seq_type, args.row[1]])
+                        if seq_is_gene(row[1]) and args.seq_type != 'gene':
+                            print("Error! the input seq detection of seq_id=%s is gene, but arg: --seq_type=%s is not gene" % (row[0], args.seq_type))
+                            sys.exit(-1)
+                        batch_data.append([row[0], args.seq_type, args.row[1]])
                     elif len(row) > 2:
+                        if seq_is_gene(row[2]) and (args.seq_type != 'gene' and row[1] != "gene"):
+                            print("Error! the input seq detection of seq_id=%s is gene, but the column: seq_type=%s is not gene" % (row[0], row[1]))
+                            sys.exit(-1)
                         if args.ground_truth_idx is not None and args.ground_truth_idx >= 0:
                             batch_ground_truth.append(row[args.ground_truth_idx])
                         # seq_id, seq_type, seq
@@ -705,20 +723,22 @@ if __name__ == "__main__":
                         continue
 
                 if len(batch_data) % args.print_per_num == 0:
-                    batch_results = run(batch_data,
-                                        args.llm_truncation_seq_length,
-                                        args.model_path,
-                                        args.dataset_name,
-                                        args.dataset_type,
-                                        args.task_type,
-                                        args.task_level_type,
-                                        args.model_type,
-                                        args.input_type,
-                                        args.time_str,
-                                        args.step,
-                                        args.gpu_id,
-                                        args.threshold,
-                                        topk=args.topk)
+                    batch_results = run(
+                        batch_data,
+                        args.llm_truncation_seq_length,
+                        args.model_path,
+                        args.dataset_name,
+                        args.dataset_type,
+                        args.task_type,
+                        args.task_level_type,
+                        args.model_type,
+                        args.input_type,
+                        args.time_str,
+                        args.step,
+                        args.gpu_id,
+                        args.threshold,
+                        topk=args.topk
+                    )
                     for item_idx, item in enumerate(batch_results):
                         if args.ground_truth_idx is not None and args.ground_truth_idx >= 0:
                             item.append(batch_ground_truth[item_idx])
@@ -729,20 +749,22 @@ if __name__ == "__main__":
                     batch_data = []
                     batch_ground_truth = []
             if len(batch_data) > 0:
-                batch_results = run(batch_data,
-                                    args.llm_truncation_seq_length,
-                                    args.model_path,
-                                    args.dataset_name,
-                                    args.dataset_type,
-                                    args.task_type,
-                                    args.task_level_type,
-                                    args.model_type,
-                                    args.input_type,
-                                    args.time_str,
-                                    args.step,
-                                    args.gpu_id,
-                                    args.threshold,
-                                    topk=args.topk)
+                batch_results = run(
+                    batch_data,
+                    args.llm_truncation_seq_length,
+                    args.model_path,
+                    args.dataset_name,
+                    args.dataset_type,
+                    args.task_type,
+                    args.task_level_type,
+                    args.model_type,
+                    args.input_type,
+                    args.time_str,
+                    args.step,
+                    args.gpu_id,
+                    args.threshold,
+                    topk=args.topk
+                )
                 for item_idx, item in enumerate(batch_results):
                     if args.ground_truth_idx is not None and args.ground_truth_idx >= 0:
                         item.append(batch_ground_truth[item_idx])
@@ -752,24 +774,26 @@ if __name__ == "__main__":
                 batch_ground_truth = []
     elif args.seq_id is not None and args.seq is not None:
         if args.seq_type is None:
-            print("Please set --seq_type, value: gene or prot")
+            print("Please set arg: --seq_type, value: gene or prot")
         else:
             data = [[args.seq_id, args.seq_type, args.seq]]
-            results = run(data,
-                          args.llm_truncation_seq_length,
-                          args.model_path,
-                          args.dataset_name,
-                          args.dataset_type,
-                          args.task_type,
-                          args.task_level_type,
-                          args.model_type,
-                          args.input_type,
-                          args.time_str,
-                          args.step,
-                          args.gpu_id,
-                          args.threshold,
-                          topk=args.topk)
-            print("results:")
+            results = run(
+                data,
+                args.llm_truncation_seq_length,
+                args.model_path,
+                args.dataset_name,
+                args.dataset_type,
+                args.task_type,
+                args.task_level_type,
+                args.model_type,
+                args.input_type,
+                args.time_str,
+                args.step,
+                args.gpu_id,
+                args.threshold,
+                topk=args.topk
+            )
+            print("predicted_result:")
             print("seq_id=%s" % args.seq_id)
             print("seq=%s" % args.seq)
             print("prob=%f" % results[0][2])
@@ -777,30 +801,32 @@ if __name__ == "__main__":
     elif args.seq_id_a is not None and args.seq_a is not None and args.seq_id_b is not None and args.seq_b is not None:
         flag = True
         if args.seq_type_a is None:
-            print("Please set --seq_type_a, value: gene or prot")
+            print("Please set arg: --seq_type_a, value: gene or prot")
             flag = False
         if args.seq_type_b is None:
-            print("Please set --seq_type_b, value: gene or prot")
+            print("Please set arg: --seq_type_b, value: gene or prot")
             flag = False
         if flag:
             data = [[args.seq_id_a, args.seq_id_b,
                      args.seq_type_a, args.seq_type_b,
                      args.seq_a, args.seq_b]]
-            results = run(data,
-                          args.llm_truncation_seq_length,
-                          args.model_path,
-                          args.dataset_name,
-                          args.dataset_type,
-                          args.task_type,
-                          args.task_level_type,
-                          args.model_type,
-                          args.input_type,
-                          args.time_str,
-                          args.step,
-                          args.gpu_id,
-                          args.threshold,
-                          topk=args.topk)
-            print("results:")
+            results = run(
+                data,
+                args.llm_truncation_seq_length,
+                args.model_path,
+                args.dataset_name,
+                args.dataset_type,
+                args.task_type,
+                args.task_level_type,
+                args.model_type,
+                args.input_type,
+                args.time_str,
+                args.step,
+                args.gpu_id,
+                args.threshold,
+                topk=args.topk
+            )
+            print("predicted_result:")
             print("seq_id=%s" % args.seq_id)
             print("seq=%s" % args.seq)
             print("prob=%f" % results[0][2])

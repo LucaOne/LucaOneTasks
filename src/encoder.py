@@ -256,8 +256,21 @@ class Encoder(object):
         self.trunc_type = trunc_type
         self.seq_max_length = seq_max_length
         self.atom_seq_max_length = atom_seq_max_length
-        self.vector_dirpath = vector_dirpath
-        self.matrix_dirpath = matrix_dirpath
+        # vector
+        if vector_dirpath and "#" in vector_dirpath:
+            self.vector_dirpath = list(vector_dirpath.split("#"))
+        elif vector_dirpath:
+            self.vector_dirpath = [vector_dirpath]
+        else:
+            self.vector_dirpath = None
+        # matrix
+        if matrix_dirpath and "#" in matrix_dirpath:
+            self.matrix_dirpath = list(matrix_dirpath.split("#"))
+        elif matrix_dirpath:
+            self.matrix_dirpath = [matrix_dirpath]
+        else:
+            self.matrix_dirpath = None
+        # special tokens
         self.prepend_bos = prepend_bos
         self.append_eos = append_eos
         self.alphabet = Alphabet.from_predefined("gene_prot")
@@ -287,6 +300,11 @@ class Encoder(object):
         else:
             self.embedding_complete_seg_overlap = False
 
+        if "matrix_embedding_exists" in kwargs and kwargs["matrix_embedding_exists"]:
+            self.matrix_embedding_exists = kwargs["matrix_embedding_exists"]
+        else:
+            self.matrix_embedding_exists = False
+
         if local_rank == -1 and not use_cpu and torch.cuda.is_available():
             device = torch.device("cuda")
         elif torch.cuda.is_available() and local_rank > -1:
@@ -297,99 +315,52 @@ class Encoder(object):
         self.device = device
         self.seq_id_2_emb_filename = {}
         print("Encoder: prepend_bos=%r, append_eos=%r" % (self.prepend_bos, self.append_eos))
+        print("Encoder: matrix_add_special_token=%r, "
+              "embedding_complete=%r, "
+              "embedding_complete_seg_overlap=%r, "
+              "matrix_embedding_exists=%r" %
+              (self.matrix_add_special_token,
+               self.embedding_complete,
+               self.embedding_complete_seg_overlap,
+               self.matrix_embedding_exists)
+              )
         print("-" * 50)
-
-    def encode_single(self,
-                      seq_id,
-                      seq_type,
-                      seq,
-                      vector_filename=None,
-                      matrix_filename=None,
-                      label=None):
-        seq_type = seq_type.strip().lower()
-        # for embedding vector
-        vector = None
-        if self.input_type in ["vector", "seq_vector"]:
-            if vector_filename is None:
-                if seq is None:
-                    raise Exception("seq is none and vector_filename is none")
-                elif seq_type == "molecule":
-                    raise Exception("now not support embedding of the seq_type=%s" % seq_type)
-                else:
-                    vector = self.__get_embedding__(seq_id, seq_type, seq, "vector")
-            elif isinstance(vector_filename, str):
-                vector = torch.load(os.path.join(self.vector_dirpath, vector_filename))
-            elif isinstance(vector_filename, np.ndarray):
-                vector = vector_filename
-            else:
-                raise Exception("vector is not filepath-str and np.ndarray")
-
-        # for embedding matrix
-        matrix = None
-        if self.input_type in ["matrix", "seq_matrix"]:
-            if matrix_filename is None:
-                if seq is None:
-                    raise Exception("seq is none and matrix_filename is none")
-                elif seq_type == "molecule":
-                    raise Exception("now not support embedding of the seq_type=%s" % seq_type)
-                else:
-                    matrix = self.__get_embedding__(seq_id, seq_type, seq, "matrix")
-            elif isinstance(matrix_filename, str):
-                matrix = torch.load(os.path.join(self.matrix_dirpath, matrix_filename))
-            elif isinstance(matrix_filename, np.ndarray):
-                matrix = matrix_filename
-            else:
-                raise Exception("matrix is not filepath-str and np.ndarray")
-
-        # for seq
-        if seq_type == "molecule":
-            # to do
-            pass
-        else:
-            seq = seq.upper()
-
-        '''
-        Asx、B可代表天冬氨酸（Asp、D）或天冬酰胺（Asn、N）。
-        Glx、Z可代表谷氨酸（Glu、E）或谷氨酰胺（Gln、Q）。
-        Xle、J可代表亮氨酸（Leu、L）或异亮氨酸（Ile、I）。
-        Xaa（亦用Unk）、X可代表任意氨基酸或未知氨基酸。
-        '''
-        # 蛋白质且使用esm进行embedding，则需要去掉蛋白质J
-        if self.input_type in ["matrix", "seq_matrix"] and "esm" in self.llm_type:
-            if seq_type == "prot":
-                seq = clean_seq(seq_id, seq)
-            elif seq_type == "multi_prot":
-                seq = ",".join([clean_seq(seq_id, v) for v in seq.split(",")])
-        return {
-            "seq_id": seq_id,
-            "seq": seq,
-            "seq_type": seq_type,
-            "vector": vector,
-            "matrix": matrix,
-            "label": label
-        }
 
     def __get_embedding__(self, seq_id, seq_type, seq, embedding_type):
         embedding_info = None
         if seq_id in self.seq_id_2_emb_filename:
             emb_filename = self.seq_id_2_emb_filename[seq_id]
             try:
-                embedding_info = torch.load(os.path.join(self.vector_dirpath if embedding_type in ["bos", "vector"] else self.matrix_dirpath, emb_filename))
-                return embedding_info
+                dirpath_list = self.vector_dirpath if embedding_type in ["bos", "vector"] else self.matrix_dirpath
+                for dirpath in dirpath_list:
+                    emb_filepath = os.path.join(dirpath, emb_filename)
+                    if os.path.exists(emb_filepath):
+                        embedding_info = torch.load(emb_filepath)
+                        return embedding_info
             except Exception as e:
                 print(e)
                 embedding_info = None
         elif embedding_type in ["bos", "vector"] and self.vector_dirpath is not None or embedding_type not in ["bos", "vector"] and self.matrix_dirpath is not None:
             emb_filename = calc_emb_filename_by_seq_id(seq_id=seq_id, embedding_type=embedding_type)
-            embedding_path = os.path.join(self.vector_dirpath if embedding_type in ["bos", "vector"] else self.matrix_dirpath, emb_filename)
-            if os.path.exists(embedding_path):
-                try:
-                    embedding_info = torch.load(embedding_path)
-                    self.seq_id_2_emb_filename[seq_id] = emb_filename
-                    return embedding_info
-                except Exception as e:
-                    print(e)
-                    embedding_info = None
+            try:
+                dirpath_list = self.vector_dirpath if embedding_type in ["bos", "vector"] else self.matrix_dirpath
+                for dirpath in dirpath_list:
+                    emb_filepath = os.path.join(dirpath, emb_filename)
+                    if os.path.exists(emb_filepath):
+                        embedding_info = torch.load(emb_filepath)
+                        self.seq_id_2_emb_filename[seq_id] = emb_filename
+                        return embedding_info
+            except Exception as e:
+                print(e)
+                embedding_info = None
+
+        if embedding_info is None:
+            if self.matrix_embedding_exists:
+                with open("matrix_embedding_not_exists.txt", "a+") as wfp:
+                    print("seq_id: %s" % seq_id)
+                    wfp.write("seq_id: %s\n" % seq_id)
+                    wfp.flush()
+
         if embedding_info is None:
             if "onehot" in self.llm_type:
                 if "multi_" in seq_type:
@@ -723,14 +694,95 @@ class Encoder(object):
                         truncation_seq_length = (truncation_seq_length + int(self.prepend_bos) + int(self.append_eos)) * 0.9 - int(self.prepend_bos) - int(self.append_eos)
                         truncation_seq_length = int(truncation_seq_length)
                         print("truncation_seq_length: %d->%d" % (cur_seq_len, truncation_seq_length))
-            if embedding_type in ["bos", "vector"] and self.vector_dirpath is not None or embedding_type not in ["bos", "vector"] and self.matrix_dirpath is not None:
+            if embedding_type in ["bos", "vector"] and self.vector_dirpath is not None \
+                    or embedding_type not in ["bos", "vector"] and self.matrix_dirpath is not None:
                 emb_filename = calc_emb_filename_by_seq_id(seq_id=seq_id, embedding_type=embedding_type)
-                embedding_filepath = os.path.join(self.vector_dirpath if embedding_type in ["bos", "vector"] else self.matrix_dirpath, emb_filename)
+                dirpath_list = self.vector_dirpath if embedding_type in ["bos", "vector"] else self.matrix_dirpath
+                dirpath = dirpath_list[0]
+                emb_filepath = os.path.join(dirpath, emb_filename)
                 # print("seq_len: %d" % len(seq))
                 # print("emb shape:", embedding_info.shape)
-                torch.save(embedding_info, embedding_filepath)
+                torch.save(embedding_info, emb_filepath)
                 self.seq_id_2_emb_filename[seq_id] = emb_filename
         return embedding_info
+
+    def encode_single(self,
+                      seq_id,
+                      seq_type,
+                      seq,
+                      vector_filename=None,
+                      matrix_filename=None,
+                      label=None):
+        seq_type = seq_type.strip().lower()
+        # for embedding vector
+        vector = None
+        if self.input_type in ["vector", "seq_vector"]:
+            if vector_filename is None:
+                if seq is None:
+                    raise Exception("seq is none and vector_filename is none")
+                elif seq_type == "molecule":
+                    raise Exception("now not support embedding of the seq_type=%s" % seq_type)
+                else:
+                    vector = self.__get_embedding__(seq_id, seq_type, seq, "vector")
+            elif isinstance(vector_filename, str):
+                for vector_dir in self.vector_dirpath:
+                    vector_filepath = os.path.join(vector_dir, vector_filename)
+                    if os.path.exists(vector_filepath):
+                        vector = torch.load(vector_filepath)
+                        break
+            elif isinstance(vector_filename, np.ndarray):
+                vector = vector_filename
+            else:
+                raise Exception("vector is not filepath-str and np.ndarray")
+
+        # for embedding matrix
+        matrix = None
+        if self.input_type in ["matrix", "seq_matrix"]:
+            if matrix_filename is None:
+                if seq is None:
+                    raise Exception("seq is none and matrix_filename is none")
+                elif seq_type == "molecule":
+                    raise Exception("now not support embedding of the seq_type=%s" % seq_type)
+                else:
+                    matrix = self.__get_embedding__(seq_id, seq_type, seq, "matrix")
+            elif isinstance(matrix_filename, str):
+                for matrix_dir in self.matrix_dirpath:
+                    matrix_filepath = os.path.join(matrix_dir, matrix_filename)
+                    if os.path.exists(matrix_filepath):
+                        matrix = torch.load(matrix_filepath)
+                        break
+            elif isinstance(matrix_filename, np.ndarray):
+                matrix = matrix_filename
+            else:
+                raise Exception("matrix is not filepath-str and np.ndarray")
+
+        # for seq
+        if seq_type == "molecule":
+            # to do
+            pass
+        else:
+            seq = seq.upper()
+
+        '''
+        Asx、B可代表天冬氨酸（Asp、D）或天冬酰胺（Asn、N）。
+        Glx、Z可代表谷氨酸（Glu、E）或谷氨酰胺（Gln、Q）。
+        Xle、J可代表亮氨酸（Leu、L）或异亮氨酸（Ile、I）。
+        Xaa（亦用Unk）、X可代表任意氨基酸或未知氨基酸。
+        '''
+        # 蛋白质且使用esm进行embedding，则需要去掉蛋白质J
+        if self.input_type in ["matrix", "seq_matrix"] and "esm" in self.llm_type:
+            if seq_type == "prot":
+                seq = clean_seq(seq_id, seq)
+            elif seq_type == "multi_prot":
+                seq = ",".join([clean_seq(seq_id, v) for v in seq.split(",")])
+        return {
+            "seq_id": seq_id,
+            "seq": seq,
+            "seq_type": seq_type,
+            "vector": vector,
+            "matrix": matrix,
+            "label": label
+        }
 
     def encode_pair(self,
                     seq_id_a,
@@ -758,7 +810,11 @@ class Encoder(object):
                 else:
                     vector_a = self.__get_embedding__(seq_id_a, seq_type_a, seq_a, "vector")
             elif isinstance(vector_filename_a, str):
-                vector_a = torch.load(os.path.join(self.vector_dirpath, vector_filename_a))
+                for vector_dir in self.vector_dirpath:
+                    vector_filepath_a = os.path.join(vector_dir, vector_filename_a)
+                    if os.path.exists(vector_filepath_a):
+                        vector_a = torch.load(vector_filepath_a)
+                        break
             elif isinstance(vector_filename_a, np.ndarray):
                 vector_a = vector_filename_a
             else:
@@ -772,7 +828,11 @@ class Encoder(object):
                 else:
                     vector_b = self.__get_embedding__(seq_id_b, seq_type_b, seq_b, "vector")
             elif isinstance(vector_filename_b, str):
-                vector_b = torch.load(os.path.join(self.vector_dirpath, vector_filename_b))
+                for vector_dir in self.vector_dirpath:
+                    vector_filepath_b = os.path.join(vector_dir, vector_filename_b)
+                    if os.path.exists(vector_filepath_b):
+                        vector_b = torch.load(vector_filepath_b)
+                        break
             elif isinstance(vector_filename_b, np.ndarray):
                 vector_b = vector_filename_b
             else:
@@ -787,7 +847,11 @@ class Encoder(object):
                 else:
                     matrix_a = self.__get_embedding__(seq_id_a, seq_type_a, seq_a, "matrix")
             elif isinstance(matrix_filename_a, str):
-                matrix_a = torch.load(os.path.join(self.matrix_dirpath, matrix_filename_a))
+                for matrix_dir in self.matrix_dirpath:
+                    matrix_filepath_a = os.path.join(matrix_dir, matrix_filename_a)
+                    if os.path.exists(matrix_filepath_a):
+                        matrix_a = torch.load(matrix_filepath_a)
+                        break
             elif isinstance(matrix_filename_a, np.ndarray):
                 matrix_a = matrix_filename_a
             else:
@@ -798,7 +862,11 @@ class Encoder(object):
                 else:
                     matrix_b = self.__get_embedding__(seq_id_b, seq_type_b, seq_b, "matrix")
             elif isinstance(matrix_filename_b, str):
-                matrix_b = torch.load(os.path.join(self.matrix_dirpath, matrix_filename_b))
+                for matrix_dir in self.matrix_dirpath:
+                    matrix_filepath_b = os.path.join(matrix_dir, matrix_filename_b)
+                    if os.path.exists(matrix_filepath_b):
+                        matrix_b = torch.load(matrix_filepath_b)
+                        break
             elif isinstance(matrix_filename_b, np.ndarray):
                 matrix_b = matrix_filename_b
             else:

@@ -123,38 +123,39 @@ class BatchConverter(object):
         if self.atom_tokenizer is None:
             self.atom_append_len = 0
         else:
-            if hasattr(seq_tokenizer, "padding_idx"):
-                self.padding_idx = self.seq_tokenizer.padding_idx
-            elif hasattr(seq_tokenizer, "pad_idx"):
-                self.padding_idx = self.seq_tokenizer.pad_idx
-            elif hasattr(seq_tokenizer, "pad_token_id"):
-                self.padding_idx = self.seq_tokenizer.pad_token_id
+            if hasattr(atom_tokenizer, "padding_idx"):
+                self.padding_idx = self.atom_tokenizer.padding_idx
+            elif hasattr(atom_tokenizer, "pad_idx"):
+                self.padding_idx = self.atom_tokenizer.pad_idx
+            elif hasattr(atom_tokenizer, "pad_token_id"):
+                self.padding_idx = self.atom_tokenizer.pad_token_id
 
-            if hasattr(seq_tokenizer, "unk_idx"):
-                self.unk_idx = self.seq_tokenizer.unk_idx
-            elif hasattr(seq_tokenizer, "unk_token_id"):
-                self.unk_idx = self.seq_tokenizer.unk_token_id
+            if hasattr(atom_tokenizer, "unk_idx"):
+                self.unk_idx = self.atom_tokenizer.unk_idx
+            elif hasattr(atom_tokenizer, "unk_token_id"):
+                self.unk_idx = self.atom_tokenizer.unk_token_id
 
-            if hasattr(seq_tokenizer, "cls_idx"):
-                self.cls_idx = self.seq_tokenizer.cls_idx
-            elif hasattr(seq_tokenizer, "cls_token_id"):
-                self.cls_idx = self.seq_tokenizer.cls_token_id
-            elif hasattr(seq_tokenizer, "bos_idx"):
-                self.cls_idx = self.seq_tokenizer.bos_idx
-            elif hasattr(seq_tokenizer, "bos_token_id"):
-                self.cls_idx = self.seq_tokenizer.bos_token_id
+            if hasattr(atom_tokenizer, "cls_idx"):
+                self.cls_idx = self.atom_tokenizer.cls_idx
+            elif hasattr(atom_tokenizer, "cls_token_id"):
+                self.cls_idx = self.atom_tokenizer.cls_token_id
+            elif hasattr(atom_tokenizer, "bos_idx"):
+                self.cls_idx = self.atom_tokenizer.bos_idx
+            elif hasattr(atom_tokenizer, "bos_token_id"):
+                self.cls_idx = self.atom_tokenizer.bos_token_id
 
-            if hasattr(seq_tokenizer, "eos_idx"):
-                self.eos_idx = self.seq_tokenizer.eos_idx
-            elif hasattr(seq_tokenizer, "eos_token_id"):
-                self.eos_idx = self.seq_tokenizer.eos_token_id
-            elif hasattr(seq_tokenizer, "sep_token_id"):
-                self.eos_idx = self.seq_tokenizer.sep_token_id
+            if hasattr(atom_tokenizer, "eos_idx"):
+                self.eos_idx = self.atom_tokenizer.eos_idx
+            elif hasattr(atom_tokenizer, "eos_token_id"):
+                self.eos_idx = self.atom_tokenizer.eos_token_id
+            elif hasattr(atom_tokenizer, "sep_token_id"):
+                self.eos_idx = self.atom_tokenizer.sep_token_id
 
-            if hasattr(seq_tokenizer, "mask_idx"):
-                self.mask_idx = self.seq_tokenizer.mask_idx
-            elif hasattr(seq_tokenizer, "mask_token_id"):
-                self.mask_idx = self.seq_tokenizer.mask_token_id
+            if hasattr(atom_tokenizer, "mask_idx"):
+                self.mask_idx = self.atom_tokenizer.mask_idx
+            elif hasattr(atom_tokenizer, "mask_token_id"):
+                self.mask_idx = self.atom_tokenizer.mask_token_id
+
             if hasattr(atom_tokenizer, "all_special_token_idx_list"):
                 self.atom_all_special_token_idx_list = self.atom_tokenizer.all_special_token_idx_list
             else:

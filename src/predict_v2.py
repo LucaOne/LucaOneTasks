@@ -16,7 +16,7 @@ import json
 import os, sys
 import torch
 import codecs
-import time
+import time, shutil
 import numpy as np
 import argparse
 from collections import OrderedDict
@@ -26,7 +26,7 @@ sys.path.append(".")
 sys.path.append("..")
 sys.path.append("../src")
 try:
-    from .utils import to_device, device_memory, available_gpu_id, load_labels, seq_type_is_match_seq,\
+    from .utils import to_device, device_memory, available_gpu_id, load_labels, seq_type_is_match_seq, \
         download_trained_checkpoint_lucaone, download_trained_checkpoint_downstream_tasks
     from .common.multi_label_metrics import relevant_indexes
     from .encoder import Encoder
@@ -49,25 +49,29 @@ except ImportError:
     from src.ppi.models.LucaPPI2 import LucaPPI2
 
 
-def transform_one_sample_2_feature(device,
-                                   input_mode,
-                                   encoder,
-                                   batch_convecter,
-                                   row):
+def transform_one_sample_2_feature(
+        device,
+        input_mode,
+        encoder,
+        batch_convecter,
+        row
+):
     batch_info = []
-    if input_mode in ["pair"]:
-        en = encoder.encode_pair(row[0],
-                                 row[1],
-                                 row[2],
-                                 row[3],
-                                 row[4],
-                                 row[5],
-                                 vector_filename_a=None,
-                                 vector_filename_b=None,
-                                 matrix_filename_a=None,
-                                 matrix_filename_b=None,
-                                 label=None
-                                 )
+    if input_mode == "pair":
+        en = encoder.encode_pair(
+            row[0],
+            row[1],
+            row[2],
+            row[3],
+            row[4],
+            row[5],
+            vector_filename_a=None,
+            vector_filename_b=None,
+            matrix_filename_a=None,
+            matrix_filename_b=None,
+            label=None
+
+        )
         en_list = en
         batch_info.append([row[0], row[1], row[4], row[5]])
         seq_lens = [len(row[4]), len(row[5])]
@@ -77,32 +81,37 @@ def transform_one_sample_2_feature(device,
         cur_seq = row[2]
         if batch_convecter.task_level_type not in ["seq_level", "seq-level"]:
             split_seqs = []
-            max_len = 1024 - int(batch_convecter.prepend_bos) - int(batch_convecter.append_eos)
+            # segment for long sequence in token-level task
+            max_len = 10240 - int(batch_convecter.prepend_bos) - int(batch_convecter.append_eos)
             while max_len < len(cur_seq):
                 split_seqs.append(cur_seq[:max_len])
                 seq_lens.append(max_len)
                 cur_seq = cur_seq[max_len:]
-
             if len(cur_seq) > 0:
                 split_seqs.append(cur_seq)
                 seq_lens.append(len(cur_seq))
+
             for split_seq in split_seqs:
-                en = encoder.encode_single(row[0],
-                                           row[1],
-                                           split_seq,
-                                           vector_filename=None,
-                                           matrix_filename=None,
-                                           label=None
-                                           )
+                en = encoder.encode_single(
+                    row[0],
+                    row[1],
+                    split_seq,
+                    vector_filename=None,
+                    matrix_filename=None,
+                    label=None
+
+                )
                 en_list.append(en)
         else:
-            en = encoder.encode_single(row[0],
-                                       row[1],
-                                       row[2],
-                                       vector_filename=None,
-                                       matrix_filename=None,
-                                       label=None
-                                       )
+            en = encoder.encode_single(
+                row[0],
+                row[1],
+                row[2],
+                vector_filename=None,
+                matrix_filename=None,
+                label=None
+
+            )
             en_list = en
             seq_lens = len(row[2])
             if "matrix" in en and en["matrix"] is not None:
@@ -123,7 +132,9 @@ def transform_one_sample_2_feature(device,
 
 
 def predict_probs(args, encoder, batch_convecter, model, row):
+    model.to(torch.device("cpu"))
     batch_info, batch_features, seq_lens = transform_one_sample_2_feature(args.device, args.input_mode, encoder, batch_convecter, row)
+    model.to(args.device)
     if isinstance(batch_features, list):
         probs = []
         for cur_batch_features in batch_features:
@@ -360,14 +371,17 @@ def create_encoder_batch_convecter(model_args, seq_subword, seq_tokenizer):
             "trunc_type": model_args.trunc_type,
             "seq_max_length": model_args.seq_max_length,
             "atom_seq_max_length": None,
+            "prepend_bos": True,
+            "append_eos": True,
             "vector_dirpath": model_args.vector_dirpath,
             "matrix_dirpath": model_args.matrix_dirpath,
-            "matrix_add_special_token": model_args.matrix_add_special_token,
             "local_rank": model_args.gpu_id,
             "max_sentence_length": model_args.max_sentence_length if hasattr(model_args, "max_sentence_length") else None,
             "max_sentences": model_args.max_sentences if hasattr(model_args, "max_sentences") else None,
             "embedding_complete": model_args.embedding_complete,
             "embedding_complete_seg_overlap": model_args.embedding_complete_seg_overlap,
+            "matrix_add_special_token": model_args.matrix_add_special_token,
+            "matrix_embedding_exists": model_args.matrix_embedding_exists,
             "use_cpu": True if model_args.gpu_id < 0 else False
         }
     else:
@@ -381,19 +395,23 @@ def create_encoder_batch_convecter(model_args, seq_subword, seq_tokenizer):
             "trunc_type": model_args.trunc_type,
             "seq_max_length": model_args.seq_max_length,
             "atom_seq_max_length": None,
+            "prepend_bos": True,
+            "append_eos": True,
             "vector_dirpath": model_args.vector_dirpath,
             "matrix_dirpath": model_args.matrix_dirpath,
-            "matrix_add_special_token": model_args.matrix_add_special_token,
             "local_rank": model_args.gpu_id,
             "max_sentence_length": model_args.max_sentence_length if hasattr(model_args, "max_sentence_length") else None,
             "max_sentences": model_args.max_sentences if hasattr(model_args, "max_sentences") else None,
             "embedding_complete": model_args.embedding_complete,
             "embedding_complete_seg_overlap": model_args.embedding_complete_seg_overlap,
+            "matrix_add_special_token": model_args.matrix_add_special_token,
+            "matrix_embedding_exists": model_args.matrix_embedding_exists,
             "use_cpu": True if model_args.gpu_id < 0 else False
         }
     encoder = Encoder(**encoder_config)
 
     batch_converter = BatchConverter(
+        input_type=model_args.input_type if hasattr(model_args, "input_type") else False,
         task_level_type=model_args.task_level_type,
         label_size=model_args.label_size,
         output_mode=model_args.output_mode,
@@ -469,11 +487,11 @@ def run(
     model_args.dataset_name = dataset_name
     model_args.dataset_type = dataset_type
     model_args.task_type = task_type
-    model_args.task_level_type = task_level_type
     model_args.model_type = model_type
     model_args.input_type = input_type
     model_args.time_str = time_str
     model_args.step = step
+    model_args.task_level_type = task_level_type
     model_args.gpu_id = gpu_id
 
     if not hasattr(model_args, "embedding_complete"):
@@ -515,8 +533,25 @@ def run(
         trained_model = global_trained_model
 
     print("------After loaded the model:------")
+    
     device_memory(None if gpu_id == -1 else gpu_id)
     encoder, batch_convecter = create_encoder_batch_convecter(model_args, seq_subword, seq_tokenizer)
+
+    # embedding in advance
+    if not matrix_embedding_exists and gpu_id > -1:
+        # 先to cpu
+        trained_model.to(torch.device("cpu"))
+        assert model_args.emb_dir is not None
+        if not os.path.exists(model_args.emb_dir):
+            os.makedirs(model_args.emb_dir)
+        for item in sequences:
+            seq_id = item[0]
+            seq_type = item[1]
+            seq = item[2]
+            encoder.__get_embedding__(seq_id=seq_id, seq_type=seq_type, seq=seq, embedding_type="matrix" if "matrix" in input_type else "vector")
+        encoder.matrix_embedding_exists = True
+        # embedding 完之后to device
+        trained_model.to(model_args.device)
 
     label_list = load_labels(model_args.label_filepath)
     label_id_2_name = {idx: name for idx, name in enumerate(label_list)}
@@ -554,28 +589,24 @@ def run(
             seq_b = item[5]
             row = [seq_id_a, seq_id_b, seq_type_a, seq_type_b, seq_a, seq_b]
             if task_level_type in ["seq_level", "seq-level"] and task_type in ["multi_class", "multi-class"]:
-                cur_res = predict_func(
-                    model_args,
-                    encoder,
-                    batch_convecter,
-                    label_id_2_name,
-                    trained_model,
-                    row,
-                    topk=topk
-                )
+                cur_res = predict_func(model_args,
+                                       encoder,
+                                       batch_convecter,
+                                       label_id_2_name,
+                                       trained_model,
+                                       row,
+                                       topk=topk)
                 if topk is not None and topk > 1:
                     predicted_results.append([seq_id_a, seq_id_b, seq_a, seq_b, cur_res[0][4], cur_res[0][5], cur_res[0][6], cur_res[0][7]])
                 else:
                     predicted_results.append([seq_id_a, seq_id_b, seq_a, seq_b, cur_res[0][4], cur_res[0][5]])
             else:
-                cur_res = predict_func(
-                    model_args,
-                    encoder,
-                    batch_convecter,
-                    label_id_2_name,
-                    trained_model,
-                    row
-                )
+                cur_res = predict_func(model_args,
+                                       encoder,
+                                       batch_convecter,
+                                       label_id_2_name,
+                                       trained_model,
+                                       row)
                 predicted_results.append([seq_id_a, seq_id_b, seq_a, seq_b, cur_res[0][4], cur_res[0][5]])
     else:
         for item in sequences:
@@ -585,30 +616,29 @@ def run(
             row = [seq_id, seq_type, seq]
             if task_level_type in ["seq_level", "seq-level"] and task_type in ["multi_class", "multi-class"]:
                 # print("task_level_type: %s, task_type: %s" % (task_level_type, task_type))
-                cur_res = predict_func(
-                    model_args,
-                    encoder,
-                    batch_convecter,
-                    label_id_2_name,
-                    trained_model,
-                    row,
-                    topk=topk
-                )
+                cur_res = predict_func(model_args,
+                                       encoder,
+                                       batch_convecter,
+                                       label_id_2_name,
+                                       trained_model,
+                                       row,
+                                       topk=topk)
                 if topk is not None and topk > 1:
                     predicted_results.append([seq_id, seq, cur_res[0][2], cur_res[0][3], cur_res[0][4], cur_res[0][5]])
                 else:
                     predicted_results.append([seq_id, seq, cur_res[0][2], cur_res[0][3]])
             else:
-                cur_res = predict_func(
-                    model_args,
-                    encoder,
-                    batch_convecter,
-                    label_id_2_name,
-                    trained_model,
-                    row
-                )
+                cur_res = predict_func(model_args,
+                                       encoder,
+                                       batch_convecter,
+                                       label_id_2_name,
+                                       trained_model,
+                                       row)
                 predicted_results.append([seq_id, seq, cur_res[0][2], cur_res[0][3]])
     # torch.cuda.empty_cache()
+    # 删除embedding
+    if os.path.exists(model_args.emb_dir):
+        shutil.rmtree(model_args.emb_dir)
     return predicted_results
 
 
@@ -626,6 +656,7 @@ def run_args():
     parser.add_argument("--seq_id_b", default=None, type=str,  help="the seq id b")
     parser.add_argument("--seq_type_b", default=None, type=str, choices=["prot", "gene"], help="seq type b.")
     parser.add_argument("--seq_b", default=None, type=str,  help="the sequence b")
+
     # for many samples
     parser.add_argument("--input_file", default=None, type=str, 
                         help="the fasta or csv format file for single-seq model,"
@@ -637,12 +668,11 @@ def run_args():
     parser.add_argument("--matrix_embedding_exists", action="store_true",
                         help="the structural embedding is or not in advance. default: False")
     parser.add_argument("--emb_dir", default=None, type=str,
-                        help="the llm embedding save dir. default: None, not to save")
+                        help="the structural embedding save dir. default: None")
 
     # for trained model
-    parser.add_argument("--model_path", default=None, type=str, 
+    parser.add_argument("--model_path", default=None, type=str,
                         help="the model dir. default: None")
-
     parser.add_argument("--dataset_name", default=None, type=str, required=True,
                         help="the dataset name for model building.")
     parser.add_argument("--dataset_type", default=None, type=str, required=True, 
@@ -673,6 +703,7 @@ def run_args():
                              "None for multi-class classification or regression, default: 0.5.")
     parser.add_argument("--ground_truth_idx", default=None, type=int, 
                         help="the ground truth idx, when the input file contains")
+
     # for results(csv format, contain header)
     parser.add_argument("--save_path", default=None, type=str, help="the result save path")
     # for print info
@@ -687,7 +718,6 @@ if __name__ == "__main__":
     print("-" * 25 + "Run Args" + "-" * 25)
     print(args.__dict__)
     print("-" * 50)
-
     if args.input_file is not None:
         input_file_suffix = os.path.basename(args.input_file).split(".")[-1]
         if args.input_mode == "pair":
@@ -755,10 +785,10 @@ if __name__ == "__main__":
                         continue
                     # seq_id_a, seq_id_b, seq_type_a, seq_type_b, seq_a, seq_b
                     if not seq_type_is_match_seq(row[2], row[4]):
-                        print("Error! the input seq_a(seq_id_a=%s) not match its seq_type_a=%s: %s" % (row[0], row[2], row[4]))
+                        print("Error! the input seq_a(seq_id_a=%s) not match the seq_type_a=%s: %s" % (row[0], row[2], row[4]))
                         sys.exit(-1)
                     if not seq_type_is_match_seq(row[3], row[5]):
-                        print("Error! the input seq_a(seq_id_a=%s) not match its seq_type_a=%s: %s" % (row[1], row[3], row[5]))
+                        print("Error! the input seq_b(seq_id_b=%s) not match the seq_type_b=%s: %s" % (row[1], row[3], row[5]))
                         sys.exit(-1)
                     batch_data.append([row[0], row[1], row[2], row[3], row[4], row[5]])
                     if args.ground_truth_idx is not None and args.ground_truth_idx >= 0:
@@ -768,12 +798,12 @@ if __name__ == "__main__":
                         continue
                     if len(row) == 2:
                         if not seq_type_is_match_seq(args.seq_type, row[1]):
-                            print("Error! the input seq(seq_id=%s) not match its seq_type=%s: %s" % (row[0], args.seq_type, row[1]))
+                            print("Error! the input seq(seq_id=%s) not match the arg: --seq_type=%s: %s" % (row[0], args.seq_type, row[1]))
                             sys.exit(-1)
                         batch_data.append([row[0], args.seq_type, args.row[1]])
                     elif len(row) > 2:
                         if not seq_type_is_match_seq(row[1], row[2]):
-                            print("Error! the input seq(seq_id=%s) not match its seq_type=%s: %s" % (row[0], row[1], row[2]))
+                            print("Error! the input seq(seq_id=%s) not match the seq_type=%s: %s" % (row[0], row[1], row[2]))
                             sys.exit(-1)
                         if args.ground_truth_idx is not None and args.ground_truth_idx >= 0:
                             batch_ground_truth.append(row[args.ground_truth_idx])
@@ -880,9 +910,10 @@ if __name__ == "__main__":
         if not seq_type_is_match_seq(args.seq_type_b, args.seq_b):
             print("Error! the input seq_b(seq_id_b=%s) not match its seq_type_b=%s: %s" % (args.seq_id_b, args.seq_type_b, args.seq_b))
             sys.exit(-1)
-        data = [[args.seq_id_a, args.seq_id_b,
-                 args.seq_type_a, args.seq_type_b,
-                 args.seq_a, args.seq_b]]
+        data = [[
+            args.seq_id_a, args.seq_id_b,
+            args.seq_type_a, args.seq_type_b,
+            args.seq_a, args.seq_b]]
         results = run(
             data,
             args.llm_truncation_seq_length,

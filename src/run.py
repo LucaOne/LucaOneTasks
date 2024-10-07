@@ -307,6 +307,8 @@ def get_args():
     parser.add_argument("--matrix_add_special_token",  action="store_true", help="add specical token([CLS], [SEP]) embedding vector into embedding matrix of sequence")
     parser.add_argument("--embedding_complete",  action="store_true", help="when the seq len > inference_max_len, then the embedding matrix is completed by segment")
     parser.add_argument("--embedding_complete_seg_overlap",  action="store_true", help="overlap segement(overlap sliding window)")
+    parser.add_argument("--embedding_fixed_len_a_time", type=int, default=None,
+                        help="embedding_fixed_len_a_time")
 
     args = parser.parse_args()
     return args
@@ -671,7 +673,8 @@ def main():
             "max_sentence_length": args.max_sentence_length,
             "max_sentences": args.max_sentences,
             "embedding_complete": args.embedding_complete,
-            "embedding_complete_seg_overlap": args.embedding_complete_seg_overlap
+            "embedding_complete_seg_overlap": args.embedding_complete_seg_overlap,
+            "embedding_fixed_len_a_time": args.embedding_fixed_len_a_time
         }
     else:
         assert args.seq_max_length is not None
@@ -691,7 +694,8 @@ def main():
             "max_sentence_length": args.max_sentence_length,
             "max_sentences": args.max_sentences,
             "embedding_complete": args.embedding_complete,
-            "embedding_complete_seg_overlap": args.embedding_complete_seg_overlap
+            "embedding_complete_seg_overlap": args.embedding_complete_seg_overlap,
+            "embedding_fixed_len_a_time": args.embedding_fixed_len_a_time
         }
 
     # file row parser

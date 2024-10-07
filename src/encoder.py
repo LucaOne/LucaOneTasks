@@ -33,18 +33,21 @@ except ImportError as e:
     from src.llm.dnaberts.inference_embedding import predict_embedding as predict_embedding_dnaberts
 
 
-def complete_embedding_matrix(seq_id,
-                              seq_type,
-                              seq,
-                              truncation_seq_length,
-                              init_emb,
-                              llm_dirpath,
-                              trunc_type,
-                              embedding_type,
-                              matrix_add_special_token,
-                              embedding_complete,
-                              embedding_complete_seg_overlap,
-                              device):
+def complete_embedding_matrix(
+        seq_id,
+        seq_type,
+        seq,
+        truncation_seq_length,
+        init_emb,
+        llm_dirpath,
+        trunc_type,
+        embedding_type,
+        matrix_add_special_token,
+        embedding_complete,
+        embedding_complete_seg_overlap,
+        device,
+        use_cpu=False
+):
     if init_emb is not None and embedding_complete and ("representations" in embedding_type or "matrix" in embedding_type):
         ori_seq_len = min(len(seq), 10000)
         # 每次能处理这么长度
@@ -64,7 +67,8 @@ def complete_embedding_matrix(seq_id,
         append_emb = None
         if embedding_complete_seg_overlap:
             sliding_window = init_cur_segment_len // 2
-            print("Embedding Complete Seg Overlap: %r, ori seq len: %d, segment len: %d, init sliding windown: %d" % (embedding_complete_seg_overlap, ori_seq_len, init_cur_segment_len, sliding_window))
+            print("Embedding Complete Seg Overlap: %r, ori seq len: %d, segment len: %d, init sliding windown: %d" % (
+                embedding_complete_seg_overlap, ori_seq_len, init_cur_segment_len, sliding_window))
             while True:
                 print("updated window: %d" % sliding_window)
                 try:
@@ -77,14 +81,16 @@ def complete_embedding_matrix(seq_id,
                             last_end = min(pos_idx + sliding_window, ori_seq_len)
                             seg_seq = seq[pos_idx - sliding_window:last_end]
                             print("segment idx: %d, seg seq len: %d" % (seg_idx, len(seg_seq)))
-                            seg_emb, seg_processed_seq_len = predict_embedding_luca(llm_dirpath,
-                                                                                    [seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
-                                                                                    trunc_type,
-                                                                                    embedding_type,
-                                                                                    repr_layers=[-1],
-                                                                                    truncation_seq_length=truncation_seq_length,
-                                                                                    matrix_add_special_token=False,
-                                                                                    device=device)
+                            seg_emb, seg_processed_seq_len = predict_embedding_luca(
+                                llm_dirpath,
+                                [seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
+                                trunc_type,
+                                embedding_type,
+                                repr_layers=[-1],
+                                truncation_seq_length=truncation_seq_length,
+                                matrix_add_special_token=False,
+                                device=device if not use_cpu else torch.device("cpu")
+                            )
                             # 有seq overlap 所以要截取
                             if append_emb is None:
                                 append_emb = seg_emb[sliding_window:]
@@ -94,14 +100,16 @@ def complete_embedding_matrix(seq_id,
                             seg_idx += 1
                             remain = ori_seq_len - last_end
                             seg_seq = seq[ori_seq_len - 2 * sliding_window:ori_seq_len]
-                            seg_emb, seg_processed_seq_len = predict_embedding_luca(llm_dirpath,
-                                                                                    [seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
-                                                                                    trunc_type,
-                                                                                    embedding_type,
-                                                                                    repr_layers=[-1],
-                                                                                    truncation_seq_length=truncation_seq_length,
-                                                                                    matrix_add_special_token=False,
-                                                                                    device=device)
+                            seg_emb, seg_processed_seq_len = predict_embedding_luca(
+                                llm_dirpath,
+                                [seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
+                                trunc_type,
+                                embedding_type,
+                                repr_layers=[-1],
+                                truncation_seq_length=truncation_seq_length,
+                                matrix_add_special_token=False,
+                                device=device if not use_cpu else torch.device("cpu")
+                            )
                             # 有seq overlap 所以要截取
                             if append_emb is None:
                                 append_emb = seg_emb[-remain:]
@@ -114,14 +122,16 @@ def complete_embedding_matrix(seq_id,
                             seg_idx += 1
                             last_start = min(pos_idx - sliding_window, -ori_seq_len)
                             seg_seq = seq[last_start: pos_idx + sliding_window]
-                            seg_emb, seg_processed_seq_len = predict_embedding_luca(llm_dirpath,
-                                                                                    [seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
-                                                                                    trunc_type,
-                                                                                    embedding_type,
-                                                                                    repr_layers=[-1],
-                                                                                    truncation_seq_length=truncation_seq_length,
-                                                                                    matrix_add_special_token=False,
-                                                                                    device=device)
+                            seg_emb, seg_processed_seq_len = predict_embedding_luca(
+                                llm_dirpath,
+                                [seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
+                                trunc_type,
+                                embedding_type,
+                                repr_layers=[-1],
+                                truncation_seq_length=truncation_seq_length,
+                                matrix_add_special_token=False,
+                                device=device if not use_cpu else torch.device("cpu")
+                            )
                             # 有seq overlap 所以要截取
                             if append_emb is None:
                                 append_emb = seg_emb[:sliding_window]
@@ -131,14 +141,16 @@ def complete_embedding_matrix(seq_id,
                             seg_idx += 1
                             remain = last_start - ori_seq_len
                             seg_seq = seq[-ori_seq_len:-ori_seq_len + 2 * sliding_window]
-                            seg_emb, seg_processed_seq_len = predict_embedding_luca(llm_dirpath,
-                                                                                    [seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
-                                                                                    trunc_type,
-                                                                                    embedding_type,
-                                                                                    repr_layers=[-1],
-                                                                                    truncation_seq_length=truncation_seq_length,
-                                                                                    matrix_add_special_token=False,
-                                                                                    device=device)
+                            seg_emb, seg_processed_seq_len = predict_embedding_luca(
+                                llm_dirpath,
+                                [seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
+                                trunc_type,
+                                embedding_type,
+                                repr_layers=[-1],
+                                truncation_seq_length=truncation_seq_length,
+                                matrix_add_special_token=False,
+                                device=device if not use_cpu else torch.device("cpu")
+                            )
                             # 有seq overlap 所以要截取
                             if append_emb is None:
                                 append_emb = seg_emb[:remain]
@@ -163,14 +175,16 @@ def complete_embedding_matrix(seq_id,
                         seg_seq = seq[begin_seq_idx + seg_idx * cur_segment_len: begin_seq_idx + (seg_idx + 1) * cur_segment_len]
                         # print("segment idx: %d, seg_seq(%d): %s" % (seg_idx, len(seg_seq), seg_seq))
                         print("segment idx: %d, seg seq len: %d" % (seg_idx, len(seg_seq)))
-                        seg_emb, seg_processed_seq_len = predict_embedding_luca(llm_dirpath,
-                                                                                [seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
-                                                                                trunc_type,
-                                                                                embedding_type,
-                                                                                repr_layers=[-1],
-                                                                                truncation_seq_length=truncation_seq_length,
-                                                                                matrix_add_special_token=False,
-                                                                                device=device)
+                        seg_emb, seg_processed_seq_len = predict_embedding_luca(
+                            llm_dirpath,
+                            [seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
+                            trunc_type,
+                            embedding_type,
+                            repr_layers=[-1],
+                            truncation_seq_length=truncation_seq_length,
+                            matrix_add_special_token=False,
+                            device=device if not use_cpu else torch.device("cpu")
+                        )
 
                         if append_emb is None:
                             append_emb = seg_emb
@@ -186,14 +200,16 @@ def complete_embedding_matrix(seq_id,
                         really_len = (ori_seq_len - (segment_num - 1) * cur_segment_len)
                         # print("last seg seq: %s" % last_seg_seq)
                         print("last seg seq len: %d, really len: %d" % (len(last_seg_seq), really_len))
-                        last_seg_emb, last_seg_processed_seq_len = predict_embedding_luca(llm_dirpath,
-                                                                                          [seq_id + "_seg_%d" % (segment_num - 1), seq_type, last_seg_seq],
-                                                                                          trunc_type,
-                                                                                          embedding_type,
-                                                                                          repr_layers=[-1],
-                                                                                          truncation_seq_length=truncation_seq_length,
-                                                                                          matrix_add_special_token=False,
-                                                                                          device=device)
+                        last_seg_emb, last_seg_processed_seq_len = predict_embedding_luca(
+                            llm_dirpath,
+                            [seq_id + "_seg_%d" % (segment_num - 1), seq_type, last_seg_seq],
+                            trunc_type,
+                            embedding_type,
+                            repr_layers=[-1],
+                            truncation_seq_length=truncation_seq_length,
+                            matrix_add_special_token=False,
+                            device=device if not use_cpu else torch.device("cpu")
+                        )
                         last_seg_emb = last_seg_emb[-really_len:, :]
                         append_emb = np.concatenate((append_emb, last_seg_emb), axis=0)
                     else:
@@ -202,21 +218,28 @@ def complete_embedding_matrix(seq_id,
                         really_len = (ori_seq_len - (segment_num - 1) * cur_segment_len)
                         # print("first seg seq: %s" % first_seg_seq)
                         print("first seg seq len: %d, really len: %d" % (len(first_seg_seq), really_len))
-                        first_seg_emb, first_seg_processed_seq_len = predict_embedding_luca(llm_dirpath,
-                                                                                            [seq_id + "_seg_0", seq_type, first_seg_seq],
-                                                                                            trunc_type,
-                                                                                            embedding_type,
-                                                                                            repr_layers=[-1],
-                                                                                            truncation_seq_length=truncation_seq_length,
-                                                                                            matrix_add_special_token=False,
-                                                                                            device=device)
+                        first_seg_emb, first_seg_processed_seq_len = predict_embedding_luca(
+                            llm_dirpath,
+                            [seq_id + "_seg_0", seq_type, first_seg_seq],
+                            trunc_type,
+                            embedding_type,
+                            repr_layers=[-1],
+                            truncation_seq_length=truncation_seq_length,
+                            matrix_add_special_token=False,
+                            device=device if not use_cpu else torch.device("cpu")
+                        )
                         first_seg_emb = first_seg_emb[:really_len, :]
                         append_emb = np.concatenate((first_seg_emb, append_emb), axis=0)
                 except Exception as e:
                     append_emb = None
                 if append_emb is not None:
                     break
-                print("fail, change segment len: %d -> %d, change seg num: %d -> %d" % (cur_segment_len, int(cur_segment_len * 0.95), segment_num, int((ori_seq_len + cur_segment_len - 1) / cur_segment_len)))
+                print("fail, change segment len: %d -> %d, change seg num: %d -> %d" % (
+                    cur_segment_len,
+                    int(cur_segment_len * 0.95),
+                    segment_num,
+                    int((ori_seq_len + cur_segment_len - 1) / cur_segment_len)
+                ))
                 cur_segment_len = int(cur_segment_len * 0.95)
                 segment_num = int((ori_seq_len + cur_segment_len - 1) / cur_segment_len)
 
@@ -235,27 +258,32 @@ def complete_embedding_matrix(seq_id,
 
 
 class Encoder(object):
-    def __init__(self,
-                 llm_type,
-                 llm_dirpath,
-                 input_type,
-                 trunc_type,
-                 seq_max_length,
-                 atom_seq_max_length=None,
-                 prepend_bos=True,
-                 append_eos=True,
-                 vector_dirpath=None,
-                 matrix_dirpath=None,
-                 local_rank=-1,
-                 use_cpu=False,
-                 **kwargs):
-        print("------Encoder------")
+    def __init__(
+            self,
+            llm_type,
+            llm_dirpath,
+            input_type,
+            trunc_type,
+            seq_max_length,
+            atom_seq_max_length=None,
+            prepend_bos=True,
+            append_eos=True,
+            vector_dirpath=None,
+            matrix_dirpath=None,
+            local_rank=-1,
+            use_cpu=False,
+            embedding_fixed_len_a_time=None,
+            **kwargs
+    ):
+        print("-" * 25 + "Encoder" + "-" * 25)
         self.llm_type = llm_type
         self.llm_dirpath = llm_dirpath
         self.input_type = input_type
         self.trunc_type = trunc_type
         self.seq_max_length = seq_max_length
         self.atom_seq_max_length = atom_seq_max_length
+        self.embedding_fixed_len_a_time = embedding_fixed_len_a_time
+
         # vector
         if vector_dirpath and "#" in vector_dirpath:
             self.vector_dirpath = list(vector_dirpath.split("#"))
@@ -318,10 +346,12 @@ class Encoder(object):
         print("Encoder: matrix_add_special_token=%r, "
               "embedding_complete=%r, "
               "embedding_complete_seg_overlap=%r, "
+              "embedding_fixed_len_a_time=%d, "
               "matrix_embedding_exists=%r" %
               (self.matrix_add_special_token,
                self.embedding_complete,
                self.embedding_complete_seg_overlap,
+               self.embedding_fixed_len_a_time if self.embedding_fixed_len_a_time else -1,
                self.matrix_embedding_exists)
               )
         print("-" * 50)
@@ -424,35 +454,41 @@ class Encoder(object):
                         cur_seq_len = len(cur_seq)
                         truncation_seq_length = self.seq_max_length - int(self.prepend_bos) - int(self.append_eos)
                         while True:
-                            cur_embedding_info, cur_processed_seq = predict_embedding_esm([seq_id, cur_seq],
-                                                                                          self.trunc_type,
-                                                                                          embedding_type,
-                                                                                          repr_layers=[-1],
-                                                                                          truncation_seq_length=truncation_seq_length,
-                                                                                          matrix_add_special_token=self.matrix_add_special_token,
-                                                                                          device=self.device)
+                            cur_embedding_info, cur_processed_seq = predict_embedding_esm(
+                                [seq_id, cur_seq],
+                                self.trunc_type,
+                                embedding_type,
+                                repr_layers=[-1],
+                                truncation_seq_length=truncation_seq_length,
+                                matrix_add_special_token=self.matrix_add_special_token,
+                                device=self.device
+                            )
                             if cur_embedding_info is not None:
                                 break
-                            truncation_seq_length = (truncation_seq_length + int(self.prepend_bos) + int(self.append_eos)) * 0.9 - int(self.prepend_bos) - int(self.append_eos)
+                            truncation_seq_length = (truncation_seq_length + int(self.prepend_bos) + int(self.append_eos)) * 0.95 \
+                                                    - int(self.prepend_bos) - int(self.append_eos)
                             truncation_seq_length = int(truncation_seq_length)
-                            print("truncation_seq_length: %d->%d" % (cur_seq_len, truncation_seq_length))
+                            print("%s embedding error, truncation_seq_length: %d->%d" % (seq_id, cur_seq_len, truncation_seq_length))
                         embedding_info.append(cur_embedding_info)
                 else:
                     truncation_seq_length = self.seq_max_length - int(self.prepend_bos) - int(self.append_eos)
                     cur_seq_len = len(seq)
                     while True:
-                        embedding_info, processed_seq = predict_embedding_esm([seq_id, seq],
-                                                                              self.trunc_type,
-                                                                              embedding_type,
-                                                                              repr_layers=[-1],
-                                                                              truncation_seq_length=truncation_seq_length,
-                                                                              matrix_add_special_token=self.matrix_add_special_token,
-                                                                              device=self.device)
+                        embedding_info, processed_seq = predict_embedding_esm(
+                            [seq_id, seq],
+                            self.trunc_type,
+                            embedding_type,
+                            repr_layers=[-1],
+                            truncation_seq_length=truncation_seq_length,
+                            matrix_add_special_token=self.matrix_add_special_token,
+                            device=self.device
+                        )
                         if embedding_info is not None:
                             break
-                        truncation_seq_length = (truncation_seq_length + int(self.prepend_bos) + int(self.append_eos)) * 0.9 - int(self.prepend_bos) - int(self.append_eos)
+                        truncation_seq_length = (truncation_seq_length + int(self.prepend_bos) + int(self.append_eos)) * 0.95 \
+                                                - int(self.prepend_bos) - int(self.append_eos)
                         truncation_seq_length = int(truncation_seq_length)
-                        print("truncation_seq_length: %d->%d" % (cur_seq_len, truncation_seq_length))
+                        print("%s embedding error, truncation_seq_length: %d->%d" % (seq_id, cur_seq_len, truncation_seq_length))
             elif "dnaberts" in self.llm_type and "gene" in seq_type:
                 if seq_type == "multi_gene":
                     embedding_info = []
@@ -466,38 +502,41 @@ class Encoder(object):
                         cur_seq_len = len(cur_seq)
                         truncation_seq_length = self.seq_max_length - int(self.prepend_bos) - int(self.append_eos)
                         while True:
-                            cur_embedding_info, cur_processed_seq = predict_embedding_dnaberts([seq_id, cur_seq],
-                                                                                               self.trunc_type,
-                                                                                               embedding_type,
-                                                                                               repr_layers=[-1],
-                                                                                               truncation_seq_length=truncation_seq_length,
-                                                                                               matrix_add_special_token=self.matrix_add_special_token,
-                                                                                               device=self.device)
-
-
+                            cur_embedding_info, cur_processed_seq = predict_embedding_dnaberts(
+                                [seq_id, cur_seq],
+                                self.trunc_type,
+                                embedding_type,
+                                repr_layers=[-1],
+                                truncation_seq_length=truncation_seq_length,
+                                matrix_add_special_token=self.matrix_add_special_token,
+                                device=self.device
+                            )
                             if cur_embedding_info is not None:
                                 break
-                            truncation_seq_length = (truncation_seq_length + int(self.prepend_bos) + int(self.append_eos)) * 0.9 - int(self.prepend_bos) - int(self.append_eos)
+                            truncation_seq_length = (truncation_seq_length + int(self.prepend_bos) + int(self.append_eos)) * 0.95 \
+                                                    - int(self.prepend_bos) - int(self.append_eos)
                             truncation_seq_length = int(truncation_seq_length)
-                            print("truncation_seq_length: %d->%d" % (cur_seq_len, truncation_seq_length))
+                            print("%s embedding error, truncation_seq_length: %d->%d" % (seq_id, cur_seq_len, truncation_seq_length))
                         embedding_info.append(cur_embedding_info)
                 else:
                     cur_seq_len = len(seq)
                     truncation_seq_length = self.seq_max_length - int(self.prepend_bos) - int(self.append_eos)
                     while True:
-                        embedding_info, processed_seq = predict_embedding_dnaberts([seq_id, seq],
-                                                                                   self.trunc_type,
-                                                                                   embedding_type,
-                                                                                   repr_layers=[-1],
-                                                                                   truncation_seq_length=truncation_seq_length,
-                                                                                   matrix_add_special_token=self.matrix_add_special_token,
-                                                                                   device=self.device)
-
+                        embedding_info, processed_seq = predict_embedding_dnaberts(
+                            [seq_id, seq],
+                            self.trunc_type,
+                            embedding_type,
+                            repr_layers=[-1],
+                            truncation_seq_length=truncation_seq_length,
+                            matrix_add_special_token=self.matrix_add_special_token,
+                            device=self.device
+                        )
                         if embedding_info is not None:
                             break
-                        truncation_seq_length = (truncation_seq_length + int(self.prepend_bos) + int(self.append_eos)) * 0.9 - int(self.prepend_bos) - int(self.append_eos)
+                        truncation_seq_length = (truncation_seq_length + int(self.prepend_bos) + int(self.append_eos)) * 0.95 \
+                                                - int(self.prepend_bos) - int(self.append_eos)
                         truncation_seq_length = int(truncation_seq_length)
-                        print("truncation_seq_length: %d->%d" % (cur_seq_len, truncation_seq_length))
+                        print("%s embedding error, truncation_seq_length: %d->%d" % (seq_id, cur_seq_len, truncation_seq_length))
             elif ("dnabert2" in self.llm_type or "dnabert" in self.llm_type) and "gene" in seq_type:
                 if seq_type == "multi_gene":
                     embedding_info = []
@@ -511,38 +550,43 @@ class Encoder(object):
                         cur_seq_len = len(cur_seq)
                         truncation_seq_length = self.seq_max_length - int(self.prepend_bos) - int(self.append_eos)
                         while True:
-                            cur_embedding_info, cur_processed_seq = predict_embedding_dnabert2([seq_id, cur_seq],
-                                                                                               self.trunc_type,
-                                                                                               embedding_type,
-                                                                                               repr_layers=[-1],
-                                                                                               truncation_seq_length=truncation_seq_length,
-                                                                                               matrix_add_special_token=self.matrix_add_special_token,
-                                                                                               device=self.device)
-
+                            cur_embedding_info, cur_processed_seq = predict_embedding_dnabert2(
+                                [seq_id, cur_seq],
+                                self.trunc_type,
+                                embedding_type,
+                                repr_layers=[-1],
+                                truncation_seq_length=truncation_seq_length,
+                                matrix_add_special_token=self.matrix_add_special_token,
+                                device=self.device
+                            )
 
                             if cur_embedding_info is not None:
                                 break
-                            truncation_seq_length = (truncation_seq_length + int(self.prepend_bos) + int(self.append_eos)) * 0.9 - int(self.prepend_bos) - int(self.append_eos)
+                            truncation_seq_length = (truncation_seq_length + int(self.prepend_bos) + int(self.append_eos)) * 0.95 \
+                                                    - int(self.prepend_bos) - int(self.append_eos)
                             truncation_seq_length = int(truncation_seq_length)
-                            print("truncation_seq_length: %d->%d" % (cur_seq_len, truncation_seq_length))
+                            print("%s embedding error, truncation_seq_length: %d->%d" % (seq_id, cur_seq_len, truncation_seq_length))
                         embedding_info.append(cur_embedding_info)
                 else:
                     cur_seq_len = len(seq)
                     truncation_seq_length = self.seq_max_length - int(self.prepend_bos) - int(self.append_eos)
                     while True:
-                        embedding_info, processed_seq = predict_embedding_dnabert2([seq_id, seq],
-                                                                                   self.trunc_type,
-                                                                                   embedding_type,
-                                                                                   repr_layers=[-1],
-                                                                                   truncation_seq_length=truncation_seq_length,
-                                                                                   matrix_add_special_token=self.matrix_add_special_token,
-                                                                                   device=self.device)
+                        embedding_info, processed_seq = predict_embedding_dnabert2(
+                            [seq_id, seq],
+                            self.trunc_type,
+                            embedding_type,
+                            repr_layers=[-1],
+                            truncation_seq_length=truncation_seq_length,
+                            matrix_add_special_token=self.matrix_add_special_token,
+                            device=self.device
+                        )
 
                         if embedding_info is not None:
                             break
-                        truncation_seq_length = (truncation_seq_length + int(self.prepend_bos) + int(self.append_eos)) * 0.9 - int(self.prepend_bos) - int(self.append_eos)
+                        truncation_seq_length = (truncation_seq_length + int(self.prepend_bos) + int(self.append_eos)) * 0.95 \
+                                                - int(self.prepend_bos) - int(self.append_eos)
                         truncation_seq_length = int(truncation_seq_length)
-                        print("truncation_seq_length: %d->%d" % (cur_seq_len, truncation_seq_length))
+                        print("%s embedding error, truncation_seq_length: %d->%d" % (seq_id, cur_seq_len, truncation_seq_length))
             elif "molecule" in seq_type:
                 # to do
                 pass
@@ -565,32 +609,97 @@ class Encoder(object):
                             truncation_seq_length = min(cur_seq_len, truncation_seq_length)
                         cur_seq_type = "gene" if seq_type == "multi_gene" else "prot"
                         while True:
-                            cur_embedding_info, cur_processed_seq = predict_embedding_luca(
-                                self.llm_dirpath,
-                                [seq_id, cur_seq_type, cur_seq],
-                                self.trunc_type,
-                                embedding_type,
-                                repr_layers=[-1],
-                                truncation_seq_length=truncation_seq_length,
-                                matrix_add_special_token=self.matrix_add_special_token,
-                                device=self.device
-                            )
-                            if cur_embedding_info is not None:
-                                cur_embedding_info = complete_embedding_matrix(seq_id,
-                                                                               cur_seq_type,
-                                                                               cur_seq,
-                                                                               truncation_seq_length,
-                                                                               cur_embedding_info,
-                                                                               self.llm_dirpath,
-                                                                               self.trunc_type,
-                                                                               embedding_type,
-                                                                               self.matrix_add_special_token,
-                                                                               self.embedding_complete,
-                                                                               self.embedding_complete_seg_overlap,
-                                                                               self.device)
-                                break
+                            # 设置了一次性推理长度
+                            if self.embedding_fixed_len_a_time and self.embedding_fixed_len_a_time > 0:
+                                cur_embedding_info, cur_processed_seq = predict_embedding_luca(
+                                    self.llm_dirpath,
+                                    [seq_id, cur_seq_type, cur_seq],
+                                    self.trunc_type,
+                                    embedding_type,
+                                    repr_layers=[-1],
+                                    truncation_seq_length=self.embedding_fixed_len_a_time,
+                                    matrix_add_special_token=self.matrix_add_special_token,
+                                    device=self.device
+                                )
+                                use_cpu = False
+                                if cur_embedding_info is None:
+                                    cur_embedding_info, cur_processed_seq = predict_embedding_luca(
+                                        self.llm_dirpath,
+                                        [seq_id, cur_seq_type, cur_seq],
+                                        self.trunc_type,
+                                        embedding_type,
+                                        repr_layers=[-1],
+                                        truncation_seq_length=self.embedding_fixed_len_a_time,
+                                        matrix_add_special_token=self.matrix_add_special_token,
+                                        device=torch.device("cpu")
+                                    )
+                                    use_cpu = True
 
-                            truncation_seq_length = (truncation_seq_length + int(self.prepend_bos) + int(self.append_eos)) * 0.9 - int(self.prepend_bos) - int(self.append_eos)
+                                if cur_embedding_info is not None and hasattr(self, "embedding_complete") \
+                                        and self.embedding_complete and cur_seq_len > self.embedding_fixed_len_a_time:
+                                    cur_embedding_info = complete_embedding_matrix(
+                                        seq_id,
+                                        cur_seq_type,
+                                        cur_seq,
+                                        self.embedding_fixed_len_a_time,
+                                        cur_embedding_info,
+                                        self.llm_dirpath,
+                                        self.trunc_type,
+                                        embedding_type,
+                                        self.matrix_add_special_token,
+                                        self.embedding_complete,
+                                        self.embedding_complete_seg_overlap,
+                                        self.device,
+                                        use_cpu=use_cpu
+                                    )
+                            else:
+                                cur_embedding_info, cur_processed_seq = predict_embedding_luca(
+                                    self.llm_dirpath,
+                                    [seq_id, cur_seq_type, cur_seq],
+                                    self.trunc_type,
+                                    embedding_type,
+                                    repr_layers=[-1],
+                                    truncation_seq_length=truncation_seq_length,
+                                    matrix_add_special_token=self.matrix_add_special_token,
+                                    device=self.device
+                                )
+                                use_cpu = False
+                                if cur_embedding_info is None:
+                                    cur_embedding_info, cur_processed_seq = predict_embedding_luca(
+                                        self.llm_dirpath,
+                                        [seq_id, cur_seq_type, cur_seq],
+                                        self.trunc_type,
+                                        embedding_type,
+                                        repr_layers=[-1],
+                                        truncation_seq_length=truncation_seq_length,
+                                        matrix_add_special_token=self.matrix_add_special_token,
+                                        device=torch.device("cpu")
+                                    )
+                                    use_cpu = True
+
+                                if cur_embedding_info is not None and hasattr(self, "embedding_complete") \
+                                        and self.embedding_complete and cur_seq_len > truncation_seq_length:
+                                    cur_embedding_info = complete_embedding_matrix(
+                                        seq_id,
+                                        cur_seq_type,
+                                        cur_seq,
+                                        truncation_seq_length,
+                                        cur_embedding_info,
+                                        self.llm_dirpath,
+                                        self.trunc_type,
+                                        embedding_type,
+                                        self.matrix_add_special_token,
+                                        self.embedding_complete,
+                                        self.embedding_complete_seg_overlap,
+                                        self.device,
+                                        use_cpu=use_cpu
+                                    )
+                            if use_cpu:
+                                print("use_cpu: %r" % use_cpu)
+                            if cur_embedding_info is not None:
+                                break
+                            truncation_seq_length = (truncation_seq_length + int(self.prepend_bos) + int(self.append_eos)) * 0.95 \
+                                                    - int(self.prepend_bos) - int(self.append_eos)
                             truncation_seq_length = int(truncation_seq_length)
                             print("truncation_seq_length: %d->%s" % (cur_seq_len, truncation_seq_length))
                         embedding_info.append(cur_embedding_info)
@@ -603,16 +712,74 @@ class Encoder(object):
                         truncation_seq_length = self.seq_max_length - int(self.prepend_bos) - int(self.append_eos)
                         truncation_seq_length = min(cur_seq_len, truncation_seq_length)
                     while True:
-                        embedding_info, processed_seq = predict_embedding_luca(self.llm_dirpath,
-                                                                               [seq_id, seq_type, seq],
-                                                                               self.trunc_type,
-                                                                               embedding_type,
-                                                                               repr_layers=[-1],
-                                                                               truncation_seq_length=truncation_seq_length,
-                                                                               matrix_add_special_token=self.matrix_add_special_token,
-                                                                               device=self.device)
-                        if embedding_info is not None:
-                            if hasattr(self, "embedding_complete") and self.embedding_complete:
+                        # 设置了一次性推理长度
+                        if self.embedding_fixed_len_a_time and self.embedding_fixed_len_a_time > 0:
+                            embedding_info, processed_seq = predict_embedding_luca(
+                                self.llm_dirpath,
+                                [seq_id, seq_type, seq],
+                                self.trunc_type,
+                                embedding_type,
+                                repr_layers=[-1],
+                                truncation_seq_length=self.embedding_fixed_len_a_time,
+                                matrix_add_special_token=self.matrix_add_special_token,
+                                device=self.device
+                            )
+                            use_cpu = False
+                            if embedding_info is None:
+                                embedding_info, processed_seq = predict_embedding_luca(
+                                    self.llm_dirpath,
+                                    [seq_id, seq_type, seq],
+                                    self.trunc_type,
+                                    embedding_type,
+                                    repr_layers=[-1],
+                                    truncation_seq_length=self.embedding_fixed_len_a_time,
+                                    matrix_add_special_token=self.matrix_add_special_token,
+                                    device=torch.device("cpu")
+                                )
+                                use_cpu = True
+                            if embedding_info is not None and \
+                                    hasattr(self, "embedding_complete") and self.embedding_complete and cur_seq_len > self.embedding_fixed_len_a_time:
+                                embedding_info = complete_embedding_matrix(
+                                    seq_id,
+                                    seq_type,
+                                    seq,
+                                    self.embedding_fixed_len_a_time,
+                                    embedding_info,
+                                    self.llm_dirpath,
+                                    self.trunc_type,
+                                    embedding_type,
+                                    self.matrix_add_special_token,
+                                    self.embedding_complete,
+                                    self.embedding_complete_seg_overlap,
+                                    self.device,
+                                    use_cpu=use_cpu
+                                )
+                        else:
+                            embedding_info, processed_seq = predict_embedding_luca(
+                                self.llm_dirpath,
+                                [seq_id, seq_type, seq],
+                                self.trunc_type,
+                                embedding_type,
+                                repr_layers=[-1],
+                                truncation_seq_length=truncation_seq_length,
+                                matrix_add_special_token=self.matrix_add_special_token,
+                                device=self.device
+                            )
+                            use_cpu = False
+                            if embedding_info is None:
+                                embedding_info, processed_seq = predict_embedding_luca(
+                                    self.llm_dirpath,
+                                    [seq_id, seq_type, seq],
+                                    self.trunc_type,
+                                    embedding_type,
+                                    repr_layers=[-1],
+                                    truncation_seq_length=truncation_seq_length,
+                                    matrix_add_special_token=self.matrix_add_special_token,
+                                    device=torch.device("cpu")
+                                )
+                                use_cpu = True
+                            if embedding_info is not None and \
+                                    hasattr(self, "embedding_complete") and self.embedding_complete and cur_seq_len > truncation_seq_length:
                                 embedding_info = complete_embedding_matrix(
                                     seq_id,
                                     seq_type,
@@ -625,13 +792,17 @@ class Encoder(object):
                                     self.matrix_add_special_token,
                                     self.embedding_complete,
                                     self.embedding_complete_seg_overlap,
-                                    self.device
+                                    self.device,
+                                    use_cpu=use_cpu
                                 )
-
+                        if use_cpu:
+                            print("use_cpu: %r" % use_cpu)
+                        if embedding_info is not None:
                             break
-                        truncation_seq_length = (truncation_seq_length + int(self.prepend_bos) + int(self.append_eos)) * 0.9 - int(self.prepend_bos) - int(self.append_eos)
+                        truncation_seq_length = (truncation_seq_length + int(self.prepend_bos) + int(self.append_eos)) * 0.95 \
+                                                - int(self.prepend_bos) - int(self.append_eos)
                         truncation_seq_length = int(truncation_seq_length)
-                        print("truncation_seq_length: %d->%d" % (cur_seq_len, truncation_seq_length))
+                        print("%s embedding error, truncation_seq_length: %d->%d" % (seq_id, cur_seq_len, truncation_seq_length))
             else:
                 if seq_type in ["multi_gene", "multi_prot"]:
                     embedding_info = []
@@ -651,22 +822,97 @@ class Encoder(object):
                             truncation_seq_length = min(cur_seq_len, truncation_seq_length)
                         cur_seq_type = "gene" if seq_type == "multi_gene" else "prot"
                         while True:
-                            cur_embedding_info, cur_processed_seq = predict_embedding_luca(self.llm_dirpath,
-                                                                                           [seq_id, cur_seq_type, cur_seq],
-                                                                                           self.trunc_type,
-                                                                                           embedding_type,
-                                                                                           repr_layers=[-1],
-                                                                                           truncation_seq_length=truncation_seq_length,
-                                                                                           matrix_add_special_token=self.matrix_add_special_token,
-                                                                                           device=self.device)
+                            # 设置了一次性推理长度
+                            if self.embedding_fixed_len_a_time and self.embedding_fixed_len_a_time > 0:
+                                cur_embedding_info, cur_processed_seq = predict_embedding_luca(
+                                    self.llm_dirpath,
+                                    [seq_id, cur_seq_type, cur_seq],
+                                    self.trunc_type,
+                                    embedding_type,
+                                    repr_layers=[-1],
+                                    truncation_seq_length=self.embedding_fixed_len_a_time,
+                                    matrix_add_special_token=self.matrix_add_special_token,
+                                    device=self.device
+                                )
+                                use_cpu = False
+                                if cur_embedding_info is None:
+                                    cur_embedding_info, cur_processed_seq = predict_embedding_luca(
+                                        self.llm_dirpath,
+                                        [seq_id, cur_seq_type, cur_seq],
+                                        self.trunc_type,
+                                        embedding_type,
+                                        repr_layers=[-1],
+                                        truncation_seq_length=self.embedding_fixed_len_a_time,
+                                        matrix_add_special_token=self.matrix_add_special_token,
+                                        device=torch.device("cpu")
+                                    )
+                                    use_cpu = True
+                                if cur_embedding_info is not None and hasattr(self, "embedding_complete") \
+                                        and self.embedding_complete and cur_seq_len > self.embedding_fixed_len_a_time:
+                                    cur_embedding_info = complete_embedding_matrix(
+                                        seq_id,
+                                        cur_seq_type,
+                                        cur_seq,
+                                        self.embedding_fixed_len_a_time,
+                                        cur_embedding_info,
+                                        self.llm_dirpath,
+                                        self.trunc_type,
+                                        embedding_type,
+                                        self.matrix_add_special_token,
+                                        self.embedding_complete,
+                                        self.embedding_complete_seg_overlap,
+                                        self.device,
+                                        use_cpu=use_cpu
+                                    )
+                            else:
+                                cur_embedding_info, cur_processed_seq = predict_embedding_luca(
+                                    self.llm_dirpath,
+                                    [seq_id, cur_seq_type, cur_seq],
+                                    self.trunc_type,
+                                    embedding_type,
+                                    repr_layers=[-1],
+                                    truncation_seq_length=truncation_seq_length,
+                                    matrix_add_special_token=self.matrix_add_special_token,
+                                    device=self.device
+                                )
+                                use_cpu = False
+                                if cur_embedding_info is None:
+                                    cur_embedding_info, cur_processed_seq = predict_embedding_luca(
+                                        self.llm_dirpath,
+                                        [seq_id, cur_seq_type, cur_seq],
+                                        self.trunc_type,
+                                        embedding_type,
+                                        repr_layers=[-1],
+                                        truncation_seq_length=truncation_seq_length,
+                                        matrix_add_special_token=self.matrix_add_special_token,
+                                        device=torch.device("cpu")
+                                    )
+                                    use_cpu = True
+                                if cur_embedding_info is not None and hasattr(self, "embedding_complete") \
+                                        and self.embedding_complete and cur_seq_len > truncation_seq_length:
+                                    cur_embedding_info = complete_embedding_matrix(
+                                        seq_id,
+                                        cur_seq_type,
+                                        cur_seq,
+                                        truncation_seq_length,
+                                        cur_embedding_info,
+                                        self.llm_dirpath,
+                                        self.trunc_type,
+                                        embedding_type,
+                                        self.matrix_add_special_token,
+                                        self.embedding_complete,
+                                        self.embedding_complete_seg_overlap,
+                                        self.device,
+                                        use_cpu=use_cpu
+                                    )
+                            if use_cpu:
+                                print("use_cpu: %r" % use_cpu)
                             if cur_embedding_info is not None:
-                                cur_embedding_info = complete_embedding_matrix(seq_id, cur_seq_type, cur_seq, truncation_seq_length, cur_embedding_info,
-                                                                               self.llm_dirpath, self.trunc_type, embedding_type, self.matrix_add_special_token, self.embedding_complete, self.embedding_complete_seg_overlap, self.device)
                                 break
-
-                            truncation_seq_length = (truncation_seq_length + int(self.prepend_bos) + int(self.append_eos)) * 0.9 - int(self.prepend_bos) - int(self.append_eos)
+                            truncation_seq_length = (truncation_seq_length + int(self.prepend_bos) + int(self.append_eos)) * 0.95 \
+                                                    - int(self.prepend_bos) - int(self.append_eos)
                             truncation_seq_length = int(truncation_seq_length)
-                            print("truncation_seq_length: %d->%d" % (cur_seq_len, truncation_seq_length))
+                            print("%s embedding error, truncation_seq_length: %d->%d" % (seq_id, cur_seq_len, truncation_seq_length))
                         embedding_info.append(cur_embedding_info)
                 else:
                     cur_seq_len = len(seq)
@@ -677,23 +923,97 @@ class Encoder(object):
                         truncation_seq_length = min(cur_seq_len, truncation_seq_length)
 
                     while True:
-                        embedding_info, processed_seq = predict_embedding_luca(self.llm_dirpath,
-                                                                               [seq_id, seq_type, seq],
-                                                                               self.trunc_type,
-                                                                               embedding_type,
-                                                                               repr_layers=[-1],
-                                                                               truncation_seq_length=truncation_seq_length,
-                                                                               matrix_add_special_token=self.matrix_add_special_token,
-                                                                               device=self.device)
+                        # 设置了一次性推理长度
+                        if self.embedding_fixed_len_a_time and self.embedding_fixed_len_a_time > 0:
+                            embedding_info, processed_seq = predict_embedding_luca(
+                                self.llm_dirpath,
+                                [seq_id, seq_type, seq],
+                                self.trunc_type,
+                                embedding_type,
+                                repr_layers=[-1],
+                                truncation_seq_length=self.embedding_fixed_len_a_time,
+                                matrix_add_special_token=self.matrix_add_special_token,
+                                device=self.device
+                            )
+                            use_cpu = False
+                            if embedding_info is None:
+                                embedding_info, processed_seq = predict_embedding_luca(
+                                    self.llm_dirpath,
+                                    [seq_id, seq_type, seq],
+                                    self.trunc_type,
+                                    embedding_type,
+                                    repr_layers=[-1],
+                                    truncation_seq_length=self.embedding_fixed_len_a_time,
+                                    matrix_add_special_token=self.matrix_add_special_token,
+                                    device=torch.device("cpu")
+                                )
+                                use_cpu = True
+                            if embedding_info is not None and hasattr(self, "embedding_complete") and self.embedding_complete \
+                                    and cur_seq_len > self.embedding_fixed_len_a_time:
+                                embedding_info = complete_embedding_matrix(
+                                    seq_id,
+                                    seq_type,
+                                    seq,
+                                    self.embedding_fixed_len_a_time,
+                                    embedding_info,
+                                    self.llm_dirpath,
+                                    self.trunc_type,
+                                    embedding_type,
+                                    self.matrix_add_special_token,
+                                    self.embedding_complete,
+                                    self.embedding_complete_seg_overlap,
+                                    self.device,
+                                    use_cpu=use_cpu
+                                )
+                        else:
+                            embedding_info, processed_seq = predict_embedding_luca(
+                                self.llm_dirpath,
+                                [seq_id, seq_type, seq],
+                                self.trunc_type,
+                                embedding_type,
+                                repr_layers=[-1],
+                                truncation_seq_length=truncation_seq_length,
+                                matrix_add_special_token=self.matrix_add_special_token,
+                                device=self.device
+                            )
+                            use_cpu = False
+                            if embedding_info is None:
+                                embedding_info, processed_seq = predict_embedding_luca(
+                                    self.llm_dirpath,
+                                    [seq_id, seq_type, seq],
+                                    self.trunc_type,
+                                    embedding_type,
+                                    repr_layers=[-1],
+                                    truncation_seq_length=truncation_seq_length,
+                                    matrix_add_special_token=self.matrix_add_special_token,
+                                    device=torch.device("cpu")
+                                )
+                                use_cpu = True
+                            if embedding_info is not None and hasattr(self, "embedding_complete") and self.embedding_complete \
+                                    and cur_seq_len > truncation_seq_length:
+                                embedding_info = complete_embedding_matrix(
+                                    seq_id,
+                                    seq_type,
+                                    seq,
+                                    truncation_seq_length,
+                                    embedding_info,
+                                    self.llm_dirpath,
+                                    self.trunc_type,
+                                    embedding_type,
+                                    self.matrix_add_special_token,
+                                    self.embedding_complete,
+                                    self.embedding_complete_seg_overlap,
+                                    self.device,
+                                    use_cpu=use_cpu
+                                )
+                        if use_cpu:
+                            print("use_cpu: %r" % use_cpu)
                         if embedding_info is not None:
-                            if hasattr(self, "embedding_complete") and self.embedding_complete:
-                                embedding_info = complete_embedding_matrix(seq_id, seq_type, seq, truncation_seq_length, embedding_info,
-                                                                           self.llm_dirpath, self.trunc_type, embedding_type, self.matrix_add_special_token, self.embedding_complete, self.embedding_complete_seg_overlap, self.device)
-
                             break
-                        truncation_seq_length = (truncation_seq_length + int(self.prepend_bos) + int(self.append_eos)) * 0.9 - int(self.prepend_bos) - int(self.append_eos)
+                        truncation_seq_length = (truncation_seq_length + int(self.prepend_bos) + int(self.append_eos)) * 0.95 \
+                                                - int(self.prepend_bos) - int(self.append_eos)
                         truncation_seq_length = int(truncation_seq_length)
-                        print("truncation_seq_length: %d->%d" % (cur_seq_len, truncation_seq_length))
+                        print("%s embedding error, truncation_seq_length: %d->%d" % (seq_id, cur_seq_len, truncation_seq_length))
             if embedding_type in ["bos", "vector"] and self.vector_dirpath is not None \
                     or embedding_type not in ["bos", "vector"] and self.matrix_dirpath is not None:
                 emb_filename = calc_emb_filename_by_seq_id(seq_id=seq_id, embedding_type=embedding_type)
@@ -706,13 +1026,15 @@ class Encoder(object):
                 self.seq_id_2_emb_filename[seq_id] = emb_filename
         return embedding_info
 
-    def encode_single(self,
-                      seq_id,
-                      seq_type,
-                      seq,
-                      vector_filename=None,
-                      matrix_filename=None,
-                      label=None):
+    def encode_single(
+            self,
+            seq_id,
+            seq_type,
+            seq,
+            vector_filename=None,
+            matrix_filename=None,
+            label=None
+    ):
         seq_type = seq_type.strip().lower()
         # for embedding vector
         vector = None
@@ -784,19 +1106,21 @@ class Encoder(object):
             "label": label
         }
 
-    def encode_pair(self,
-                    seq_id_a,
-                    seq_id_b,
-                    seq_type_a,
-                    seq_type_b,
-                    seq_a,
-                    seq_b,
-                    vector_filename_a=None,
-                    vector_filename_b=None,
-                    matrix_filename_a=None,
-                    matrix_filename_b=None,
-                    label=None
-                    ):
+    def encode_pair(
+            self,
+            seq_id_a,
+            seq_id_b,
+            seq_type_a,
+            seq_type_b,
+            seq_a,
+            seq_b,
+            vector_filename_a=None,
+            vector_filename_b=None,
+            matrix_filename_a=None,
+            matrix_filename_b=None,
+            label=None
+
+    ):
         seq_type_a = seq_type_a.strip().lower()
         seq_type_b = seq_type_b.strip().lower()
         # for embedding vector

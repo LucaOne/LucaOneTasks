@@ -119,46 +119,7 @@ When downloading automatically failed, you can manually download:
 Copy the **TrainedCheckPoint Files(`models/` + `logs/`)** from <href> http://47.93.21.181/lucaone/TrainedCheckPoint/* </href> into the directory `./llm/`
 
 
-## 5. Usage of Downstream Models Inference
-The <a href='http://47.93.21.181/lucaone/DownstreamTasksTrainedModels/'> FTP</a> includes the trained models of 10 downstream tasks(presented in the paper, all metrics in `TableS5`), all these trained models are based on LucaOne's embedding.        
-Use the script `src/predict.py` or `src/predict.sh` to load the trained model and predict.
-
-**Notice**    
-The project will download automatically Trained-CheckPoint of all downstream tasks from **FTP**.
-
-When downloading automatically failed, you can manually download:
-
-Copy the **DownstreamTasksTrainedModels Files(`models/` + `logs/`)** from <href> http://47.93.21.181/lucaone/DownstreamTasksTrainedModels/ </href> into the project `LucaOneTasks/`
-
-
-The shell script of all downstream task models for inference in `LucaOneTasks/src/predict.sh`
-
-```shell 
-cd LucaOneTasks/src/
-# input file format(csv, the first row is csv-header), Required columns: seq_id_a, seq_id_b, seq_type_a, seq_type_b, seq_a, seq_b
-# seq_type_a must be gene, seq_type_a must be prot
-export CUDA_VISIBLE_DEVICES="0,1,2,3"
-python predict.py \
-    --input_file ../test/CentralDogma/CentralDogma_prediction.csv \
-    --llm_truncation_seq_length 4096 \
-    --model_path .. \
-    --save_path ../predicts/CentralDogma/CentralDogma_prediction_results.csv \
-    --dataset_name CentralDogma \
-    --dataset_type gene_protein \
-    --task_type binary_class \
-    --task_level_type seq_level \
-    --model_type lucappi2 \
-    --input_type matrix \
-    --input_mode pair \
-    --time_str 20240406173806 \
-    --print_per_num 1000 \
-    --step 64000 \
-    --threshold 0.5 \
-    --gpu_id 0
-```
-
-
-## 6. Usage of LucaOne Embedding(also can use LucaOneApp project)      
+## 5. Usage of LucaOne Embedding(can also use LucaOneApp project)      
 Methods of using embedding:    
 In this project, the sequence is embedded during the training downstream task(`./src/encoder.py`).   
 
@@ -290,11 +251,49 @@ python get_embedding.py \
     * save_path: the saving dir for storing the embedding file.     
     * embedding_complete: When `embedding_complete` is set, `truncation_seq_length` is invalid. If the GPU memory is not enough to infer the entire sequence at once, it is used to determine whether to perform segmented completion (if this parameter is not used, 0.95*len is truncated each time until the CPU can process the length).
     * embedding_complete_seg_overlap: When `embedding_complete` is set, whether the method of overlap is applicable to segmentation(overlap sliding window)
+    * embedding_fixed_len_a_time: When the input sequence is too long for your GPU to complete the inference at once, you can specify the fixed length of the inference at once(default: None)    
     * gpu_id: the gpu id to use(-1 for cpu).  
 
 3) Optional parameters:      
     * id_idx & seq_idx: when the input file format is csv file, need to use `id_idx` and `seq_idx` to specify the column index in the csv (starting with 0).   
 
+## 6. Usage of Downstream Models Inference
+The <a href='http://47.93.21.181/lucaone/DownstreamTasksTrainedModels/'> FTP</a> includes the trained models of 10 downstream tasks(presented in the paper, all metrics in `TableS5`), all these trained models are based on LucaOne's embedding.        
+Use the script `src/predict.py` or `src/predict.sh` to load the trained model and predict.
+
+**Notice**    
+The project will download automatically Trained-CheckPoint of all downstream tasks from **FTP**.
+
+When downloading automatically failed, you can manually download:
+
+Copy the **DownstreamTasksTrainedModels Files(`models/` + `logs/`)** from <href> http://47.93.21.181/lucaone/DownstreamTasksTrainedModels/ </href> into the project `LucaOneTasks/`
+
+
+The shell script of all downstream task models for inference in `LucaOneTasks/src/predict.sh`
+
+```shell 
+cd LucaOneTasks/src/
+# input file format(csv, the first row is csv-header), Required columns: seq_id_a, seq_id_b, seq_type_a, seq_type_b, seq_a, seq_b
+# seq_type_a must be gene, seq_type_a must be prot
+export CUDA_VISIBLE_DEVICES="0,1,2,3"
+python predict.py \
+    --input_file ../test/CentralDogma/CentralDogma_prediction.csv \
+    --llm_truncation_seq_length 4096 \
+    --model_path .. \
+    --save_path ../predicts/CentralDogma/CentralDogma_prediction_results.csv \
+    --dataset_name CentralDogma \
+    --dataset_type gene_protein \
+    --task_type binary_class \
+    --task_level_type seq_level \
+    --model_type lucappi2 \
+    --input_type matrix \
+    --input_mode pair \
+    --time_str 20240406173806 \
+    --print_per_num 1000 \
+    --step 64000 \
+    --threshold 0.5 \
+    --gpu_id 0
+```
 
 ## 7. Downstream Tasks        
 The running scripts of 10 downstream tasks in three directories:      

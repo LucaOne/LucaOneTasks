@@ -1,5 +1,5 @@
 #!/bin/bash
-export CUDA_VISIBLE_DEVICES=0,1
+export CUDA_VISIBLE_DEVICES=0
 seed=1221
 
 # for dataset
@@ -77,8 +77,7 @@ pos_weight=2.0
 
 time_str=$(date "+%Y%m%d%H%M%S")
 cd ../../
-python -W ignore -m torch.distributed.launch --nnodes 1 --node_rank 0 --master_port=25687 --nproc_per_node=2 \
-  run.py \
+python run.py \
   --train_data_dir ../dataset/$DATASET_NAME/$DATASET_TYPE/$TASK_TYPE/train/ \
   --dev_data_dir ../dataset/$DATASET_NAME/$DATASET_TYPE/$TASK_TYPE/dev/ \
   --test_data_dir ../dataset/$DATASET_NAME/$DATASET_TYPE/$TASK_TYPE/test/ \
@@ -158,3 +157,4 @@ python -W ignore -m torch.distributed.launch --nnodes 1 --node_rank 0 --master_p
   --embedding_complete \
   --embedding_complete_seg_overlap \
   --embedding_fixed_len_a_time $embedding_fixed_len_a_time
+

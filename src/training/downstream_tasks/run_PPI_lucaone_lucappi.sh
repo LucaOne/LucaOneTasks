@@ -7,7 +7,7 @@ TASK_TYPE="binary_class"
 TASK_LEVEL_TYPE="seq_level"
 MODEL_TYPE="lucappi"
 CONFIG_NAME="ppi_config.json"
-# seq,vector,matrix,seq_matrix,seq_vector
+# channels: seq,vector,matrix,seq_matrix,seq_vector
 INPUT_TYPE="matrix"
 INPUT_MODE="pair"
 LABEL_TYPE="PPI"
@@ -28,6 +28,7 @@ VOCAB_NAME="gene_prot"
 BEST_METRIC_TYPE="acc"
 classifier_size=128
 batch_size=16
+# binary-class, multi-label: bce, multi-class: cce, regression: l1 or l2
 loss_type="bce"
 llm_type="lucaone_gplm"
 llm_task_level="token_level,span_level,seq_level,structure_level"
@@ -112,7 +113,7 @@ python run.py \
   --beta1 0.9 \
   --beta2 0.98 \
   --weight_decay 0.01 \
-  --save_steps 2000000000 \
+  --save_steps -1 \
   --logging_steps 200 \
   --matrix_encoder
 

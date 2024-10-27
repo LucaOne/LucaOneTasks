@@ -33,6 +33,9 @@ except ImportError as e:
     from src.llm.dnaberts.inference_embedding import predict_embedding as predict_embedding_dnaberts
 
 
+MAX_SEQ_LEN = 10240
+
+
 def complete_embedding_matrix(
         seq_id,
         seq_type,
@@ -49,7 +52,7 @@ def complete_embedding_matrix(
         use_cpu=False
 ):
     if init_emb is not None and embedding_complete and ("representations" in embedding_type or "matrix" in embedding_type):
-        ori_seq_len = min(len(seq), 10000)
+        ori_seq_len = min(len(seq), MAX_SEQ_LEN)
         # 每次能处理这么长度
         # print("init_emb:", init_emb.shape)
         cur_segment_len = init_emb.shape[0]
@@ -392,6 +395,9 @@ class Encoder(object):
                     wfp.flush()
 
         if embedding_info is None:
+            if self.matrix_embedding_exists:
+                print("seq_id: %s 's embedding file not exists in advance" % seq_id)
+                print(1/0)
             if "onehot" in self.llm_type:
                 if "multi_" in seq_type:
                     embedding_info = []
@@ -603,7 +609,7 @@ class Encoder(object):
                     for cur_seq in cur_seqs:
                         cur_seq_len = len(cur_seq)
                         if hasattr(self, "embedding_complete") and self.embedding_complete:
-                            truncation_seq_length = min(cur_seq_len, 10000)
+                            truncation_seq_length = min(cur_seq_len, MAX_SEQ_LEN)
                         else:
                             truncation_seq_length = self.seq_max_length - int(self.prepend_bos) - int(self.append_eos)
                             truncation_seq_length = min(cur_seq_len, truncation_seq_length)
@@ -706,7 +712,7 @@ class Encoder(object):
                 else:
                     cur_seq_len = len(seq)
                     if hasattr(self, "embedding_complete") and self.embedding_complete:
-                        truncation_seq_length = min(cur_seq_len, 10000)
+                        truncation_seq_length = min(cur_seq_len, MAX_SEQ_LEN)
                     else:
                         # to do
                         truncation_seq_length = self.seq_max_length - int(self.prepend_bos) - int(self.append_eos)
@@ -816,7 +822,7 @@ class Encoder(object):
                     for cur_seq in cur_seqs:
                         cur_seq_len = len(cur_seq)
                         if hasattr(self, "embedding_complete") and self.embedding_complete:
-                            truncation_seq_length = min(cur_seq_len, 10000)
+                            truncation_seq_length = min(cur_seq_len, MAX_SEQ_LEN)
                         else:
                             truncation_seq_length = self.seq_max_length - int(self.prepend_bos) - int(self.append_eos)
                             truncation_seq_length = min(cur_seq_len, truncation_seq_length)
@@ -917,7 +923,7 @@ class Encoder(object):
                 else:
                     cur_seq_len = len(seq)
                     if hasattr(self, "embedding_complete") and self.embedding_complete:
-                        truncation_seq_length = min(cur_seq_len, 10000)
+                        truncation_seq_length = min(cur_seq_len, MAX_SEQ_LEN)
                     else:
                         truncation_seq_length = self.seq_max_length - int(self.prepend_bos) - int(self.append_eos)
                         truncation_seq_length = min(cur_seq_len, truncation_seq_length)

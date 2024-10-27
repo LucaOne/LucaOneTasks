@@ -304,11 +304,17 @@ def get_args():
     parser.add_argument('--worker_num', default=0, type=int, help='worker number for the data loader.')
     parser.add_argument('--early_stop_epoch', default=-1, type=int, help='early stop epoch.')
 
-    parser.add_argument("--matrix_add_special_token",  action="store_true", help="add specical token([CLS], [SEP]) embedding vector into embedding matrix of sequence")
-    parser.add_argument("--embedding_complete",  action="store_true", help="when the seq len > inference_max_len, then the embedding matrix is completed by segment")
-    parser.add_argument("--embedding_complete_seg_overlap",  action="store_true", help="overlap segement(overlap sliding window)")
+    parser.add_argument("--matrix_embedding_exists",  action="store_true",
+                        help="whether the embedding exists")
+    parser.add_argument("--matrix_add_special_token",  action="store_true",
+                        help="add specical token([CLS], [SEP]) embedding vector into embedding matrix of sequence")
+    parser.add_argument("--embedding_complete",  action="store_true",
+                        help="when the seq len > inference_max_len, then the embedding matrix is completed by segment")
+    parser.add_argument("--embedding_complete_seg_overlap",  action="store_true",
+                        help="overlap segement(overlap sliding window)")
     parser.add_argument("--embedding_fixed_len_a_time", type=int, default=None,
-                        help="embedding_fixed_len_a_time")
+                        help="When the input sequence is too long for your GPU to complete the inference at once, you can specify the fixed length of the inference at once")
+
 
     args = parser.parse_args()
     return args
@@ -674,7 +680,8 @@ def main():
             "max_sentences": args.max_sentences,
             "embedding_complete": args.embedding_complete,
             "embedding_complete_seg_overlap": args.embedding_complete_seg_overlap,
-            "embedding_fixed_len_a_time": args.embedding_fixed_len_a_time
+            "embedding_fixed_len_a_time": args.embedding_fixed_len_a_time,
+            "matrix_embedding_exists": args.matrix_embedding_exists
         }
     else:
         assert args.seq_max_length is not None
@@ -695,7 +702,8 @@ def main():
             "max_sentences": args.max_sentences,
             "embedding_complete": args.embedding_complete,
             "embedding_complete_seg_overlap": args.embedding_complete_seg_overlap,
-            "embedding_fixed_len_a_time": args.embedding_fixed_len_a_time
+            "embedding_fixed_len_a_time": args.embedding_fixed_len_a_time,
+            "matrix_embedding_exists": args.matrix_embedding_exists
         }
 
     # file row parser

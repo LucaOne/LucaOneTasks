@@ -66,8 +66,10 @@ def train(args, train_dataloader, model_config, model, seq_tokenizer, parse_row_
 
     if args.logging_steps <= 0:
         args.logging_steps = (train_batch_total_num + args.gradient_accumulation_steps - 1) // args.gradient_accumulation_steps
+    '''
     if args.save_steps <= 0:
         args.save_steps = args.logging_steps
+    '''
 
     t_total = args.num_train_epochs * (train_batch_total_num + args.gradient_accumulation_steps - 1) // args.gradient_accumulation_steps
     if args.local_rank in [-1, 0]:
@@ -154,7 +156,7 @@ def train(args, train_dataloader, model_config, model, seq_tokenizer, parse_row_
             best_metric_value = 10000000.0
             best_metric_flag = False
         else: # argmax
-            best_metric_value = 0.0
+            best_metric_value = -1.0
         best_metric_model_info = {}
         run_begin_time = time.time()
         total_loss, logging_loss = 0.0, 0.0

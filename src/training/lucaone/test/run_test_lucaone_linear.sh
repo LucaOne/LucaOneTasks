@@ -1,15 +1,15 @@
 #!/bin/bash
-export CUDA_VISIBLE_DEVICES=7
+export CUDA_VISIBLE_DEVICES=0
 seed=1221
 
 # for dataset
-DATASET_NAME="ProtStab"
-DATASET_TYPE="protein"
+DATASET_NAME="Test"
+DATASET_TYPE="gene"
 
 # for task
-TASK_TYPE="regression"
+TASK_TYPE="binary_class"
 TASK_LEVEL_TYPE="seq_level"
-LABEL_TYPE="ProtStab"
+LABEL_TYPE="Test"
 
 # for input
 ## here only embedding matrix-channel
@@ -25,12 +25,12 @@ FUSION_TYPE="concat"
 dropout_prob=0.1
 fc_size=128
 classifier_size=$fc_size
-BEST_METRIC_TYPE="sp_statistic"
+BEST_METRIC_TYPE="f1"
 # binary-class, multi-label: bce, multi-class: cce, regression: l1 or l2
-loss_type="l2"
+loss_type="bce"
 
 # for sequence channel
-SEQ_MAX_LENGTH=64
+SEQ_MAX_LENGTH=10242
 hidden_size=1024
 num_attention_heads=8
 num_hidden_layers=4
@@ -40,23 +40,25 @@ VOCAB_NAME="gene_prot"
 
 # for embedding channel
 embedding_input_size=2560
-matrix_max_length=64
+matrix_max_length=10242
 # none, avg, max, value_attention
 MATRIX_POOLING_TYPE="value_attention"
+# When the input sequence is too long for your GPU to complete the inference at once, you can specify the fixed length of the inference at once
+embedding_fixed_len_a_time=4096
 # for llm
 llm_type="lucaone_gplm"
 llm_task_level="token_level,span_level,seq_level,structure_level"
 llm_version="v2.0"
 llm_time_str=20231125113045
-llm_step=5600000
+llm_step=17600000
 
 # for training
 ## max epochs
 num_train_epochs=50
 ## accumulation gradient steps
-gradient_accumulation_steps=1
+gradient_accumulation_steps=16
 # 间隔多少个step在log文件中写入信息（实际上是gradient_accumulation_steps与logging_steps的最小公倍数）
-logging_steps=200
+logging_steps=1000
 ## checkpoint的间隔step数。-1表示按照epoch粒度保存checkpoint
 save_steps=-1
 ## warmup_steps个step到达peak lr
@@ -65,14 +67,16 @@ warmup_steps=1000
 ## -1自动计算
 max_steps=-1
 ## batch size for one GPU
-batch_size=16
+batch_size=1
 ## 最大学习速率(peak learning rate)
 learning_rate=1e-4
 ## data loading buffer size
-buffer_size=4096
+buffer_size=512
+# pos weight
+pos_weight=2.0
 
 time_str=$(date "+%Y%m%d%H%M%S")
-cd ../../
+cd ../../../
 python run.py \
   --train_data_dir ../dataset/$DATASET_NAME/$DATASET_TYPE/$TASK_TYPE/train/ \
   --dev_data_dir ../dataset/$DATASET_NAME/$DATASET_TYPE/$TASK_TYPE/dev/ \
@@ -101,7 +105,7 @@ python run.py \
   --do_metrics \
   --evaluate_during_training \
   --per_gpu_train_batch_size=$batch_size \
-  --per_gpu_eval_batch_size=$batch_size \
+  --per_gpu_eval_batch_size=$batch_size  \
   --gradient_accumulation_steps=$gradient_accumulation_steps \
   --learning_rate=$learning_rate \
   --lr_update_strategy step \
@@ -118,8 +122,9 @@ python run.py \
   --no_token_embeddings \
   --no_token_type_embeddings \
   --no_position_embeddings \
+  --pos_weight $pos_weight \
   --buffer_size $buffer_size \
-  --delete_old \
+  --save_all \
   --llm_dir .. \
   --llm_type $llm_type \
   --llm_version $llm_version \
@@ -147,5 +152,9 @@ python run.py \
   --save_steps $save_steps \
   --max_steps $max_steps \
   --logging_steps $logging_steps \
-  --matrix_encoder \
-  --loss_reduction meanmean
+  --loss_reduction mean \
+  --matrix_add_special_token \
+  --embedding_complete \
+  --embedding_complete_seg_overlap \
+  --embedding_fixed_len_a_time $embedding_fixed_len_a_time
+

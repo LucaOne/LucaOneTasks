@@ -30,7 +30,7 @@ BEST_METRIC_TYPE="f1"
 loss_type="bce"
 
 # for sequence channel
-SEQ_MAX_LENGTH=4098
+SEQ_MAX_LENGTH=10242
 hidden_size=1024
 num_attention_heads=8
 num_hidden_layers=4
@@ -40,7 +40,7 @@ VOCAB_NAME="gene_prot"
 
 # for embedding channel
 embedding_input_size=2560
-matrix_max_length=4098
+matrix_max_length=10242
 # none, avg, max, value_attention
 MATRIX_POOLING_TYPE="value_attention"
 # When the input sequence is too long for your GPU to complete the inference at once, you can specify the fixed length of the inference at once
@@ -76,7 +76,7 @@ buffer_size=512
 pos_weight=2.0
 
 time_str=$(date "+%Y%m%d%H%M%S")
-cd ../../
+cd ../../../
 python run.py \
   --train_data_dir ../dataset/$DATASET_NAME/$DATASET_TYPE/$TASK_TYPE/train/ \
   --dev_data_dir ../dataset/$DATASET_NAME/$DATASET_TYPE/$TASK_TYPE/dev/ \

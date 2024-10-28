@@ -1,7 +1,7 @@
 # LLM for embedding     
 
 ### LucaOne(LucaGPLM) Embedding   
-for gene or prot
+for `gene` or `prot`
 ```
 cd ./src/llm/lucaone_gplm
 export CUDA_VISIBLE_DEVICES="0,1,2,3,4,5,6,7,8"
@@ -46,12 +46,12 @@ python get_embedding.py \
 ```
 
 ### ESM2 Embedding
-only for prot        
+only for `prot`          
 
 
 ### DNABert2 Embedding          
-only for gene      
+only for `gene`         
 
 
 ### DNABerts  Embedding         
-only for gene     
+only for `gene`        

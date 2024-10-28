@@ -144,15 +144,15 @@ python get_embedding.py \
     --llm_task_level token_level,span_level,seq_level,structure_level \
     --llm_time_str 20231125113045 \
     --llm_step 5600000 \
-    --embedding_type matrix \
-    --trunc_type right \
     --truncation_seq_length 100000 \
-    --matrix_add_special_token \
+    --trunc_type right \
     --seq_type prot \
     --input_file ../../../data/test_data/prot/test_prot.csv \
     --id_idx 2 \
     --seq_idx 3 \
     --save_path ../../../embedding/lucaone/test_data/prot/test_prot \
+    --embedding_type matrix \
+    --matrix_add_special_token \
     --embedding_complete \
     --embedding_complete_seg_overlap \
     --gpu_id 0   
@@ -167,15 +167,15 @@ python get_embedding.py \
     --llm_task_level token_level,span_level,seq_level,structure_level \
     --llm_time_str 20231125113045 \
     --llm_step 5600000 \
-    --embedding_type matrix \
-    --trunc_type right \
     --truncation_seq_length 100000 \
-    --matrix_add_special_token \
+    --trunc_type right \
     --seq_type gene \
     --input_file ../../../data/test_data/gene/test_gene.csv \
     --id_idx 0 \
     --seq_idx 1 \
     --save_path ../../../embedding/lucaone/test_data/gene/test_gene \
+    --embedding_type matrix \
+    --matrix_add_special_token \
     --embedding_complete \
     --embedding_complete_seg_overlap \
     --gpu_id 0   
@@ -196,13 +196,13 @@ python get_embedding.py \
     --llm_task_level token_level,span_level,seq_level,structure_level \
     --llm_time_str 20231125113045 \
     --llm_step 5600000 \
-    --embedding_type matrix \
-    --trunc_type right \
     --truncation_seq_length 100000 \
-    --matrix_add_special_token \
+    --trunc_type right \
     --seq_type prot \
     --input_file ../../../data/test_data/prot/test_prot.fasta \
     --save_path ../../../embedding/lucaone/test_data/prot/test_prot \
+    --embedding_type matrix \
+    --matrix_add_special_token \
     --embedding_complete \
     --embedding_complete_seg_overlap \
     --gpu_id 0   
@@ -220,13 +220,13 @@ python get_embedding.py \
     --llm_task_level token_level,span_level,seq_level,structure_level \
     --llm_time_str 20231125113045 \
     --llm_step 5600000 \
-    --embedding_type matrix \
-    --trunc_type right \
     --truncation_seq_length 100000 \
-    --matrix_add_special_token \
+    --trunc_type right \
     --seq_type gene \
     --input_file ../../../data/test_data/gene/test_gene.fasta \
     --save_path ../../../embedding/lucaone/test_data/gene/test_gene \
+    --embedding_type matrix \
+    --matrix_add_special_token \
     --embedding_complete \
     --embedding_complete_seg_overlap \
     --gpu_id 0   

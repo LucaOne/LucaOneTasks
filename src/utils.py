@@ -597,6 +597,15 @@ def clean_seq(protein_id, seq, return_rm_index=False):
     return new_seq
 
 
+def clean_seq_luca(seq_id, seq):
+    seq = seq.upper()
+    new_seq = ""
+    for idx, ch in enumerate(seq):
+        if 'A' <= ch <= 'Z':
+            new_seq += ch
+    return new_seq
+
+
 def sample_size(data_dirpath):
     if os.path.isdir(data_dirpath):
         new_filepaths = []

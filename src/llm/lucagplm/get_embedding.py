@@ -25,7 +25,7 @@ try:
     from ....args import Args
     from ....file_operator import fasta_reader, csv_reader, tsv_reader
     from ....utils import set_seed, to_device, get_labels, get_parameter_number, seq_type_is_match_seq, \
-        gene_seq_replace, available_gpu_id, download_trained_checkpoint_lucaone, calc_emb_filename_by_seq_id
+        gene_seq_replace, clean_seq_luca, available_gpu_id, download_trained_checkpoint_lucaone, calc_emb_filename_by_seq_id
     from ....batch_converter import BatchConverter
     from .v0_2.lucaone_gplm import LucaGPLM as LucaGPLMV0_2
     from .v0_2.lucaone_gplm_config import LucaGPLMConfig as LucaGPLMConfigV0_2
@@ -38,7 +38,7 @@ except ImportError as e:
     from src.args import Args
     from src.file_operator import fasta_reader, csv_reader, tsv_reader
     from src.utils import set_seed, to_device, get_labels, get_parameter_number, seq_type_is_match_seq, \
-        gene_seq_replace, available_gpu_id, download_trained_checkpoint_lucaone, calc_emb_filename_by_seq_id
+        gene_seq_replace, clean_seq_luca, available_gpu_id, download_trained_checkpoint_lucaone, calc_emb_filename_by_seq_id
     from src.batch_converter import BatchConverter
     from src.llm.lucagplm.v0_2.lucaone_gplm import LucaGPLM as LucaGPLMV0_2
     from src.llm.lucagplm.v0_2.lucaone_gplm_config import LucaGPLMConfig as LucaGPLMConfigV0_2
@@ -433,7 +433,7 @@ def predict_embedding(
                 lucaone_global_tokenizer[key] = tmp_tokenizer
             lucaone_global_args_info[key]["max_length"] = truncation_seq_length
 
-    processed_seq = seq.strip()
+    processed_seq = clean_seq_luca(seq_id, seq)
     if len(processed_seq) > truncation_seq_length:
         if trunc_type == "left":
             processed_seq = processed_seq[-truncation_seq_length:]

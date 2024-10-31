@@ -398,6 +398,7 @@ class Encoder(object):
             if self.matrix_embedding_exists:
                 print("seq_id: %s 's embedding file not exists in advance" % seq_id)
                 print(1/0)
+
             if "onehot" in self.llm_type:
                 if "multi_" in seq_type:
                     embedding_info = []

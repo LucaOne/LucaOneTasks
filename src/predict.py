@@ -368,6 +368,8 @@ def create_encoder_batch_convecter(model_args, seq_subword, seq_tokenizer):
             "max_sentences": model_args.max_sentences if hasattr(model_args, "max_sentences") else None,
             "embedding_complete": model_args.embedding_complete,
             "embedding_complete_seg_overlap": model_args.embedding_complete_seg_overlap,
+            "embedding_fixed_len_a_time": model_args.embedding_fixed_len_a_time,
+            "matrix_embedding_exists": model_args.matrix_embedding_exists,
             "use_cpu": True if model_args.gpu_id < 0 else False
         }
     else:
@@ -389,6 +391,8 @@ def create_encoder_batch_convecter(model_args, seq_subword, seq_tokenizer):
             "max_sentences": model_args.max_sentences if hasattr(model_args, "max_sentences") else None,
             "embedding_complete": model_args.embedding_complete,
             "embedding_complete_seg_overlap": model_args.embedding_complete_seg_overlap,
+            "embedding_fixed_len_a_time": model_args.embedding_fixed_len_a_time,
+            "matrix_embedding_exists": model_args.matrix_embedding_exists,
             "use_cpu": True if model_args.gpu_id < 0 else False
         }
     encoder = Encoder(**encoder_config)
@@ -480,6 +484,8 @@ def run(
         model_args.embedding_complete = False
     if not hasattr(model_args, "embedding_complete_seg_overlap"):
         model_args.embedding_complete_seg_overlap = False
+    if not hasattr(model_args, "embedding_fixed_len_a_time"):
+        model_args.embedding_fixed_len_a_time = None
     if not hasattr(model_args, "matrix_add_special_token"):
         model_args.matrix_add_special_token = False
 

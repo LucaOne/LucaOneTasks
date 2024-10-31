@@ -356,7 +356,11 @@ def load_model(args, model_name, model_dir):
     return model_config, seq_subword, seq_tokenizer, model
 
 
-def create_encoder_batch_convecter(model_args, seq_subword, seq_tokenizer):
+def create_encoder_batch_convecter(
+        model_args,
+        seq_subword,
+        seq_tokenizer
+):
     if hasattr(model_args, "input_mode") and model_args.input_mode in ["pair"]:
         assert model_args.seq_max_length is not None or (model_args.seq_max_length_a is not None and model_args.seq_max_length_b is not None)
         if model_args.seq_max_length is None:
@@ -381,6 +385,7 @@ def create_encoder_batch_convecter(model_args, seq_subword, seq_tokenizer):
             "embedding_complete": model_args.embedding_complete,
             "embedding_complete_seg_overlap": model_args.embedding_complete_seg_overlap,
             "matrix_add_special_token": model_args.matrix_add_special_token,
+            "embedding_fixed_len_a_time": model_args.embedding_fixed_len_a_time,
             "matrix_embedding_exists": model_args.matrix_embedding_exists,
             "use_cpu": True if model_args.gpu_id < 0 else False
         }
@@ -405,6 +410,7 @@ def create_encoder_batch_convecter(model_args, seq_subword, seq_tokenizer):
             "embedding_complete": model_args.embedding_complete,
             "embedding_complete_seg_overlap": model_args.embedding_complete_seg_overlap,
             "matrix_add_special_token": model_args.matrix_add_special_token,
+            "embedding_fixed_len_a_time": model_args.embedding_fixed_len_a_time,
             "matrix_embedding_exists": model_args.matrix_embedding_exists,
             "use_cpu": True if model_args.gpu_id < 0 else False
         }
@@ -498,6 +504,8 @@ def run(
         model_args.embedding_complete = False
     if not hasattr(model_args, "embedding_complete_seg_overlap"):
         model_args.embedding_complete_seg_overlap = False
+    if not hasattr(model_args, "embedding_fixed_len_a_time"):
+        model_args.embedding_fixed_len_a_time = None
     if not hasattr(model_args, "matrix_add_special_token"):
         model_args.matrix_add_special_token = False
 

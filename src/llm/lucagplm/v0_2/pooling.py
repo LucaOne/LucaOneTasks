@@ -12,6 +12,13 @@
 '''
 import torch
 import torch.nn as nn
+import sys
+sys.path.append(".")
+sys.path.append("..")
+sys.path.append("../../")
+sys.path.append("../../../")
+sys.path.append("../../../../")
+sys.path.append("../../../../src")
 try:
     from ....common.modeling_bert import BertEncoder, BertPooler
 except ImportError:

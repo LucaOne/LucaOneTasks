@@ -18,7 +18,7 @@ import logging
 import codecs
 import argparse
 import shutil
-from datetime import timedelta
+from datetime import datetime, timedelta
 from datasets import load_dataset
 import torch.distributed as dist
 from subword_nmt.apply_bpe import BPE
@@ -324,11 +324,23 @@ def check_args(args):
         args.no_token_embeddings = False
     else:
         args.no_token_embeddings = True
+
     if args.matrix_add_special_token:
         args.not_prepend_bos = False
         args.not_append_eos = False
     if args.task_type == "multi_label":
         args.non_ignore = True
+    if args.task_type in ["multi_label", "binary_class"]:
+        args.sigmoid = True
+    if not hasattr(args, "time_str") or args.time_str is None:
+        now = datetime.now()
+        args.time_str = now.strftime('%Y%m%d%H%M%S')
+
+    # for pytorch 1.9+
+    if "LOCAL_RANK" in os.environ:
+        local_rank = int(os.environ["LOCAL_RANK"])
+        args.local_rank = local_rank
+        print("args.local_rank: %d" % args.local_rank)
     return args
 
 
@@ -921,7 +933,8 @@ def main():
         result = dict(("evaluation_" + k + "_{}".format(global_step), v) for k, v in result.items())
         logger.info(json.dumps(result, ensure_ascii=False))
         log_fp.write(json.dumps(result, ensure_ascii=False) + "\n")
-    log_fp.close()
+    if args.local_rank in [-1, 0] and log_fp:
+        log_fp.close()
 
 
 if __name__ == "__main__":

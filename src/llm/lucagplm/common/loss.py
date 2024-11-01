@@ -15,14 +15,16 @@ import torch.nn as nn
 import sys
 sys.path.append(".")
 sys.path.append("..")
-sys.path.append("../..")
-sys.path.append("../../src")
+sys.path.append("../../")
+sys.path.append("../../../")
+sys.path.append("../../../../")
+sys.path.append("../../../../src")
 try:
     from classification_loss import *
     from regression_loss import *
 except ImportError:
-    from src.common.classification_loss import *
-    from src.common.regression_loss import *
+    from src.llm.lucagplm.common.classification_loss import *
+    from src.llm.lucagplm.common.regression_loss import *
 
 
 class NewGELUActivation(nn.Module):

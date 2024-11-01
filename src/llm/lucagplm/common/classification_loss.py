@@ -15,12 +15,14 @@ import torch.nn.functional as F
 import sys
 sys.path.append(".")
 sys.path.append("..")
-sys.path.append("../..")
-sys.path.append("../../src")
+sys.path.append("../../")
+sys.path.append("../../../")
+sys.path.append("../../../../")
+sys.path.append("../../../../src")
 try:
     from masked_loss import _MaskedLoss
 except ImportError:
-    from src.common.masked_loss import _MaskedLoss
+    from src.llm.lucagplm.common.masked_loss import _MaskedLoss
 
 
 class MaskedFocalLoss(_MaskedLoss):

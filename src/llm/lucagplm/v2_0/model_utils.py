@@ -16,7 +16,10 @@ from transformers.modeling_outputs import ModelOutput
 import sys, copy, math
 sys.path.append(".")
 sys.path.append("..")
-sys.path.append("../../src")
+sys.path.append("../../")
+sys.path.append("../../../")
+sys.path.append("../../../../")
+sys.path.append("../../../../src")
 try:
     from .pooling import *
     from ..common.loss import *

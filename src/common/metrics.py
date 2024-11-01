@@ -239,13 +239,16 @@ def metrics_regression(targets, preds):
     mse = mean_squared_error(targets, preds)
     r2 = r2_score(targets, preds)
     spearmanr = stats.spearmanr(targets, preds)
+    pearsonr = stats.pearsonr(targets, preds)
     print(spearmanr)
     return {
         "mae": round(float(mae), 6),
         "mse": round(float(mse), 6),
         "r2": round(float(r2), 6),
         "sp_statistic": round(float(spearmanr.correlation), 6),
-        "sp_pvalue": round(float(spearmanr.pvalue), 6)
+        "sp_pvalue": round(float(spearmanr.pvalue), 6),
+        "ps_statistic": round(float(pearsonr.statistic), 6),
+        "ps_pvalue": round(float(pearsonr.pvalue), 6)
     }
 
 

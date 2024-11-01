@@ -204,7 +204,7 @@ def get_args():
                                  "prec", "recall", "f1",
                                  "fmax", "roc_auc", "pr_auc",
                                  "mcc", "sp_statistic", "mse",
-                                 "mae", "r2"
+                                 "mae", "r2", "ps_statistic"
                         ],
                         help="Which metric for model selected")
     # for BCE Loss

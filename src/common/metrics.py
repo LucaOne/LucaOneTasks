@@ -240,7 +240,6 @@ def metrics_regression(targets, preds):
     r2 = r2_score(targets, preds)
     spearmanr = stats.spearmanr(targets, preds)
     pearsonr = stats.pearsonr(targets, preds)
-    print(spearmanr)
     return {
         "mae": round(float(mae), 6),
         "mse": round(float(mse), 6),

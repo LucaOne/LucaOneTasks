@@ -124,42 +124,42 @@ class BatchConverter(object):
             self.atom_append_len = 0
         else:
             if hasattr(atom_tokenizer, "padding_idx"):
-                self.padding_idx = self.atom_tokenizer.padding_idx
+                self.atom_padding_idx = self.atom_tokenizer.padding_idx
             elif hasattr(atom_tokenizer, "pad_idx"):
-                self.padding_idx = self.atom_tokenizer.pad_idx
+                self.atom_padding_idx = self.atom_tokenizer.pad_idx
             elif hasattr(atom_tokenizer, "pad_token_id"):
-                self.padding_idx = self.atom_tokenizer.pad_token_id
+                self.atom_padding_idx = self.atom_tokenizer.pad_token_id
 
             if hasattr(atom_tokenizer, "unk_idx"):
-                self.unk_idx = self.atom_tokenizer.unk_idx
+                self.atom_unk_idx = self.atom_tokenizer.unk_idx
             elif hasattr(atom_tokenizer, "unk_token_id"):
-                self.unk_idx = self.atom_tokenizer.unk_token_id
+                self.atom_unk_idx = self.atom_tokenizer.unk_token_id
 
             if hasattr(atom_tokenizer, "cls_idx"):
-                self.cls_idx = self.atom_tokenizer.cls_idx
+                self.atom_cls_idx = self.atom_tokenizer.cls_idx
             elif hasattr(atom_tokenizer, "cls_token_id"):
-                self.cls_idx = self.atom_tokenizer.cls_token_id
+                self.atom_cls_idx = self.atom_tokenizer.cls_token_id
             elif hasattr(atom_tokenizer, "bos_idx"):
-                self.cls_idx = self.atom_tokenizer.bos_idx
+                self.atom_cls_idx = self.atom_tokenizer.bos_idx
             elif hasattr(atom_tokenizer, "bos_token_id"):
-                self.cls_idx = self.atom_tokenizer.bos_token_id
+                self.atom_cls_idx = self.atom_tokenizer.bos_token_id
 
             if hasattr(atom_tokenizer, "eos_idx"):
-                self.eos_idx = self.atom_tokenizer.eos_idx
+                self.atom_eos_idx = self.atom_tokenizer.eos_idx
             elif hasattr(atom_tokenizer, "eos_token_id"):
-                self.eos_idx = self.atom_tokenizer.eos_token_id
+                self.atom_eos_idx = self.atom_tokenizer.eos_token_id
             elif hasattr(atom_tokenizer, "sep_token_id"):
-                self.eos_idx = self.atom_tokenizer.sep_token_id
+                self.atom_eos_idx = self.atom_tokenizer.sep_token_id
 
             if hasattr(atom_tokenizer, "mask_idx"):
-                self.mask_idx = self.atom_tokenizer.mask_idx
+                self.atom_mask_idx = self.atom_tokenizer.mask_idx
             elif hasattr(atom_tokenizer, "mask_token_id"):
-                self.mask_idx = self.atom_tokenizer.mask_token_id
+                self.atom_mask_idx = self.atom_tokenizer.mask_token_id
 
             if hasattr(atom_tokenizer, "all_special_token_idx_list"):
                 self.atom_all_special_token_idx_list = self.atom_tokenizer.all_special_token_idx_list
             else:
-                self.atom_all_special_token_idx_list = [self.padding_idx, self.unk_idx, self.cls_idx, self.eos_idx, self.mask_idx]
+                self.atom_all_special_token_idx_list = [self.atom_padding_idx, self.atom_unk_idx, self.atom_cls_idx, self.atom_eos_idx, self.atom_mask_idx]
             self.atom_append_len = int(self.atom_prepend_bos) + int(self.atom_append_eos)
 
         print("BatchConverter: prepend_bos=%r, append_eos=%r" % (self.prepend_bos, self.append_eos))
@@ -197,6 +197,9 @@ class BatchConverter(object):
         if "max_sentences" in kwargs and kwargs["max_sentences"]:
             self.max_sentences = kwargs["max_sentences"]
             print("BatchConverter: self.max_sentences=%d" % self.max_sentences)
+            if atom_tokenizer is not None:
+                self.atom_max_sentences = kwargs["max_sentences"]
+                print("BatchConverter: self.atom_max_sentences=%d" % self.atom_max_sentences)
         self.trunc_type = "right"
         if "trunc_type" in kwargs and kwargs["trunc_type"]:
             self.trunc_type = kwargs["trunc_type"]
@@ -463,9 +466,9 @@ class BatchConverter(object):
             return input_ids, labels
         else:
             # non [MASK]， random one position, convect to [MASK]
-            rand_idx = random.randint(int(self.prepend_bos), seq_len + int(self.prepend_bos) - 1)
+            rand_idx = random.randint(int(self.atom_prepend_bos), seq_len + int(self.atom_pprepend_bos) - 1)
             labels[rand_idx] = input_ids[rand_idx]
-            input_ids[rand_idx] = self.mask_idx
+            input_ids[rand_idx] = self.atom_mask_idx
             return input_ids, labels
 
     def __seq_encode__(self, batch_size, seqs):

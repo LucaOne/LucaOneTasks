@@ -878,7 +878,16 @@ def main():
     if args.do_train:
         logger.info("++++++++++++Training+++++++++++++")
         global_step, tr_loss, max_metric_model_info = train(
-            args, train_dataloader, model_config, model, seq_tokenizer, parse_row_func, batch_data_func, train_sampler=None, log_fp=log_fp)
+            args,
+            train_dataloader,
+            model_config,
+            model,
+            seq_tokenizer,
+            parse_row_func,
+            batch_data_func,
+            train_sampler=None,
+            log_fp=log_fp
+        )
         logger.info("global_step = %s, average loss = %s", global_step, tr_loss)
 
     # save
@@ -938,6 +947,8 @@ def main():
 
 
 if __name__ == "__main__":
+    import torch.multiprocessing as mp
+    mp.set_start_method('spawn')
     main()
 
 

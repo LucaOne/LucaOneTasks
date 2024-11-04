@@ -32,7 +32,6 @@ except ImportError as e:
     from src.llm.dnabert2.inference_embedding import predict_embedding as predict_embedding_dnabert2
     from src.llm.dnaberts.inference_embedding import predict_embedding as predict_embedding_dnaberts
 
-
 MAX_SEQ_LEN = 10240
 
 

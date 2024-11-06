@@ -498,8 +498,9 @@ def run(
     if not os.path.exists(model_args.label_filepath):
         model_args.label_filepath = os.path.join(config_dir, "label.txt")
 
-    if gpu_id is None:
-        gpu_id = available_gpu_id()
+    if gpu_id is None or gpu_id < 0:
+        # gpu_id = available_gpu_id()
+        gpu_id = -1
         model_args.gpu_id = gpu_id
     print("------Before loading the model:------")
     print("GPU ID: %d" % gpu_id)

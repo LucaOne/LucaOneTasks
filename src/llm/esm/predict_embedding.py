@@ -234,7 +234,8 @@ def main(args):
     if args.gpu >= 0:
         gpu_id = args.gpu
     else:
-        gpu_id = available_gpu_id()
+        # gpu_id = available_gpu_id()
+        gpu_id = -1
         print("gpu_id: ", gpu_id)
     if gpu_id is None or gpu_id == -1:
         args.device = None

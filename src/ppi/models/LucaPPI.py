@@ -47,7 +47,7 @@ class LucaPPI(BertPreTrainedModel):
 
         self.input_type = args.input_type
         self.num_labels = config.num_labels
-        self.fusion_type = "concat"
+        self.fusion_type = args.fusion_type if hasattr(args, "fusion_type") and args.fusion_type else "concat"
         self.output_mode = args.output_mode
         self.task_level_type = args.task_level_type
         self.prepend_bos = args.prepend_bos

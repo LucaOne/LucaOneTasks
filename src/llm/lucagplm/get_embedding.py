@@ -693,7 +693,7 @@ def get_args():
 
     # for many seqs
     parser.add_argument("--input_file", type=str, default=None,
-                        help="the input filepath(.fasta or .csv)")
+                        help="the input file（format: fasta or csv or tsv)")
     parser.add_argument("--id_idx", type=int, default=None,
                         help="id col idx(0 start)")
     parser.add_argument("--seq_idx", type=int, default=None,

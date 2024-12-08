@@ -13,7 +13,6 @@
 
 import sys
 import torch
-from esm import BatchConverter, pretrained
 sys.path.append(".")
 sys.path.append("..")
 sys.path.append("../../")
@@ -21,12 +20,10 @@ sys.path.append("../../../")
 sys.path.append("../../../src")
 try:
     from file_operator import fasta_reader
-    from utils import clean_seq, available_gpu_id
+    from utils import clean_seq_luca
 except ImportError:
     from src.file_operator import fasta_reader
-    from src.utils import clean_seq, available_gpu_id
-
-import torch
+    from src.utils import clean_seq_luca
 from transformers import AutoTokenizer, AutoModel
 
 model_id = 'zhihan1996/DNABERT-2-117M'
@@ -34,7 +31,16 @@ model_id = 'zhihan1996/DNABERT-2-117M'
 dnabert2_global_model, dnabert2_global_alphabet, dnabert2_global_version = None, None, None
 
 
-def predict_embedding(sample, trunc_type, embedding_type, repr_layers=[-1], truncation_seq_length=4094, device=None, version="dnabert2", matrix_add_special_token=False):
+def predict_embedding(
+        sample,
+        trunc_type,
+        embedding_type,
+        repr_layers=[-1],
+        truncation_seq_length=4094,
+        device=None,
+        version="dnabert2",
+        matrix_add_special_token=False
+):
     '''
     use sequence to predict protein embedding matrix or vector(bos)
     :param sample: [protein_id, protein_sequence]
@@ -54,7 +60,7 @@ def predict_embedding(sample, trunc_type, embedding_type, repr_layers=[-1], trun
         seq_id, seq = sample[0], sample[2]
     else:
         seq_id, seq = sample[0], sample[1]
-    processed_seq = clean_seq(seq_id, seq)
+    processed_seq = clean_seq_luca(seq_id, seq)
     if len(processed_seq) > truncation_seq_length:
         if trunc_type == "left":
             processed_seq = processed_seq[-truncation_seq_length:]

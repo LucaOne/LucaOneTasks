@@ -693,7 +693,7 @@ def get_args():
 
     # for many seqs
     parser.add_argument("--input_file", type=str, default=None,
-                        help="the input filepath(.fasta or .csv)")
+                        help="the input file（format: fasta or csv or tsv)")
     parser.add_argument("--id_idx", type=int, default=None,
                         help="id col idx(0 start)")
     parser.add_argument("--seq_idx", type=int, default=None,
@@ -795,7 +795,7 @@ def main(model_args):
         gpu_id = -1
         print("gpu_id: ", gpu_id)
     model_args.device = torch.device("cuda:%d" % gpu_id if gpu_id > -1 else "cpu")
-    # model.to(model_args.device)
+    # lucaone_global_model.to(model_args.device)
 
     assert (model_args.input_file is not None and os.path.exists(model_args.input_file)) or model_args.seq is not None
     print("input seq type: %s" % model_args.seq_type)

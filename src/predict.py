@@ -777,7 +777,7 @@ if __name__ == "__main__":
                         if not seq_type_is_match_seq(args.seq_type, row[1]):
                             print("Error! the input seq(seq_id=%s) not match its seq_type=%s: %s" % (row[0], args.seq_type, row[1]))
                             sys.exit(-1)
-                        batch_data.append([row[0], args.seq_type, args.row[1]])
+                        batch_data.append([row[0], args.seq_type, row[1]])
                     elif len(row) > 2:
                         if not seq_type_is_match_seq(row[1], row[2]):
                             print("Error! the input seq(seq_id=%s) not match its seq_type=%s: %s" % (row[0], row[1], row[2]))

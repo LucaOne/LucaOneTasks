@@ -841,8 +841,10 @@ if __name__ == "__main__":
                         item.append(batch_ground_truth[item_idx])
                     writer.writerow(item)
                 wfp.flush()
+                had_done += len(batch_data)
                 batch_data = []
                 batch_ground_truth = []
+            print("over, had_done: %d" % had_done)
     elif args.seq_id is not None and args.seq is not None:
         if args.seq_type is None:
             print("Please set arg: --seq_type, value: gene or prot")

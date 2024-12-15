@@ -13,12 +13,14 @@
 import os
 import sys
 import random
+import shutil
 import numpy as np
+from datetime import datetime
 sys.path.append(".")
 sys.path.append("..")
 sys.path.append("../src")
 try:
-    from .file_operator import *
+    from file_operator import *
 except ImportError:
     from src.file_operator import *
 csv.field_size_limit(sys.maxsize)
@@ -45,15 +47,12 @@ class MultiFilesStreamLoader(object):
                  seed=1221):
         if buffer_size % batch_size != 0:
             raise Exception("buffer_size must be evenly div by batch_size")
-        if isinstance(filepaths, str):
-            if os.path.isdir(filepaths):
-                new_filepaths = []
-                for filename in os.listdir(filepaths):
-                    if not filename.startswith("."):
-                        new_filepaths.append(os.path.join(filepaths, filename))
-                filepaths = new_filepaths
-            else:
-                filepaths = [filepaths]
+        self.shuffle = shuffle
+        self.dataset_type = dataset_type
+        if self.dataset_type == "train":
+            self.shuffle = True
+        self.cached = False
+
         self.filepaths = filepaths
         self.batch_size = batch_size
         self.buffer_size = buffer_size
@@ -67,8 +66,8 @@ class MultiFilesStreamLoader(object):
         self.matrix_dirpath = matrix_dirpath
         self.inference = inference
         self.label_size = label_size
-        self.shuffle = shuffle
-        self.dataset_type = dataset_type
+
+        self.filepaths = self.input_file_process(self.filepaths)
         if self.shuffle:
             for _ in range(5):
                 random.shuffle(self.filepaths)
@@ -86,6 +85,74 @@ class MultiFilesStreamLoader(object):
         self.enough_flag = False
         self.reload_buffer()
 
+    def delete_cache(self):
+        if self.shuffle and self.cached:
+            for filepath in self.filepaths:
+                dirpath = os.path.dirname(filepath)
+                if os.path.exists(dirpath):
+                    shutil.rmtree(dirpath)
+                    print("deleted cache dirpath=%s" % dirpath)
+
+    def input_file_process(self, filepaths):
+        if isinstance(filepaths, str):
+            if os.path.isdir(filepaths):
+                # 是一个目录
+                if self.shuffle:
+                    filepaths = self.cache(filepaths)
+                    self.cached = True
+                new_filepaths = []
+                for filename in os.listdir(filepaths):
+                    if not filename.startswith("."):
+                        new_filepaths.append(os.path.join(filepaths, filename))
+                filepaths = new_filepaths
+            else:
+                # 是一个文件
+                if self.shuffle:
+                    dirpath = os.path.dirname(filepaths)
+                    filename = os.path.basename(filepaths)
+                    cached_dirpath = self.cache(dirpath)
+                    cached_filepaths = os.path.join(cached_dirpath, filename)
+                    filepaths = cached_filepaths
+                    self.cached = True
+                filepaths = [filepaths]
+        else:
+            # 是一个列表，必须是文件列表
+            if self.shuffle:
+                new_filepaths = []
+                for filepath in filepaths:
+                    if not os.path.exists(filepath) or not os.path.isfile(filepath):
+                        continue
+                    dirpath = os.path.dirname(filepath)
+                    filename = os.path.basename(filepath)
+                    cached_dirpath = self.cache(dirpath)
+                    cached_filepath = os.path.join(cached_dirpath, filename)
+                    self.cached = True
+                    new_filepaths.append(cached_filepath)
+                filepaths = new_filepaths
+        return filepaths
+
+    @staticmethod
+    def cache(dirpath):
+        # 对于训练，因为每个epoch内，需要将文件内容打乱然后重新写入文件，也就是会修改文件内容，那么则cache，只修改cache中的内容
+        now = datetime.now()
+        time_str = now.strftime("%Y%m%d%H%M%S%f")
+        dirpath = dirpath.strip()
+        suffix = "_" + time_str + "_cached"
+        if dirpath[-1] == "/":
+            cached_dirpath = dirpath[:-1] + suffix
+        else:
+            cached_dirpath = dirpath + suffix
+        if not os.path.exists(cached_dirpath):
+            os.makedirs(cached_dirpath)
+        for filename in os.listdir(dirpath):
+            source_file = os.path.join(dirpath, filename)
+            target_file = os.path.join(cached_dirpath, filename)
+            # 仅复制文件，不复制文件夹
+            if os.path.isfile(source_file):
+                shutil.copy2(source_file, target_file)
+        print("cached dirpath: %s -> %s" % (dirpath, cached_dirpath))
+        return cached_dirpath
+
     def next_file_reader(self):
         # self.cur_fin.close()
         self.cur_file_idx += 1
@@ -94,9 +161,23 @@ class MultiFilesStreamLoader(object):
 
     def reset_file_reader(self):
         # self.cur_fin.close()
+        if self.shuffle:
+            random.shuffle(self.filepaths)
         self.cur_file_idx = 0
-        self.cur_fin = file_reader(self.filepaths[self.cur_file_idx % self.total_filename_num],
-                                   header_filter=True, header=self.header)
+        filepath = self.filepaths[self.cur_file_idx % self.total_filename_num]
+        if self.shuffle:
+            # 读取文件内容
+            with open(filepath, 'r') as file:
+                lines = file.readlines()
+            # 打乱行的顺序
+            contents = lines[1:]
+            for _ in range(5):
+                random.shuffle(contents)
+            contents = lines[0:1] + contents
+            # 将打乱后的内容写回文件
+            with open(filepath, 'w') as file:
+                file.writelines(contents)
+        self.cur_fin = file_reader(filepath, header_filter=True, header=self.header)
 
     def read_one_line(self):
         try:
@@ -197,7 +278,7 @@ class MultiFilesStreamLoader(object):
                 # done one line
                 self.buffer.append(self.encode_line(line))
                 ct += 1
-        print("\nBuffer size: ", len(self.buffer))
+        print("\nBuffer size: %d" % len(self.buffer))
         if not self.enough_flag and self.buffer_size == len(self.buffer):
             self.enough_flag = True
         if self.shuffle:
@@ -205,11 +286,11 @@ class MultiFilesStreamLoader(object):
                 self.rnd.shuffle(self.buffer)  # in-place
 
     def get_batch(self, start, end):
-        '''
+        """
         :param start:
         :param end:
         :return:
-        '''
+        """
         cur_batch = self.buffer[start:end]
         batch_input = self.batch_data_func(cur_batch)
         return batch_input
@@ -218,10 +299,10 @@ class MultiFilesStreamLoader(object):
         return self
 
     def __next__(self):
-        '''
+        """
         next batch
         :return:
-        '''
+        """
         if self.enough_flag:
             if self.epoch_over and self.ptr < len(self.buffer):
                 start = self.ptr

@@ -461,6 +461,7 @@ def run(
         task_level_type,
         model_type,
         input_type,
+        input_mode,
         time_str,
         step,
         gpu_id,
@@ -470,25 +471,35 @@ def run(
         matrix_embedding_exists
 ):
     global global_model_config, global_seq_subword, global_seq_tokenizer, global_trained_model
-    model_dir = "%s/models/%s/%s/%s/%s/%s/%s/%s" % (model_path, dataset_name, dataset_type, task_type, model_type, input_type,
-                                                    time_str, step if step == "best" else "checkpoint-{}".format(step))
-    config_dir = "%s/logs/%s/%s/%s/%s/%s/%s" % (model_path, dataset_name, dataset_type, task_type, model_type, input_type,
-                                                time_str)
+    model_dir = "%s/models/%s/%s/%s/%s/%s/%s/%s" % (
+        model_path, dataset_name, dataset_type, task_type, model_type, input_type,
+        time_str, step if step == "best" else "checkpoint-{}".format(step)
+    )
+    config_dir = "%s/logs/%s/%s/%s/%s/%s/%s" % (
+        model_path, dataset_name, dataset_type, task_type, model_type, input_type, time_str
+    )
 
     model_args = torch.load(os.path.join(model_dir, "training_args.bin"))
     print("-" * 25 + "Trained Model Args" + "-" * 25)
     print(model_args.__dict__)
     print("-" * 50)
+    '''
     model_args.llm_truncation_seq_length = llm_truncation_seq_length
     model_args.seq_max_length = llm_truncation_seq_length
     model_args.atom_seq_max_length = None # to do
     model_args.truncation_seq_length = model_args.seq_max_length
     model_args.truncation_matrix_length = model_args.matrix_max_length
+    '''
+    model_args.llm_truncation_seq_length = llm_truncation_seq_length
+    model_args.seq_max_length = max(model_args.seq_max_length, llm_truncation_seq_length)
+    model_args.atom_seq_max_length = None # to do
+    model_args.truncation_seq_length = model_args.seq_max_length
+    model_args.truncation_matrix_length = max(model_args.matrix_max_length, llm_truncation_seq_length)
 
     model_args.matrix_embedding_exists = matrix_embedding_exists
     model_args.emb_dir = emb_dir
-    model_args.vector_dirpath = model_args.emb_dir if model_args.emb_dir and (os.path.exists(model_args.emb_dir) or "#" in model_args.emb_dir) else None
-    model_args.matrix_dirpath = model_args.emb_dir if model_args.emb_dir and (os.path.exists(model_args.emb_dir) or "#" in model_args.emb_dir) else None
+    model_args.vector_dirpath = model_args.emb_dir if model_args.emb_dir else None
+    model_args.matrix_dirpath = model_args.emb_dir if model_args.emb_dir else None
 
     model_args.dataset_name = dataset_name
     model_args.dataset_type = dataset_type
@@ -547,17 +558,43 @@ def run(
     encoder, batch_convecter = create_encoder_batch_convecter(model_args, seq_subword, seq_tokenizer)
 
     # embedding in advance
-    if not matrix_embedding_exists and gpu_id > -1:
+    print("matrix_embedding_exists: %r, gpu_id: %d, input_type: %s" % (matrix_embedding_exists, gpu_id, input_type))
+    if not matrix_embedding_exists and gpu_id > -1 and input_type != "seq":
         # 先to cpu
         trained_model.to(torch.device("cpu"))
         assert model_args.emb_dir is not None
         if not os.path.exists(model_args.emb_dir):
             os.makedirs(model_args.emb_dir)
         for item in sequences:
-            seq_id = item[0]
-            seq_type = item[1]
-            seq = item[2]
-            encoder.__get_embedding__(seq_id=seq_id, seq_type=seq_type, seq=seq, embedding_type="matrix" if "matrix" in input_type else "vector")
+            if input_mode == "pair":
+                seq_id_a = item[0]
+                seq_id_b = item[1]
+                seq_type_a = item[2]
+                seq_type_b = item[3]
+                seq_a = item[4]
+                seq_b = item[5]
+                encoder.__get_embedding__(
+                    seq_id=seq_id_a,
+                    seq_type=seq_type_a,
+                    seq=seq_a,
+                    embedding_type="matrix" if "matrix" in input_type else "vector"
+                )
+                encoder.__get_embedding__(
+                    seq_id=seq_id_b,
+                    seq_type=seq_type_b,
+                    seq=seq_b,
+                    embedding_type="matrix" if "matrix" in input_type else "vector"
+                )
+            else:
+                seq_id = item[0]
+                seq_type = item[1]
+                seq = item[2]
+                encoder.__get_embedding__(
+                    seq_id=seq_id,
+                    seq_type=seq_type,
+                    seq=seq,
+                    embedding_type="matrix" if "matrix" in input_type else "vector"
+                )
         encoder.matrix_embedding_exists = True
         # embedding 完之后to device
         trained_model.to(model_args.device)
@@ -646,7 +683,7 @@ def run(
                 predicted_results.append([seq_id, seq, cur_res[0][2], cur_res[0][3]])
     # torch.cuda.empty_cache()
     # 删除embedding
-    if os.path.exists(model_args.emb_dir):
+    if not matrix_embedding_exists and os.path.exists(model_args.emb_dir) and input_type != "seq":
         shutil.rmtree(model_args.emb_dir)
     return predicted_results
 
@@ -741,9 +778,20 @@ if __name__ == "__main__":
     # download LLM(LucaOne)
     if not hasattr(args, "llm_step"):
         args.llm_step = "5600000"
-    download_trained_checkpoint_lucaone(llm_dir=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "llm/"), llm_step=args.llm_step)
+    if not hasattr(args, "llm_time_str"):
+        args.llm_time_str = "20231125113045"
+    if not hasattr(args, "llm_version"):
+        args.llm_version = "v2.0"
+    download_trained_checkpoint_lucaone(
+        llm_dir=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "llm/"),
+        llm_version=args.llm_version,
+        llm_time_str=args.llm_time_str,
+        llm_step=args.llm_step
+    )
     # download trained downstream task models
-    download_trained_checkpoint_downstream_tasks(save_dir=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    download_trained_checkpoint_downstream_tasks(
+        save_dir=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
     if args.input_file is not None and os.path.exists(args.input_file):
         exists_ids = set()
         exists_res = []
@@ -832,6 +880,7 @@ if __name__ == "__main__":
                         args.task_level_type,
                         args.model_type,
                         args.input_type,
+                        args.input_mode,
                         args.time_str,
                         args.step,
                         args.gpu_id,
@@ -860,6 +909,7 @@ if __name__ == "__main__":
                     args.task_level_type,
                     args.model_type,
                     args.input_type,
+                    args.input_mode,
                     args.time_str,
                     args.step,
                     args.gpu_id,
@@ -895,6 +945,7 @@ if __name__ == "__main__":
             args.task_level_type,
             args.model_type,
             args.input_type,
+            args.input_mode,
             args.time_str,
             args.step,
             args.gpu_id,
@@ -935,6 +986,7 @@ if __name__ == "__main__":
             args.task_level_type,
             args.model_type,
             args.input_type,
+            args.input_mode,
             args.time_str,
             args.step,
             args.gpu_id,

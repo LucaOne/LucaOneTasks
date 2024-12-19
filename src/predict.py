@@ -441,6 +441,7 @@ def run(
         task_level_type,
         model_type,
         input_type,
+        input_mode,
         time_str,
         step,
         gpu_id,
@@ -459,16 +460,23 @@ def run(
     print("-" * 25 + "Trained Model Args" + "-" * 25)
     print(model_args.__dict__)
     print("-" * 50)
+    '''
     model_args.llm_truncation_seq_length = llm_truncation_seq_length
     model_args.seq_max_length = llm_truncation_seq_length
     model_args.atom_seq_max_length = None # to do
     model_args.truncation_seq_length = model_args.seq_max_length
     model_args.truncation_matrix_length = model_args.matrix_max_length
+    '''
+    model_args.llm_truncation_seq_length = llm_truncation_seq_length
+    model_args.seq_max_length = max(model_args.seq_max_length, llm_truncation_seq_length)
+    model_args.atom_seq_max_length = None # to do
+    model_args.truncation_seq_length = model_args.seq_max_length
+    model_args.truncation_matrix_length = max(model_args.matrix_max_length, llm_truncation_seq_length)
 
     model_args.matrix_embedding_exists = matrix_embedding_exists
     model_args.emb_dir = emb_dir
-    model_args.vector_dirpath = model_args.emb_dir if model_args.emb_dir and (os.path.exists(model_args.emb_dir) or "#" in model_args.emb_dir) else None
-    model_args.matrix_dirpath = model_args.emb_dir if model_args.emb_dir and (os.path.exists(model_args.emb_dir) or "#" in model_args.emb_dir) else None
+    model_args.vector_dirpath = model_args.emb_dir if model_args.emb_dir else None
+    model_args.matrix_dirpath = model_args.emb_dir if model_args.emb_dir else None
 
     model_args.dataset_name = dataset_name
     model_args.dataset_type = dataset_type
@@ -709,9 +717,20 @@ if __name__ == "__main__":
     # download LLM(LucaOne)
     if not hasattr(args, "llm_step"):
         args.llm_step = "5600000"
-    download_trained_checkpoint_lucaone(llm_dir=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "llm/"), llm_step=args.llm_step)
+    if not hasattr(args, "llm_time_str"):
+        args.llm_time_str = "20231125113045"
+    if not hasattr(args, "llm_version"):
+        args.llm_version = "v2.0"
+    download_trained_checkpoint_lucaone(
+        llm_dir=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "llm/"),
+        llm_version=args.llm_version,
+        llm_time_str=args.llm_time_str,
+        llm_step=args.llm_step
+    )
     # download trained downstream task models
-    download_trained_checkpoint_downstream_tasks(save_dir=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    download_trained_checkpoint_downstream_tasks(
+        save_dir=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
     if args.input_file is not None and os.path.exists(args.input_file):
         exists_ids = set()
         exists_res = []
@@ -800,6 +819,7 @@ if __name__ == "__main__":
                         args.task_level_type,
                         args.model_type,
                         args.input_type,
+                        args.input_mode,
                         args.time_str,
                         args.step,
                         args.gpu_id,
@@ -828,6 +848,7 @@ if __name__ == "__main__":
                     args.task_level_type,
                     args.model_type,
                     args.input_type,
+                    args.input_mode,
                     args.time_str,
                     args.step,
                     args.gpu_id,
@@ -863,6 +884,7 @@ if __name__ == "__main__":
             args.task_level_type,
             args.model_type,
             args.input_type,
+            args.input_mode,
             args.time_str,
             args.step,
             args.gpu_id,
@@ -902,6 +924,7 @@ if __name__ == "__main__":
             args.task_level_type,
             args.model_type,
             args.input_type,
+            args.input_mode,
             args.time_str,
             args.step,
             args.gpu_id,

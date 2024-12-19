@@ -408,8 +408,10 @@ def seq_type_is_match_seq(seq_type, seq):
         if ch in {"A", "T", "C", "G", "U", "N"}:
             atcgu_num += 1
 
+    if len(seq) > 0 and seq[0] == "M" and seq_type == "prot":
+        return True
     is_gene = False
-    if total_num == atcgu_num or atcgu_num >= 0.8 * total_num:
+    if total_num == atcgu_num or atcgu_num >= 0.9 * total_num:
         is_gene = True
 
     if is_gene and seq_type == "gene":
@@ -633,15 +635,15 @@ def writer_info_tb(tb_writer, logs, global_step, prefix=None):
     :param prefix:
     :return:
     '''
+    if prefix is None:
+        prefix = ""
+    elif prefix != "":
+        prefix = prefix + "_"
     for key, value in logs.items():
         if isinstance(value, dict):
-            '''
-            for key1, value1 in value.items():
-                tb_writer.add_scalar(key + "_" + key1, value1, global_step)
-            '''
-            writer_info_tb(tb_writer, value, global_step, prefix=key)
+            writer_info_tb(tb_writer, value, global_step, prefix=prefix + key)
         elif not math.isnan(value) and not math.isinf(value):
-            tb_writer.add_scalar(prefix + "_" + key if prefix else key, value, global_step)
+            tb_writer.add_scalar(prefix + key, value, global_step)
         else:
             print("writer_info_tb NaN or Inf, Key-Value: %s=%s" % (key, value))
 
@@ -1022,7 +1024,12 @@ def download_trained_checkpoint_downstream_tasks(
             logs_file_names = ["logs.txt", "label.txt"]
             models_file_names = ["config.json", "pytorch_model.bin", "training_args.bin", "tokenizer/alphabet.pkl"]
             logs_path = "logs/%s/%s/%s/%s/%s/%s" % (dataset_name[idx], dataset_type[idx], task_type[idx], model_type[idx], input_type[idx], time_str[idx])
-            models_path = "models/%s/%s/%s/%s/%s/%s/checkpoint-%s" % (dataset_name[idx], dataset_type[idx], task_type[idx], model_type[idx], input_type[idx], time_str[idx], str(step[idx]))
+            if step[idx] == "best":
+                models_path = "models/%s/%s/%s/%s/%s/%s/%s" % (dataset_name[idx], dataset_type[idx], task_type[idx], model_type[idx], input_type[idx], time_str[idx], str(step[idx]))
+            else:
+                models_path = "models/%s/%s/%s/%s/%s/%s/checkpoint-%s" % (dataset_name[idx], dataset_type[idx], task_type[idx], model_type[idx], input_type[idx], time_str[idx], str(step[idx]))
+            print("logs_path: %s" % logs_path)
+            print("models_path: %s" % models_path)
             logs_local_dir = os.path.join(save_dir, logs_path)
             exists = True
             for logs_file_name in logs_file_names:
@@ -1032,9 +1039,15 @@ def download_trained_checkpoint_downstream_tasks(
             models_local_dir = os.path.join(save_dir, models_path)
             if exists:
                 for models_file_name in models_file_names:
-                    if not os.path.exists(os.path.join(models_local_dir, models_file_name)):
-                        exists = False
-                        break
+                    if models_file_name == "pytorch_model.bin":
+                        if not os.path.exists(os.path.join(models_local_dir, models_file_name)) \
+                                and not os.path.exists(os.path.join(models_local_dir, "model.safetensors")):
+                            exists = False
+                            break
+                    else:
+                        if not os.path.exists(os.path.join(models_local_dir, models_file_name)):
+                            exists = False
+                            break
             if not exists:
                 print("*" * 20 + "Downloading" + "*" * 20)
                 print("Downloading Downstream Task: %s TrainedCheckPoint: %s-%s-%s ..." % (dataset_name[idx], dataset_name[idx], time_str[idx], str(step[idx])))

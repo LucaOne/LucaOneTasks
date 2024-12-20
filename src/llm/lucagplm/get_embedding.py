@@ -77,13 +77,28 @@ def load_model(
         llm_dir = os.path.join(strs[0], "llm/")
         ss = strs[1].split("/")
         llm_step = None
-        for s in ss:
-            if "checkpoint-step" in s:
+        llm_version = None
+        llm_time_str = None
+        for s_idx, s in enumerate(ss):
+            if "lucagplm" in ss[s_idx]:
+                llm_version = ss[s_idx + 1]
+            elif s_idx < len(ss) - 1 and "checkpoint-step" in ss[s_idx + 1]:
+                llm_time_str = s
+            elif "checkpoint-step" in s:
                 llm_step = s.replace("checkpoint-step", "")
                 break
         if llm_step is None:
             llm_step = "5600000"
-        download_trained_checkpoint_lucaone(llm_dir=llm_dir, llm_step=llm_step)
+        if llm_time_str is None:
+            llm_time_str = "20231125113045"
+        if llm_version is None:
+            llm_version = "v2.0"
+        download_trained_checkpoint_lucaone(
+            llm_dir=llm_dir,
+            llm_time_str=llm_time_str,
+            llm_version=llm_version,
+            llm_step=llm_step
+        )
 
     with open(log_filepath, "r") as rfp:
         for line_idx, line in enumerate(rfp):
@@ -454,12 +469,36 @@ def predict_embedding(
         pass
         # print("device:", device)
     if isinstance(llm_dirpath, str):
-        emb, processed_seq_len = get_embedding(lucaone_global_args_info, lucaone_global_model_config, lucaone_global_tokenizer, lucaone_global_model, processed_seq, seq_type, device)
+        emb, processed_seq_len = get_embedding(
+            lucaone_global_args_info,
+            lucaone_global_model_config,
+            lucaone_global_tokenizer,
+            lucaone_global_model,
+            processed_seq,
+            seq_type,
+            device
+        )
     else:
         if seq_type == "gene":
-            emb, processed_seq_len = get_embedding(lucaone_global_args_info["gene"], lucaone_global_model_config["gene"], lucaone_global_tokenizer["gene"], lucaone_global_model["gene"], processed_seq, seq_type, device)
+            emb, processed_seq_len = get_embedding(
+                lucaone_global_args_info["gene"],
+                lucaone_global_model_config["gene"],
+                lucaone_global_tokenizer["gene"],
+                lucaone_global_model["gene"],
+                processed_seq,
+                seq_type,
+                device
+            )
         elif seq_type == "prot":
-            emb, processed_seq_len = get_embedding(lucaone_global_args_info["protein"], lucaone_global_model_config["protein"], lucaone_global_tokenizer["protein"], lucaone_global_model["protein"], processed_seq, seq_type, device)
+            emb, processed_seq_len = get_embedding(
+                lucaone_global_args_info["protein"],
+                lucaone_global_model_config["protein"],
+                lucaone_global_tokenizer["protein"],
+                lucaone_global_model["protein"],
+                processed_seq,
+                seq_type,
+                device
+            )
         else:
             raise Exception("Not support seq_type=%s for LucaOne" % seq_type)
 
@@ -751,7 +790,13 @@ def main(model_args):
     print("*" * 50)
     if model_args.llm_dir is None:
         model_args.llm_dir = "../../.."
-    download_trained_checkpoint_lucaone(llm_dir=os.path.join(model_args.llm_dir, "llm/"), llm_step=model_args.llm_step)
+    download_trained_checkpoint_lucaone(
+        llm_dir=os.path.join(model_args.llm_dir, "llm/"),
+        llm_version=model_args.llm_version,
+        llm_task_level=model_args.llm_task_level,
+        llm_time_str=model_args.llm_time_str,
+        llm_step=model_args.llm_step
+    )
 
     cur_log_filepath = "%s/llm/logs/lucagplm/%s/%s/%s/%s/logs.txt" % (
         model_args.llm_dir if model_args.llm_dir else "..", model_args.llm_version, model_args.llm_task_level,

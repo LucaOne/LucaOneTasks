@@ -1074,6 +1074,8 @@ def main():
         log_fp.write(json.dumps(result, ensure_ascii=False) + "\n")
     if args.local_rank in [-1, 0] and log_fp:
         log_fp.close()
+    if args.n_gpu > 1:
+        dist.barrier()
 
 
 if __name__ == "__main__":

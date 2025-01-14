@@ -105,6 +105,7 @@ def metrics_multi_class(targets, probs, average="macro"):
     result.update({
         "top2_acc": round(float(topk_accuracy_score(targets, probs, k=2)), 6),
         "top3_acc": round(float(topk_accuracy_score(targets, probs, k=3)), 6),
+        "top4_acc": round(float(topk_accuracy_score(targets, probs, k=4)), 6),
         "top5_acc": round(float(topk_accuracy_score(targets, probs, k=5)), 6),
         "top10_acc": round(float(topk_accuracy_score(targets, probs, k=10)), 6)
     })
@@ -121,6 +122,13 @@ def metrics_multi_class(targets, probs, average="macro"):
         pr_auc = average_precision_score(new_targets, probs, average=average)
         result.update({
             "pr_auc": round(float(pr_auc), 6),
+        })
+    except Exception as e:
+        pass
+    try:
+        cm = confusion_matrix(targets, preds)
+        result.update({
+            "confusion_matrix": cm.tolist()
         })
     except Exception as e:
         pass

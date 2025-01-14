@@ -1222,7 +1222,7 @@ class Encoder(object):
 
             if seq_type_b == "prot":
                 seq_b = clean_seq(seq_id_b, seq_b)
-            elif seq_type_a == "multi_prot":
+            elif seq_type_b == "multi_prot":
                 seq_b = ",".join([clean_seq(seq_id_b, v) for v in seq_b.split(",")])
 
         return {

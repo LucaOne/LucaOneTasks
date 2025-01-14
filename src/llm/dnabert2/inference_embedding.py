@@ -24,7 +24,7 @@ try:
     from utils import clean_seq_luca, calc_emb_filename_by_seq_id
 except ImportError:
     from src.file_operator import fasta_reader, csv_reader, tsv_reader
-    from src.utils import clean_seq_luca
+    from src.utils import clean_seq_luca, calc_emb_filename_by_seq_id
 from transformers import AutoTokenizer, AutoModel
 
 model_id = 'zhihan1996/DNABERT-2-117M'

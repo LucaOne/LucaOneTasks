@@ -643,7 +643,10 @@ def writer_info_tb(tb_writer, logs, global_step, prefix=None):
         if isinstance(value, dict):
             writer_info_tb(tb_writer, value, global_step, prefix=prefix + key)
         elif not math.isnan(value) and not math.isinf(value):
-            tb_writer.add_scalar(prefix + key, value, global_step)
+            try:
+                tb_writer.add_scalar(prefix + key, value, global_step)
+            except Exception as e:
+                print(e)
         else:
             print("writer_info_tb NaN or Inf, Key-Value: %s=%s" % (key, value))
 

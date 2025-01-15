@@ -998,7 +998,7 @@ if __name__ == "__main__":
         print("Predicted Result:")
         print("seq_id=%s" % args.seq_id)
         print("seq=%s" % args.seq)
-        print("prob=%f" % results[0][2])
-        print("label=%s" % results[0][3])
+        print("prob=%f" % results[0][4])
+        print("label=%s" % results[0][5])
     else:
         raise Exception("input error, usage: --hep")

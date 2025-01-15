@@ -93,13 +93,13 @@ python run.py \
   --input_type $INPUT_TYPE \
   --input_mode $INPUT_MODE \
   --label_type $LABEL_TYPE \
-  --alphabet gene_prot \
+  --alphabet $VOCAB_NAME \
   --label_filepath ../dataset/$DATASET_NAME/$DATASET_TYPE/$TASK_TYPE/label.txt  \
   --output_dir ../models/$DATASET_NAME/$DATASET_TYPE/$TASK_TYPE/$MODEL_TYPE/$INPUT_TYPE/$time_str \
   --log_dir ../logs/$DATASET_NAME/$DATASET_TYPE/$TASK_TYPE/$MODEL_TYPE/$INPUT_TYPE/$time_str \
   --tb_log_dir ../tb-logs/$DATASET_NAME/$DATASET_TYPE/$TASK_TYPE/$MODEL_TYPE/$INPUT_TYPE/$time_str \
   --config_path ../config/$MODEL_TYPE/$CONFIG_NAME \
-  --seq_vocab_path  gene_prot \
+  --seq_vocab_path $VOCAB_NAME \
   --seq_pooling_type $SEQ_POOLING_TYPE \
   --matrix_pooling_type $MATRIX_POOLING_TYPE \
   --fusion_type $FUSION_TYPE \

@@ -148,6 +148,6 @@ python run.py \
   --beta2 0.98 \
   --weight_decay 0.01 \
   --save_steps $save_steps \
-  --max_steps $max_steps
+  --max_steps $max_steps \
   --logging_steps $logging_steps \
   --loss_reduction mean

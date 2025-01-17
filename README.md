@@ -136,7 +136,7 @@ the script of embedding a dataset(`./src/llm/lucagplm/get_embedding.py`):
 5）如果不设置`--embedding_complete`，那么根据设置的`--truncation_seq_length`的值对序列进行截断embedding；  
 6）对于蛋白，因为绝大部分蛋白长度在1000以下，因此超长蛋白序列不会很多，因此可以将`--embedding_fixed_len_a_time`设置长一点或者`不设置`；    
 7）对于DNA，因为很多任务的DNA序列很长，那么请设置`--embedding_fixed_len_a_time`。    
-超长序列数据量越多，该值设置越小一点，比如在A100下设置为`2800`，否则设置大一点，如果GPU根据这个长度embedding失败，则会调用CPU。如果数据集数不大，则时间不会很久；          
+如果数据集中超长序列数据量越多，该值设置越小一点，比如在A100下设置为`2800`，否则设置大一点，如果GPU根据这个长度embedding失败，则会调用CPU。如果数据集数不大，则时间不会很久；          
 8）对于RNA，因为大部分RNA不会很长，因此与蛋白处理方式一致，因此可以将`--embedding_fixed_len_a_time`设置长一点或者不设置；
 
 **Suggestions and Instructions:**
@@ -269,7 +269,7 @@ python get_embedding.py \
     * llm_version: the version of LucaOne, default: v2.0         
     * llm_task_level: the pretrained tasks of LucaOne, default: token_level,span_level,seq_level,structure_level          
     * llm_time_str: the trained time str of LucaOne, default: 20231125113045         
-    * llm_step:  the trained checkpoint of LucaOne, default: 5600000      
+    * llm_step:  the trained checkpoint of LucaOne, default: 5600000, choices=[5600000, 17600000]       
 
 2) Important parameters:        
     * embedding_type: `matrix` or `vector`, output the embedding matrix or [CLS] vector for the entire sequence, recommend: matrix.      

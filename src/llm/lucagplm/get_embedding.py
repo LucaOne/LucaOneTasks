@@ -26,7 +26,6 @@ try:
     from ....file_operator import fasta_reader, csv_reader, tsv_reader
     from ....utils import set_seed, to_device, get_labels, get_parameter_number, seq_type_is_match_seq, \
         gene_seq_replace, clean_seq_luca, available_gpu_id, download_trained_checkpoint_lucaone, calc_emb_filename_by_seq_id
-    from ....batch_converter import BatchConverter
     from .v0_2.lucaone_gplm import LucaGPLM as LucaGPLMV0_2
     from .v0_2.lucaone_gplm_config import LucaGPLMConfig as LucaGPLMConfigV0_2
     from .v0_2.alphabet import Alphabet as AlphabetV0_2
@@ -39,7 +38,6 @@ except ImportError as e:
     from src.file_operator import fasta_reader, csv_reader, tsv_reader
     from src.utils import set_seed, to_device, get_labels, get_parameter_number, seq_type_is_match_seq, \
         gene_seq_replace, clean_seq_luca, available_gpu_id, download_trained_checkpoint_lucaone, calc_emb_filename_by_seq_id
-    from src.batch_converter import BatchConverter
     from src.llm.lucagplm.v0_2.lucaone_gplm import LucaGPLM as LucaGPLMV0_2
     from src.llm.lucagplm.v0_2.lucaone_gplm_config import LucaGPLMConfig as LucaGPLMConfigV0_2
     from src.llm.lucagplm.v0_2.alphabet import Alphabet as AlphabetV0_2

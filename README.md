@@ -15,7 +15,7 @@ Three distinct networks correspond to three different types of inputs:
 
 <center>
 <img alt="Downstream task network with three input types and results comparison of 8 ver-
-ification tasks" src="./pics/downstream_networds_and_tasks.png"/>
+ification tasks" src="./pics/DownstreamNetworksAndMetrics.png"/>
 
 Fig. 1 Downstream task network with three input types and results comparison of 8 ver-
 ification tasks.   
@@ -368,21 +368,43 @@ Other supplementary materials are available at: <a href='http://47.93.21.181/luc
 ## 9. Contributor        
 <a href="https://scholar.google.com.hk/citations?user=RDbqGTcAAAAJ&hl=en" title="Yong He">Yong He</a>,
 <a href="https://scholar.google.com/citations?user=lT3nelQAAAAJ&hl=en" title="Zhaorong Li">Zhaorong Li</a>,
-<a href="https://scholar.google.com/citations?user=ODcOX4AAAAAJ&hl=zh-CN" title="Pan Fang">Pan Fang</a>,
 <a href="https://scholar.google.com/citations?view_op=list_works&hl=en&user=uvrzUfEAAAAJ" title="Yongtao Shan">Yongtao Shan</a>, Yanhong Wei,
 <a href="https://scholar.google.com.hk/citations?hl=zh-CN&pli=1&user=Zhlg9QkAAAAJ" title="Yuan-Fei Pan">Yuan-Fei Pan</a>,
 <a href="https://scholar.google.com/citations?user=1KJOH7YAAAAJ&hl=zh-CN&oi=ao" title="Mang Shi">Mang Shi</a>
 
 
-## 10. Citation          
-@article {LucaOne,        
+## 10. Zenodo        
+We have uploaded the model code, training scripts, and embedding inference scripts of LucaOne;    
+The mode code, training and evaluation scripts, datasets, and trained models for downstream tasks,    
+and additional supplementary materials to Zenodo (10.5281/zenodo.14604463).    
+However, due to the substantial size of the pretraining dataset of LucaOne, it has not been included on Zenodo.     
+Instead, it remains accessible via our publicly available FTP server (**<a href='http://47.93.21.181/lucaone/PreTrainingDataset/'>LucaOne Pretraining dataset</a>**).     
+We are actively seeking an open FTP platform with sufficient storage capacity to host our pretraining dataset.
+
+**<a href='https://doi.org/10.5281/zenodo.14604463'>LucaOne Zenodo</a>**
+
+## 11. Citation
+**<a href='https://www.biorxiv.org/content/10.1101/2024.05.10.592927v1'>LucaOne Biorxiv</a>**
+
+
+@article {LucaOne,                
 author = {Yong He and Pan Fang and Yongtao Shan and Yuanfei Pan and Yanhong Wei and Yichang Chen and Yihao Chen and Yi Liu and Zhenyu Zeng and Zhan Zhou and Feng Zhu and Edward C. Holmes and Jieping Ye and Jun Li and Yuelong Shu and Mang Shi and Zhaorong Li},     
 title = {LucaOne: Generalized Biological Foundation Model with Unified Nucleic Acid and Protein Language},      
 elocation-id = {2024.05.10.592927},        
 year = {2024},         
 doi = {10.1101/2024.05.10.592927},        
 publisher = {Cold Spring Harbor Laboratory},        
-URL = {https://www.biorxiv.org/content/early/2024/05/14/2024.05.10.592927},        
-eprint = {https://www.biorxiv.org/content/early/2024/05/14/2024.05.10.592927.full.pdf},        
+URL = {https://www.biorxiv.org/content/early/2024/05/14/2024.05.10.592927 },        
+eprint = {https://www.biorxiv.org/content/early/2024/05/14/2024.05.10.592927.full.pdf },        
 journal = {bioRxiv}        
-}        
+}
+
+
+## 12. LucaTeam
+
+<center>
+<img alt="LucaTeam" src="./pics/LucaTeam.jpg"/>
+
+Fig. 5 LucaTeam at the West Lake in Hangzhou.
+</center>   
+  

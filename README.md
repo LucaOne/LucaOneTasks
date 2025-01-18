@@ -377,7 +377,7 @@ Other supplementary materials are available at: <a href='http://47.93.21.181/luc
 We have uploaded the model code, training scripts, and embedding inference scripts of LucaOne;
 The mode code, training and evaluation scripts, datasets, and trained models for downstream tasks,    
 and additional supplementary materials to Zenodo (10.5281/zenodo.14604463).    
-However, due to the substantial size of the pretraining dataset and the trained checkpoints of LucaOne, they have not been included on Zenodo. Instead, they remain accessible via our publicly available FTP server (http://47.93.21.181/lucaone/PreTrainingDataset/ and http://47.93.21.181/lucaone/PreTrainingDataset/).
+However, due to the substantial size of the pretraining dataset of LucaOne, they have not been included on Zenodo. Instead, they remain accessible via our publicly available FTP server (http://47.93.21.181/lucaone/PreTrainingDataset/ and http://47.93.21.181/lucaone/PreTrainingDataset/).
 We are actively seeking an open FTP platform with sufficient storage capacity to host our pretraining dataset and checkpoints.
 
 **<a href='https://doi.org/10.5281/zenodo.14604463'>LucaOne Zenodo</a>**

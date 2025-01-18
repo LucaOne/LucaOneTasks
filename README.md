@@ -373,16 +373,15 @@ Other supplementary materials are available at: <a href='http://47.93.21.181/luc
 <a href="https://scholar.google.com/citations?user=1KJOH7YAAAAJ&hl=zh-CN&oi=ao" title="Mang Shi">Mang Shi</a>
 
 
-## 10. Zenodo
-We have uploaded the model code, training scripts, and embedding inference scripts of LucaOne;
+## 10. Zenodo        
+We have uploaded the model code, training scripts, and embedding inference scripts of LucaOne;    
 The mode code, training and evaluation scripts, datasets, and trained models for downstream tasks,    
 and additional supplementary materials to Zenodo (10.5281/zenodo.14604463).    
-However, due to the substantial size of the pretraining dataset of LucaOne, they have not been included on Zenodo. Instead, they remain accessible via our publicly available FTP server (http://47.93.21.181/lucaone/PreTrainingDataset/ and http://47.93.21.181/lucaone/PreTrainingDataset/).
-We are actively seeking an open FTP platform with sufficient storage capacity to host our pretraining dataset and checkpoints.
+However, due to the substantial size of the pretraining dataset of LucaOne, it has not been included on Zenodo.     
+Instead, it remains accessible via our publicly available FTP server (**<a href='http://47.93.21.181/lucaone/PreTrainingDataset/'>LucaOne Pretraining dataset</a>**).     
+We are actively seeking an open FTP platform with sufficient storage capacity to host our pretraining dataset.
 
 **<a href='https://doi.org/10.5281/zenodo.14604463'>LucaOne Zenodo</a>**
-
-
 
 ## 11. Citation
 **<a href='https://www.biorxiv.org/content/10.1101/2024.05.10.592927v1'>LucaOne Biorxiv</a>**

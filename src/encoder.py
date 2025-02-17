@@ -344,6 +344,12 @@ class Encoder(object):
         print("Encoder device: ", device)
         self.device = device
         self.seq_id_2_emb_filename = {}
+        # embedding buffer
+        self.embedding_buffer = {}
+        if "buffer_size" in kwargs:
+            self.embedding_buffer_size = kwargs["buffer_size"]
+        else:
+            self.embedding_buffer_size = 0
         print("Encoder: prepend_bos=%r, append_eos=%r" % (self.prepend_bos, self.append_eos))
         print("Encoder: matrix_add_special_token=%r, "
               "embedding_complete=%r, "
@@ -358,9 +364,17 @@ class Encoder(object):
               )
         print("-" * 50)
 
+    def put_into_buffer(self, seq_id, embedding_info):
+        if self.embedding_buffer_size > 0:
+            if len(self.embedding_buffer) >= self.embedding_buffer_size:
+                self.embedding_buffer = {}
+            self.embedding_buffer[seq_id] = embedding_info
+
     def __get_embedding__(self, seq_id, seq_type, seq, embedding_type):
         embedding_info = None
-        if seq_id in self.seq_id_2_emb_filename:
+        if seq_id in self.embedding_buffer:
+            return self.embedding_buffer[seq_id]
+        elif seq_id in self.seq_id_2_emb_filename:
             emb_filename = self.seq_id_2_emb_filename[seq_id]
             try:
                 dirpath_list = self.vector_dirpath if embedding_type in ["bos", "vector"] else self.matrix_dirpath
@@ -368,6 +382,7 @@ class Encoder(object):
                     emb_filepath = os.path.join(dirpath, emb_filename)
                     if os.path.exists(emb_filepath):
                         embedding_info = torch.load(emb_filepath)
+                        self.put_into_buffer(seq_id, embedding_info)
                         return embedding_info
             except Exception as e:
                 print(e)
@@ -381,6 +396,7 @@ class Encoder(object):
                     if os.path.exists(emb_filepath):
                         embedding_info = torch.load(emb_filepath)
                         self.seq_id_2_emb_filename[seq_id] = emb_filename
+                        self.put_into_buffer(seq_id, embedding_info)
                         return embedding_info
             except Exception as e:
                 print(e)
@@ -1030,6 +1046,7 @@ class Encoder(object):
                 # print("emb shape:", embedding_info.shape)
                 torch.save(embedding_info, emb_filepath)
                 self.seq_id_2_emb_filename[seq_id] = emb_filename
+                self.put_into_buffer(seq_id, embedding_info)
         return embedding_info
 
     def encode_single(

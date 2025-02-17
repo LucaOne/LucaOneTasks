@@ -822,7 +822,8 @@ def main():
             "embedding_complete": args.embedding_complete,
             "embedding_complete_seg_overlap": args.embedding_complete_seg_overlap,
             "embedding_fixed_len_a_time": args.embedding_fixed_len_a_time,
-            "matrix_embedding_exists": args.matrix_embedding_exists
+            "matrix_embedding_exists": args.matrix_embedding_exists,
+            "buffer_size": args.buffer_size
         }
     else:
         assert args.seq_max_length is not None

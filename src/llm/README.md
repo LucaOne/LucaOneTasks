@@ -78,11 +78,54 @@ python get_embedding.py \
 
 ### ESM2 Embedding
 only for `prot`          
-
+```shell
+cd src/llm/esm
+export CUDA_VISIBLE_DEVICES="0,1,2,3"
+python predict_embedding.py \
+    --llm_type esm2 \
+    --llm_version 3B \
+    --truncation_seq_length 10240 \
+    --trunc_type right \
+    --seq_type prot \
+    --input_file ../../../data/prot.fasta \
+    --save_path ../../../matrices/esm2/prot/ \
+    --embedding_type matrix \
+    --matrix_add_special_token \
+    --embedding_complete \
+    --embedding_complete_seg_overlap \
+    --gpu_id 0
+```
 
 ### DNABert2 Embedding          
-only for `gene`         
-
+only for `gene`
+```shell
+cd src/llm/dnabert2
+export CUDA_VISIBLE_DEVICES="0,1,2,3"
+python inference_embedding.py \
+    --truncation_seq_length 10240 \
+    --trunc_type right \
+    --seq_type gene \
+    --input_file ../../../data/gene.fasta \
+    --save_path ../../../../matrices/dnabert2/gene/ \
+    --embedding_type matrix \
+    --matrix_add_special_token \
+    --embedding_complete \
+    --gpu_id 0
+```
 
 ### DNABerts  Embedding         
-only for `gene`        
+only for `gene`     
+```shell
+cd src/llm/dnaberts
+export CUDA_VISIBLE_DEVICES="0,1,2,3"
+python inference_embedding.py \
+    --truncation_seq_length 10240 \
+    --trunc_type right \
+    --seq_type gene \
+    --input_file ../../../data/gene.fasta \
+    --save_path ../../../../matrices/dnaberts/gene/ \
+    --embedding_type matrix \
+    --matrix_add_special_token \
+    --embedding_complete \
+    --gpu_id 0
+```

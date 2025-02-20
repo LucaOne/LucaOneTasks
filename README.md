@@ -93,12 +93,23 @@ source ~/.bashrc
 #### 3) create a virtual environment: python=3.9.13
 conda create -n lucaone_tasks python=3.9.13
 
-
 #### 4) activate lucaone_tasks
 conda activate lucaone_tasks
 
 ### step3:  install other requirements
 pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+
+
+### for DNABert2 Embedding
+**Notice：** Need to switch the virtual environment        
+
+activate deactivate
+
+conda create -n lucaone_tasks_dnabert2 python=3.9.13
+
+conda activate lucaone_tasks_dnabert2
+
+pip install -r requirements_dnabert2.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 
 ## 3. Datasets   

@@ -10,15 +10,14 @@
 @file: run
 @desc: model building main
 '''
-import os
 import sys
 import json
 import copy
 import logging
 import codecs
 import argparse
-import shutil
-from datetime import datetime, timedelta
+from collections import OrderedDict
+from datetime import timedelta
 from datasets import load_dataset
 import torch.distributed as dist
 from subword_nmt.apply_bpe import BPE
@@ -1047,7 +1046,7 @@ def main():
 
         logger.info("checkpoint path: %s" % checkpoint)
         log_fp.write("checkpoint path: %s\n" % checkpoint)
-        model = model_class.from_pretrained(checkpoint, args=args)
+        model = load_trained_model(model_config, args, model_class, checkpoint)
         model.to(args.device)
         result = evaluate(args, model, parse_row_func, batch_data_func, prefix=prefix, log_fp=log_fp)
         result = dict(("evaluation_" + k + "_{}".format(global_step), v) for k, v in result.items())
@@ -1067,7 +1066,7 @@ def main():
             seq_tokenizer = seq_tokenizer_class.from_pretrained(checkpoint, do_lower_case=args.do_lower_case)
         logger.info("checkpoint path: %s" % checkpoint)
         log_fp.write("checkpoint path: %s\n" % checkpoint)
-        model = model_class.from_pretrained(checkpoint, args=args)
+        model = load_trained_model(model_config, args, model_class, checkpoint)
         model.to(args.device)
         result = test(args, model, parse_row_func, batch_data_func, prefix=prefix, log_fp=log_fp)
         result = dict(("evaluation_" + k + "_{}".format(global_step), v) for k, v in result.items())
@@ -1077,6 +1076,7 @@ def main():
         log_fp.close()
     if args.n_gpu > 1:
         dist.barrier()
+
 
 
 if __name__ == "__main__":

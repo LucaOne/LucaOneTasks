@@ -99,8 +99,10 @@ def predict_embedding(
         inputs = inputs.to(device=device, non_blocking=True)
         try:
             out = dnaberts_global_model(inputs)
-            truncate_len = min(truncation_seq_length, inputs.shape[1])
+            # inputs contain [CLS] in head and [SEP] in tail
+            truncate_len = min(truncation_seq_length, inputs.shape[1] - 2)
             if "representations" in embedding_type or "matrix" in embedding_type:
+                # embedding matrix contain [CLS] and [SEP] vector
                 if matrix_add_special_token:
                     embedding = out[0].to(device="cpu")[0, 0: truncate_len + 2].clone().numpy()
                 else:

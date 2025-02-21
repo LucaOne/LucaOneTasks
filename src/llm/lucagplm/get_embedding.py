@@ -521,6 +521,8 @@ def predict_embedding(
             embedding = emb.hidden_states_b
         else:
             embedding = emb.hidden_states
+        # processed_seq_len = seq_len + 2([CLS] and [SEP]
+        # embedding matrix contain [CLS] and [SEP] vector
         if matrix_add_special_token:
             embeddings["representations"] = embedding[0, 0: processed_seq_len, :].to(device="cpu").clone().numpy()
         else:

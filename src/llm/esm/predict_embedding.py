@@ -429,8 +429,10 @@ def predict_embedding(
         tokens = tokens.to(device=device, non_blocking=True)
         try:
             out = esm_global_model(tokens, repr_layers=repr_layers, return_contacts=False)
+            # tokens contain [CLS] and [SEP], raw_seqs not contain [CLS], [SEP]
             truncate_len = min(truncation_seq_length, len(raw_seqs[0]))
             if "representations" in embedding_type or "matrix" in embedding_type:
+                # embedding matrix contain [CLS] and [SEP] vector
                 if matrix_add_special_token:
                     embedding = out["representations"][esm_global_layer_size].to(device="cpu")[0, 0: truncate_len + 2].clone().numpy()
                 else:

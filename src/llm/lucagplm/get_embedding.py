@@ -372,15 +372,18 @@ def predict_embedding(
         device=None,
         matrix_add_special_token=False
 ):
-    '''
-    use sequence to predict protein embedding matrix or vector(bos)
-    :param sample: [protein_id, protein_sequence]
-    :param trunc_type:
-    :param embedding_type: bos or representations
-    :param repr_layers: [-1]
-    :param truncation_seq_length: [4094, 2046, 1982, 1790, 1534, 1278, 1150, 1022]
+    """
+    use sequence to predict the seq embedding matrix or vector([CLS])
+    :param llm_dirpath: llm dirpath
+    :param sample: [seq_id, seq_type, seq], seq_type: gene or prot
+    :param trunc_type: right or left when the input seq is too longer
+    :param embedding_type: [CLS] vector or embedding matrix
+    :param repr_layers: [-1], the last layer
+    :param truncation_seq_length: such as: [4094, 2046, 1982, 1790, 1534, 1278, 1150, 1022]
+    :param device: running device
+    :param matrix_add_special_token: embedding matrix contains [CLS] and [SEP] vector or not
     :return: embedding, processed_seq_len
-    '''
+    """
 
     global lucaone_global_log_filepath, lucaone_global_model_dirpath, lucaone_global_args_info, \
         lucaone_global_model_config, lucaone_global_model_version, lucaone_global_model, lucaone_global_tokenizer
@@ -758,18 +761,21 @@ def get_args():
                         help="the llm checkpoint step.")
 
     # for embedding
-    parser.add_argument("--embedding_type", type=str, default="matrix", choices=["matrix", "vector"],
+    parser.add_argument("--embedding_type",
+                        type=str,
+                        default="matrix",
+                        choices=["matrix", "vector"],
                         help="the llm embedding type.")
     parser.add_argument("--trunc_type", type=str, default="right", choices=["left", "right"],
-                        help="llm trunc type.")
+                        help="llm trunc type when the seq is too longer.")
     parser.add_argument("--truncation_seq_length", type=int, default=4094,
                         help="the llm truncation seq length(not contain [CLS] and [SEP].")
     parser.add_argument("--matrix_add_special_token", action="store_true",
-                        help="whether to add special token embedding vector in seq representation matrix")
+                        help="whether to add special tokens([CLS] and [SEP]) vector in seq representation matrix")
     parser.add_argument("--embedding_complete",  action="store_true",
                         help="when the seq len > inference_max_len, then the embedding matrix is completed by segment")
     parser.add_argument("--embedding_complete_seg_overlap",  action="store_true",
-                        help="overlap segment(overlap sliding window)")
+                        help="overlap segment(overlap sliding window) when the seq is too longer.")
     parser.add_argument("--embedding_fixed_len_a_time", type=int, default=None,
                         help="the embedding fixed length of once inference for longer sequence")
 

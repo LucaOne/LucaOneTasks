@@ -51,7 +51,7 @@ python get_embedding.py \
     --llm_version v2.0 \
     --llm_task_level token_level,span_level,seq_level,structure_level \
     --llm_time_str 20231125113045 \
-    --llm_step 17600000 \
+    --llm_step 5600000 \
     --truncation_seq_length 100000 \
     --trunc_type right \
     --seq_type prot \

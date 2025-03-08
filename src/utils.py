@@ -643,7 +643,7 @@ def writer_info_tb(tb_writer, logs, global_step, prefix=None):
         if isinstance(value, dict):
             writer_info_tb(tb_writer, value, global_step, prefix=prefix + key)
         elif isinstance(value, list):
-            print("writer_info_tb List, Key-Value: %s=%s" % (key, value))
+            print("writer_info_tb List, Key-Value: %s=%s" % (key, str(value)))
         elif not math.isnan(value) and not math.isinf(value):
             try:
                 tb_writer.add_scalar(prefix + key, value, global_step)

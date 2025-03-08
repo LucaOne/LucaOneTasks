@@ -379,7 +379,7 @@ However, due to the substantial size of the pretraining dataset of LucaOne, it h
 Instead, it remains accessible via our publicly available FTP server (**<a href='http://47.93.21.181/lucaone/PreTrainingDataset/'>LucaOne Pretraining dataset</a>**).     
 We are actively seeking an open FTP platform with sufficient storage capacity to host our pretraining dataset.
 
-**<a href='https://doi.org/10.5281/zenodo.14604463'>LucaOne Zenodo</a>**
+**<a href='https://doi.org/10.5281/zenodo.14977739'>LucaOne Zenodo</a>**
 
 ## 11. Citation
 **<a href='https://www.biorxiv.org/content/10.1101/2024.05.10.592927v1'>LucaOne Biorxiv</a>**

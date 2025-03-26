@@ -75,6 +75,8 @@ def load_model(
         llm_dir = os.path.join(strs[0], "llm/")
         ss = strs[1].split("/")
         llm_step = None
+        llm_type = None
+        llm_task_level = None
         llm_version = None
         llm_time_str = None
         for s_idx, s in enumerate(ss):
@@ -82,6 +84,10 @@ def load_model(
                 llm_version = ss[s_idx + 1]
             elif s_idx < len(ss) - 1 and "checkpoint-step" in ss[s_idx + 1]:
                 llm_time_str = s
+            elif s_idx < len(ss) - 1 and "checkpoint-step" in ss[s_idx + 2]:
+                llm_type = s
+            elif s_idx < len(ss) - 1 and "checkpoint-step" in ss[s_idx + 3]:
+                llm_task_level = s
             elif "checkpoint-step" in s:
                 llm_step = s.replace("checkpoint-step", "")
                 break
@@ -91,8 +97,15 @@ def load_model(
             llm_time_str = "20231125113045"
         if llm_version is None:
             llm_version = "v2.0"
+        if llm_task_level is None:
+            llm_task_level = "token_level,span_level,seq_level,structure_level"
+        if llm_type is None:
+            llm_type = "lucaone_gplm"
+
         download_trained_checkpoint_lucaone(
             llm_dir=llm_dir,
+            llm_type=llm_type,
+            llm_task_level=llm_task_level,
             llm_time_str=llm_time_str,
             llm_version=llm_version,
             llm_step=llm_step
@@ -798,6 +811,7 @@ def main(model_args):
         model_args.llm_dir = "../../.."
     download_trained_checkpoint_lucaone(
         llm_dir=os.path.join(model_args.llm_dir, "llm/"),
+        llm_type=model_args.llm_type,
         llm_version=model_args.llm_version,
         llm_task_level=model_args.llm_task_level,
         llm_time_str=model_args.llm_time_str,

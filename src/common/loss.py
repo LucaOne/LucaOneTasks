@@ -56,17 +56,18 @@ def create_activate(activate_func):
         return nn.Tanh()
 
 
-def create_loss_function(config,
-                         args,
-                         hidden_size,
-                         classifier_size,
-                         sigmoid,
-                         output_mode,
-                         num_labels,
-                         loss_type,
-                         ignore_index=-100,
-                         return_types=["dropout", "hidden_layer", "hidden_act", "classifier", "output", "loss"]
-                         ):
+def create_loss_function(
+        config,
+        args,
+        hidden_size,
+        classifier_size,
+        sigmoid,
+        output_mode,
+        num_labels,
+        loss_type,
+        ignore_index=-100,
+        return_types=["dropout", "hidden_layer", "hidden_act", "classifier", "output", "loss"]
+):
     '''
     create the output layer and loss layer
     :param hidden_size:

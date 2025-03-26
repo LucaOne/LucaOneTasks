@@ -959,12 +959,14 @@ def download_trained_checkpoint_lucaone(
         for logs_file_name in logs_file_names:
             if not os.path.exists(os.path.join(logs_local_dir, logs_file_name)):
                 exists = False
+                print(os.path.abspath(os.path.join(logs_local_dir, logs_file_name)) + ' not exists.')
                 break
         models_local_dir = os.path.join(llm_dir, models_path)
         if exists:
             for models_file_name in models_file_names:
                 if not os.path.exists(os.path.join(models_local_dir, models_file_name)):
                     exists = False
+                    print(os.path.abspath(os.path.join(models_local_dir, models_file_name)) + ' not exists.')
                     break
         if not exists:
             print("*" * 20 + "Downloading" + "*" * 20)
@@ -1040,6 +1042,7 @@ def download_trained_checkpoint_downstream_tasks(
             for logs_file_name in logs_file_names:
                 if not os.path.exists(os.path.join(logs_local_dir, logs_file_name)):
                     exists = False
+                    print(os.path.abspath(os.path.join(logs_local_dir, logs_file_name)) + ' not exists.')
                     break
             models_local_dir = os.path.join(save_dir, models_path)
             if exists:
@@ -1048,9 +1051,11 @@ def download_trained_checkpoint_downstream_tasks(
                         if not os.path.exists(os.path.join(models_local_dir, models_file_name)) \
                                 and not os.path.exists(os.path.join(models_local_dir, "model.safetensors")):
                             exists = False
+                            print(os.path.abspath(os.path.join(models_local_dir, models_file_name)) + ' not exists.')
                             break
                     else:
                         if not os.path.exists(os.path.join(models_local_dir, models_file_name)):
+                            print(os.path.abspath(os.path.join(models_local_dir, models_file_name)) + ' not exists.')
                             exists = False
                             break
             if not exists:

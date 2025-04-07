@@ -28,20 +28,20 @@ sys.path.append("../src")
 from torch.utils.data.dataloader import DataLoader
 from datasets.distributed import split_dataset_by_node
 try:
-    from .common.metrics import metrics_multi_class, metrics_binary
-    from .common.multi_label_metrics import *
-    from .utils import set_seed, save_labels, get_parameter_number, get_labels, load_trained_model
-    from .multi_files_stream_dataloader import *
-    from .trainer import train
-    from .evaluator import evaluate
-    from .tester import test
-    from .common.luca_base import LucaBase
-    from .ppi.models.LucaPPI import LucaPPI
-    from .ppi.models.LucaPPI2 import LucaPPI2
-    from .common.alphabet import Alphabet
-    from .common.model_config import LucaConfig
-    from .encoder import Encoder
-    from .batch_converter import BatchConverter
+    from common.metrics import metrics_multi_class, metrics_binary
+    from common.multi_label_metrics import *
+    from utils import set_seed, save_labels, get_parameter_number, get_labels, load_trained_model
+    from multi_files_stream_dataloader import *
+    from trainer import train
+    from evaluator import evaluate
+    from tester import test
+    from common.luca_base import LucaBase
+    from ppi.models.LucaPPI import LucaPPI
+    from ppi.models.LucaPPI2 import LucaPPI2
+    from common.alphabet import Alphabet
+    from common.model_config import LucaConfig
+    from encoder import Encoder
+    from batch_converter import BatchConverter
 
 except ImportError:
     from src.common.metrics import metrics_multi_class, metrics_binary
@@ -258,9 +258,21 @@ def get_args():
     # which metric for model finalization selected
     parser.add_argument("--best_metric_type", type=str, default="f1",
                         choices=[
-                            "loss", "acc", "jaccard", "prec", "recall", "f1",
-                            "fmax", "roc_auc", "pr_auc", "mcc", "sp_statistic",
-                            "mse", "mae", "r2", "ps_statistic"
+                            "loss",
+                            "acc",
+                            "jaccard",
+                            "prec",
+                            "recall",
+                            "f1",
+                            "fmax",
+                            "roc_auc",
+                            "pr_auc",
+                            "mcc",
+                            "mse",
+                            "mae",
+                            "r2",
+                            "sp_statistic",
+                            "ps_statistic"
                         ],
                         help="Which metric for model selected")
     # for BCE Loss
@@ -348,26 +360,32 @@ def get_args():
                         help="llm dir.")
     parser.add_argument("--llm_type", default=None, type=str,
                         choices=[
-                            "none", "onehot", "esm", "lucaone_gplm", "luca_separated",
-                            "dnabert", "dnaberts", "dnabert-esm", "lucaone_gplm-unimol"
+                            "none",
+                            "onehot",
+                            "lucaone",
+                            "dnabert",
+                            "dnaberts",
+                            "esm",
+                            "dnabert-esm"
                         ],
                         required=True, help="llm type.")
     parser.add_argument("--llm_version", type=str, default="v2.0",
                         choices=[
-                            "none", "onehot", "v0.2", "v0.3", "v2.0", "esm2", "dnabert2",
-                            "dnaberts", "v2.0-v0.2", "dnabert2-esm2", "v0.3-v0.2"],
-                        help="llm version")
-    parser.add_argument("--llm_task_level", type=str,
-                        default="token_level,span_level,seq_level,structure_level",
-                        choices=[
-                            "token_level",
-                            "token_level,span_level,seq_level",
-                            "token_level,span_level,seq_level,structure_level"
+                            "none",
+                            "onehot",
+                            "lucaone",
+                            "lucaone_separated",
+                            "lucaone-gene",
+                            "lucaone-prot",
+                            "dnabert2",
+                            "dnaberts",
+                            "esm2",
+                            "dnabert2-esm2"
                         ],
-                        help="llm task level")
-    parser.add_argument("--llm_time_str", type=str, default=None,
-                        help="llm time str")
-    parser.add_argument("--llm_step", type=str, default=None,
+                        help="llm version")
+    parser.add_argument("--llm_step",
+                        type=str,
+                        default=None,
                         help="llm step.")
 
     # others
@@ -399,7 +417,12 @@ def get_args():
     parser.add_argument("--not_append_eos", action="store_true",
                         help="not append_eos")
     parser.add_argument("--loss_reduction", default="mean",
-                        choices=["none", "meansum", "mean", "meanmean"],
+                        choices=[
+                            "none",
+                            "meansum",
+                            "mean",
+                            "meanmean"
+                        ],
                         type=str, help="loss reduction")
     parser.add_argument("--cross_atten",  action="store_true",
                         help="use cross attention")
@@ -751,31 +774,28 @@ def main():
 
     # create model
     model_config, model_class, model, seq_subword, seq_tokenizer_class, seq_tokenizer, label_list = get_model(args)
-    if "luca_separated" in args.llm_type:
-        llm_version_strs = args.llm_version.split("-")
-        llm_time_str_strs = args.llm_time_str.split("-")
+    if "lucaone_separated" in args.llm_type:
         llm_step_strs = args.llm_step.split("-")
-        dataset_types = args.dataset_type.split("_")
-
-        llm_dirpath_1 = "%s/llm/models/lucagplm/%s/%s/%s/%s/checkpoint-%s" % (
-            args.llm_dir if args.llm_dir else "..", llm_version_strs[0], args.llm_task_level,
-            "lucaone_gplm", llm_time_str_strs[0], llm_step_strs[0]
+        dataset_types = [
+            "gene",
+            "prot"
+        ]
+        # llm/models/lucaone/lucaone_separated/gene/v2.0/checkpoint-step5600000
+        llm_dirpath_1 = "%s/llm/models/%s/%s/gene/v2.0/checkpoint-step%s" % (
+            args.llm_dir if args.llm_dir else "..",
+            args.llm_type,
+            args.llm_version,
+            llm_step_strs[0]
         )
-        if not os.path.exists(llm_dirpath_1):
-            llm_dirpath_1 = "%s/llm/models/lucagplm/%s/%s/%s/%s/checkpoint-step%s" % (
-                args.llm_dir if args.llm_dir else "..", llm_version_strs[0], args.llm_task_level,
-                "lucaone_gplm",llm_time_str_strs[0], llm_step_strs[0]
+
+        if len(llm_step_strs) > 1:
+            # llm/models/lucaone/lucaone_separated/prot/v0.2/checkpoint-step5600000
+            llm_dirpath_2 = "%s/llm/models/%s/%s/prot/v0.2/checkpoint-step%s" % (
+                args.llm_dir if args.llm_dir else "..",
+                args.llm_type,
+                args.llm_version,
+                llm_step_strs[1]
             )
-        if len(llm_version_strs) > 1:
-            llm_dirpath_2 = "%s/llm/models/lucagplm/%s/%s/%s/%s/checkpoint-%s" % (
-                args.llm_dir if args.llm_dir else "..", llm_version_strs[1], args.llm_task_level,
-                "lucaone_gplm", llm_time_str_strs[1], llm_step_strs[1]
-            )
-            if not os.path.exists(llm_dirpath_2):
-                llm_dirpath_2 = "%s/llm/models/lucagplm/%s/%s/%s/%s/checkpoint-step%s" % (
-                    args.llm_dir if args.llm_dir else "..", llm_version_strs[1], args.llm_task_level,
-                    "lucaone_gplm", llm_time_str_strs[1], llm_step_strs[1]
-                )
             llm_dirpath = {
                 dataset_types[0]: llm_dirpath_1,
                 dataset_types[1]: llm_dirpath_2
@@ -784,16 +804,14 @@ def main():
             llm_dirpath = {
                 dataset_types[0]: llm_dirpath_1
             }
-    elif "luca" in args.llm_type:
-            llm_dirpath = "%s/llm/models/lucagplm/%s/%s/%s/%s/checkpoint-%s" % (
-                args.llm_dir if args.llm_dir else "..", args.llm_version, args.llm_task_level,
-                args.llm_type, args.llm_time_str, args.llm_step
-            )
-            if not os.path.exists(llm_dirpath):
-                llm_dirpath = "%s/llm/models/lucagplm/%s/%s/%s/%s/checkpoint-step%s" % (
-                    args.llm_dir if args.llm_dir else "..", args.llm_version, args.llm_task_level,
-                    args.llm_type, args.llm_time_str, args.llm_step
-            )
+    elif "lucaone" in args.llm_type:
+        # llm/models/lucaone/lucaone or lucaone-gene or lucaone-prot
+        llm_dirpath = "%s/llm/models/%s/%s/%s/%s/checkpoint-step%s" % (
+            args.llm_dir if args.llm_dir else "..",
+            args.llm_type,
+            args.llm_version,
+            args.llm_step
+        )
     else:
         llm_dirpath = None
     args.llm_dirpath = llm_dirpath
@@ -804,10 +822,10 @@ def main():
             args.seq_max_length = max(args.seq_max_length_a, args.seq_max_length_b)
         # encoder_config
         encoder_config = {
+            "llm_dirpath": llm_dirpath,
             "llm_type": args.llm_type,
             "llm_version": args.llm_version,
             "llm_step": args.llm_step,
-            "llm_dirpath": llm_dirpath,
             "input_type": args.input_type,
             "trunc_type": args.trunc_type,
             "seq_max_length": args.seq_max_length,
@@ -827,10 +845,10 @@ def main():
     else:
         assert args.seq_max_length is not None
         encoder_config = {
+            "llm_dirpath": llm_dirpath,
             "llm_type": args.llm_type,
             "llm_version": args.llm_version,
             "llm_step": args.llm_step,
-            "llm_dirpath": llm_dirpath,
             "input_type": args.input_type,
             "trunc_type": args.trunc_type,
             "seq_max_length": args.seq_max_length,
@@ -956,10 +974,12 @@ def main():
         )
     else:
         print("n_gpu: %d, use: DataLoader" % args.n_gpu)
-        train_dataset = load_dataset('csv',
-                                     data_dir=args.train_data_dir,
-                                     split='train',
-                                     streaming=True)
+        train_dataset = load_dataset(
+            'csv',
+            data_dir=args.train_data_dir,
+            split='train',
+            streaming=True
+        )
         if args.input_mode == "pair":
             print("Has Pair: True")
             train_dataset = train_dataset.map(
@@ -1076,7 +1096,6 @@ def main():
         log_fp.close()
     if args.n_gpu > 1:
         dist.barrier()
-
 
 
 if __name__ == "__main__":

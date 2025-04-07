@@ -22,16 +22,16 @@ sys.path.append("../../")
 sys.path.append("../../../")
 sys.path.append("../../../src")
 try:
-    from ....args import Args
-    from ....file_operator import fasta_reader, csv_reader, tsv_reader
-    from ....utils import set_seed, to_device, get_labels, get_parameter_number, seq_type_is_match_seq, \
+    from args import Args
+    from file_operator import fasta_reader, csv_reader, tsv_reader
+    from utils import set_seed, to_device, get_labels, get_parameter_number, seq_type_is_match_seq, \
         gene_seq_replace, clean_seq_luca, available_gpu_id, download_trained_checkpoint_lucaone, calc_emb_filename_by_seq_id
-    from .v0_2.lucaone_gplm import LucaGPLM as LucaGPLMV0_2
-    from .v0_2.lucaone_gplm_config import LucaGPLMConfig as LucaGPLMConfigV0_2
-    from .v0_2.alphabet import Alphabet as AlphabetV0_2
-    from .v2_0.lucaone_gplm import LucaGPLM as LucaGPLMV2_0
-    from .v2_0.lucaone_gplm_config import LucaGPLMConfig as LucaGPLMConfigV2_0
-    from .v2_0.alphabet import Alphabet as AlphabetV2_0
+    from llm.lucagplm.v0_2.lucaone_gplm import LucaGPLM as LucaGPLMV0_2
+    from llm.lucagplm.v0_2.lucaone_gplm_config import LucaGPLMConfig as LucaGPLMConfigV0_2
+    from llm.lucagplm.v0_2.alphabet import Alphabet as AlphabetV0_2
+    from llm.lucagplm.v2_0.lucaone_gplm import LucaGPLM as LucaGPLMV2_0
+    from llm.lucagplm.v2_0.lucaone_gplm_config import LucaGPLMConfig as LucaGPLMConfigV2_0
+    from llm.lucagplm.v2_0.alphabet import Alphabet as AlphabetV2_0
 
 except ImportError as e:
     from src.args import Args
@@ -44,17 +44,16 @@ except ImportError as e:
     from src.llm.lucagplm.v2_0.lucaone_gplm import LucaGPLM as LucaGPLMV2_0
     from src.llm.lucagplm.v2_0.lucaone_gplm_config import LucaGPLMConfig as LucaGPLMConfigV2_0
     from src.llm.lucagplm.v2_0.alphabet import Alphabet as AlphabetV2_0
-
 from transformers import AutoTokenizer, PretrainedConfig, BertTokenizer
 from collections import OrderedDict
 
 lucaone_global_log_filepath = None
-
 lucaone_global_model_dirpath = None
-
 lucaone_global_model_version = None
-
-lucaone_global_args_info, lucaone_global_model_config, lucaone_global_model, lucaone_global_tokenizer = None, None, None, None
+lucaone_global_args_info = None
+lucaone_global_model_config = None
+lucaone_global_model = None
+lucaone_global_tokenizer = None
 
 
 def load_model(
@@ -74,43 +73,28 @@ def load_model(
     if len(strs) > 1:
         llm_dir = os.path.join(strs[0], "llm/")
         ss = strs[1].split("/")
-        llm_step = None
         llm_type = None
-        llm_task_level = None
         llm_version = None
-        llm_time_str = None
+        llm_step = None
         for s_idx, s in enumerate(ss):
-            if "lucagplm" in ss[s_idx]:
-                llm_version = ss[s_idx + 1]
-            elif s_idx < len(ss) - 1 and "checkpoint-step" in ss[s_idx + 1]:
-                llm_time_str = s
-            elif s_idx < len(ss) - 1 and "checkpoint-step" in ss[s_idx + 2]:
-                llm_type = s
-            elif s_idx < len(ss) - 1 and "checkpoint-step" in ss[s_idx + 3]:
-                llm_task_level = s
-            elif "checkpoint-step" in s:
+            if "checkpoint-step" in s:
+                llm_type = ss[s_idx - 2]
+                llm_version = ss[s_idx - 1]
                 llm_step = s.replace("checkpoint-step", "")
                 break
-        if llm_step is None:
-            llm_step = "5600000"
-        if llm_time_str is None:
-            llm_time_str = "20231125113045"
-        if llm_version is None:
-            llm_version = "v2.0"
-        if llm_task_level is None:
-            llm_task_level = "token_level,span_level,seq_level,structure_level"
         if llm_type is None:
-            llm_type = "lucaone_gplm"
+            llm_type = "lucaone"
+        if llm_version is None:
+            llm_version = "lucaone"
+        if llm_step is None:
+            llm_step = "36000000"
 
         download_trained_checkpoint_lucaone(
             llm_dir=llm_dir,
             llm_type=llm_type,
-            llm_task_level=llm_task_level,
-            llm_time_str=llm_time_str,
             llm_version=llm_version,
-            llm_step=llm_step
+            llm_step=str(llm_step)
         )
-
     with open(log_filepath, "r") as rfp:
         for line_idx, line in enumerate(rfp):
             if line_idx == 0:
@@ -132,7 +116,7 @@ def load_model(
             do_lower_case=args_info["do_lower_case"],
             truncation_side=args_info["truncation"]
         )
-    elif args_info["model_type"] in ["lucaone_gplm"]:
+    elif args_info["model_type"] in ["lucaone_gplm", "lucaone", "lucagplm"]:
         print("Alphabet, vocab path: %s" % tokenizer_dir)
         if "/v0.2/" in model_dirpath:
             tokenizer = AlphabetV0_2.from_predefined("gene_prot")
@@ -147,18 +131,20 @@ def load_model(
             do_lower_case=args_info["do_lower_case"],
             truncation_side=args_info["truncation"])
     # four type of models
-    if args_info["model_type"] in ["lucaone_gplm"]:
+    if args_info["model_type"] in ["lucaone_gplm", "lucaone", "lucagplm"]:
         if "/v0.2/" in model_dirpath:
             config_class, model_class = LucaGPLMConfigV0_2, LucaGPLMV0_2
         elif "/v2.0/" in model_dirpath:
             config_class, model_class = LucaGPLMConfigV2_0, LucaGPLMV2_0
         else:
-            raise Exception("Not support version=%s" % model_dirpath)
+            config_class, model_class = LucaGPLMConfigV2_0, LucaGPLMV2_0
     else:
         raise Exception("Not support model_type=%s" % args_info["model_type"])
 
     # model config
-    model_config: PretrainedConfig = config_class.from_json_file(os.path.join(model_dirpath, "config.json"))
+    model_config: PretrainedConfig = config_class.from_json_file(
+        os.path.join(model_dirpath, "config.json")
+    )
 
     # load the pretrained model or create the model
     print("Load pretrained model: %s" % model_dirpath)
@@ -210,7 +196,13 @@ def load_model(
     return args_info, model_config, model, tokenizer
 
 
-def encoder(args_info, model_config, seq, seq_type, tokenizer):
+def encoder(
+        args_info,
+        model_config,
+        seq,
+        seq_type,
+        tokenizer
+):
     if args_info["tokenization"]:
         # seq to seq ids
         encoding = tokenizer.encode_plus(
@@ -225,7 +217,7 @@ def encoder(args_info, model_config, seq, seq_type, tokenizer):
             truncation=True
         )
         processed_seq_len = sum(encoding["attention_mask"])
-    elif args_info["model_type"] in ["lucaone_gplm", "lucaone", "lucagplm"]:
+    elif args_info["model_type"] in ["lucaone_gplm", "lucaone", "lucagplm", "lucaone-gene", "lucaone-prot"]:
         seqs = [seq]
         seq_types = [seq_type]
         seq_encoded_list = [tokenizer.encode(seq)]
@@ -330,7 +322,7 @@ def get_embedding(
         seq_type,
         device
 ):
-    if args_info["model_type"] in ["lucaone_gplm", "lucaone", "lucagplm"]:
+    if args_info["model_type"] in ["lucaone_gplm", "lucaone", "lucagplm", "lucaone-gene", "lucaone-prot"]:
         if seq_type == "gene":
             seq = gene_seq_replace(seq)
             batch, processed_seq_len = encoder(args_info, model_config, seq, seq_type, tokenizer)
@@ -344,8 +336,6 @@ def get_embedding(
         new_batch["return_dict"] = True
         new_batch["repr_layers"] = list(range(args_info["num_hidden_layers"] + 1))
         batch = new_batch
-        # print("batch:")
-        # print(batch)
     else:
         if seq_type == "gene":
             seq = gene_seq_replace(seq)
@@ -354,7 +344,6 @@ def get_embedding(
             encoding, processed_seq_len = encoder(args_info, model_config, seq, seq_type, tokenizer)
             if not model_config.no_token_type_embeddings:
                 encoding["token_type_ids"] = [1] * len(encoding["attention_mask"])
-
         batch = {
             "input_ids": torch.tensor([encoding["input_ids"]], dtype=torch.long).to(device),
             "attention_mask": torch.tensor([encoding["attention_mask"]], dtype=torch.long).to(device),
@@ -397,7 +386,6 @@ def predict_embedding(
     :param matrix_add_special_token: embedding matrix contains [CLS] and [SEP] vector or not
     :return: embedding, processed_seq_len
     """
-
     global lucaone_global_log_filepath, lucaone_global_model_dirpath, lucaone_global_args_info, \
         lucaone_global_model_config, lucaone_global_model_version, lucaone_global_model, lucaone_global_tokenizer
     assert "bos" in embedding_type \
@@ -411,22 +399,6 @@ def predict_embedding(
         seq_type = "prot"
     else:
         seq_id, seq_type, seq = sample[0], sample[1], sample[2]
-    # print("truncation_seq_length, seq_len:", truncation_seq_length, len(seq))
-    '''
-    cur_log_filepath = "%s/llm/logs/lucagplm/%s/%s/%s/%s/logs.txt" % (
-        model_args.llm_dir if model_args.llm_dir else "..", model_args.llm_version, model_args.llm_task_level,
-        model_args.llm_type, model_args.llm_time_str
-    )
-    cur_model_dirpath = "%s/llm/models/lucagplm/%s/%s/%s/%s/checkpoint-%d" % (
-        model_args.llm_dir if model_args.llm_dir else "..", model_args.llm_version, model_args.llm_task_level,
-        model_args.llm_type, model_args.llm_time_str, model_args.llm_step
-    )
-    if not os.path.exists(cur_model_dirpath):
-        cur_model_dirpath = "%s/llm/models/lucagplm/%s/%s/%s/%s/checkpoint-step%d" % (
-            model_args.llm_dir if model_args.llm_dir else "..", model_args.llm_version, model_args.llm_task_level,
-            model_args.llm_type, model_args.llm_time_str, model_args.llm_step
-        )
-    '''
     if isinstance(llm_dirpath, str):
         cur_log_filepath = os.path.join(os.path.dirname(llm_dirpath).replace("models", "logs"), "logs.txt")
         cur_model_dirpath = llm_dirpath
@@ -739,62 +711,142 @@ def complete_embedding_matrix(
 def get_args():
     parser = argparse.ArgumentParser(description='LucaOne/LucaGPLM Embedding')
     # for one seq
-    parser.add_argument("--seq_id", type=str, default=None,
-                        help="the seq_id")
-    parser.add_argument("--seq", type=str, default=None,
-                        help="when input a seq")
-    parser.add_argument("--seq_type", type=str, default=None,
-                        required=True, choices=["gene", "prot"], help="the input seq type")
+    parser.add_argument(
+        "--seq_id",
+        type=str,
+        default=None,
+        help="the seq id"
+    )
+    parser.add_argument(
+        "--seq",
+        type=str,
+        default=None,
+        help="when to input a seq"
+    )
+    parser.add_argument(
+        "--seq_type",
+        type=str,
+        default=None,
+        required=True,
+        choices=["gene", "prot"],
+        help="the input seq type: gene(i.e. DNA or RNA) or prot"
+    )
 
     # for many seqs
-    parser.add_argument("--input_file", type=str, default=None,
-                        help="the input file（format: fasta or csv or tsv)")
-    parser.add_argument("--id_idx", type=int, default=None,
-                        help="id col idx(0 start)")
-    parser.add_argument("--seq_idx", type=int, default=None,
-                        help="seq col idx(0 start)")
+    parser.add_argument(
+        "--input_file",
+        type=str,
+        default=None,
+        help="the input filepath(.fasta or .csv or .tsv)"
+    )
+    parser.add_argument(
+        "--id_idx",
+        type=int,
+        default=None,
+        help="id col idx(0 start)"
+    )
+    parser.add_argument(
+        "--seq_idx",
+        type=int,
+        default=None,
+        help="seq col idx(0 start)"
+    )
 
-    # for saved path
-    parser.add_argument("--save_path", type=str, default=None,
-                        help="embedding file save dir path")
+    # saved path
+    parser.add_argument(
+        "--save_path",
+        type=str,
+        default=None,
+        help="embedding file save dir path"
+    )
 
+    # for trained llm checkpoint
     # for trained LucaOne checkpoint
-    parser.add_argument("--llm_dir", type=str, default="../../..",
-                        help="the llm model dir")
-    parser.add_argument("--llm_type", type=str, default="lucaone_gplm", choices=["esm", "lucaone_gplm"],
-                        help="the llm type")
-    parser.add_argument("--llm_version", type=str, default="v2.0", choices=["v2.0"],
-                        help="the llm version")
-    parser.add_argument("--llm_task_level", type=str, default="token_level,span_level,seq_level,structure_level",
-                        choices=["token_level", "token_level,span_level,seq_level,structure_level"],
-                        help="the llm task level")
-    parser.add_argument("--llm_time_str", type=str, default=None,
-                        help="the llm running time str")
-    parser.add_argument("--llm_step", type=int, default=None,
-                        help="the llm checkpoint step.")
+    parser.add_argument(
+        "--llm_dir",
+        type=str,
+        default=None,
+        help="the llm model save dir"
+    )
+    parser.add_argument(
+        "--llm_type",
+        type=str,
+        default="lucaone",
+        choices=["lucaone"],
+        help="the llm type"
+    )
+    parser.add_argument(
+        "--llm_version",
+        type=str,
+        default="lucaone",
+        choices=["lucaone", "lucaone-gene", "lucaone-prot"],
+        help="the llm version"
+    )
+    parser.add_argument(
+        "--llm_step",
+        type=int,
+        default=None,
+        choices=["5600000", "17600000", "30000000", "36000000", "36800000"],
+        help="the llm checkpoint step."
+    )
 
     # for embedding
-    parser.add_argument("--embedding_type",
-                        type=str,
-                        default="matrix",
-                        choices=["matrix", "vector"],
-                        help="the llm embedding type.")
-    parser.add_argument("--trunc_type", type=str, default="right", choices=["left", "right"],
-                        help="llm trunc type when the seq is too longer.")
-    parser.add_argument("--truncation_seq_length", type=int, default=4094,
-                        help="the llm truncation seq length(not contain [CLS] and [SEP].")
-    parser.add_argument("--matrix_add_special_token", action="store_true",
-                        help="whether to add special tokens([CLS] and [SEP]) vector in seq representation matrix")
-    parser.add_argument("--embedding_complete",  action="store_true",
-                        help="when the seq len > inference_max_len, then the embedding matrix is completed by segment")
-    parser.add_argument("--embedding_complete_seg_overlap",  action="store_true",
-                        help="overlap segment(overlap sliding window) when the seq is too longer.")
-    parser.add_argument("--embedding_fixed_len_a_time", type=int, default=None,
-                        help="the embedding fixed length of once inference for longer sequence")
+    parser.add_argument(
+        "--embedding_type",
+        type=str,
+        default="matrix",
+        choices=["matrix", "vector"],
+        help="the llm embedding type."
+    )
+    parser.add_argument(
+        "--vector_type",
+        type=str,
+        default="mean",
+        choices=["mean", "max", "cls"],
+        help="the llm vector embedding type."
+    )
+    parser.add_argument(
+        "--trunc_type",
+        type=str,
+        default="right",
+        choices=["left", "right"],
+        help="llm trunc type when the seq is too longer."
+    )
+    parser.add_argument(
+        "--truncation_seq_length",
+        type=int,
+        default=4094,
+        help="the llm truncation seq length(not contain [CLS] and [SEP]."
+    )
+    parser.add_argument(
+        "--matrix_add_special_token",
+        action="store_true",
+        help="whether to add special tokens([CLS] and [SEP]) vector in seq representation matrix."
+    )
 
-    # for running
-    parser.add_argument('--gpu_id', type=int, default=-1,
-                        help="the gpu id to use.")
+    parser.add_argument(
+        "--embedding_complete",
+        action="store_true",
+        help="when the seq len > inference_max_len, then the embedding matrix is completed by segment."
+    )
+    parser.add_argument(
+        "--embedding_complete_seg_overlap",
+        action="store_true",
+        help="segment overlap when the seq is too longer."
+    )
+    parser.add_argument(
+        "--embedding_fixed_len_a_time",
+        type=int,
+        default=None,
+        help="the embedding fixed length of once inference for longer sequence."
+    )
+
+    parser.add_argument(
+        '--gpu_id',
+        type=int,
+        default=-1,
+        help="the gpu id to use."
+    )
 
     input_args = parser.parse_args()
     return input_args
@@ -809,41 +861,38 @@ def main(model_args):
     print("*" * 50)
     if model_args.llm_dir is None:
         model_args.llm_dir = "../../.."
+    if not hasattr(model_args, "llm_type") or model_args.llm_type is None:
+        model_args.llm_type = "lucaone"
+    if not hasattr(model_args, "llm_version") or model_args.llm_version is None:
+        model_args.llm_version = "lucaone"
+    if model_args.llm_step is None or model_args.llm_step not in ["5600000", "17600000", "30000000", "36000000" "36800000"]:
+        if model_args.llm_version == "lucaone":
+            model_args.llm_step = "30000000"
+        elif model_args.llm_version == "lucaone-gene":
+            model_args.llm_step = "36800000"
+        elif model_args.llm_version == "lucaone-prot":
+            model_args.llm_step = "30000000"
     download_trained_checkpoint_lucaone(
         llm_dir=os.path.join(model_args.llm_dir, "llm/"),
         llm_type=model_args.llm_type,
         llm_version=model_args.llm_version,
-        llm_task_level=model_args.llm_task_level,
-        llm_time_str=model_args.llm_time_str,
         llm_step=model_args.llm_step
     )
 
-    cur_log_filepath = "%s/llm/logs/lucagplm/%s/%s/%s/%s/logs.txt" % (
-        model_args.llm_dir if model_args.llm_dir else "..", model_args.llm_version, model_args.llm_task_level,
-        model_args.llm_type, model_args.llm_time_str
+    cur_log_filepath = "%s/llm/logs/%s/%s/logs.txt" % (
+        model_args.llm_dir,
+        model_args.llm_type,
+        model_args.llm_version
     )
     print("log_filepath: %s" % cur_log_filepath)
 
-    cur_model_dirpath = "%s/llm/models/lucagplm/%s/%s/%s/%s/checkpoint-%d" % (
-        model_args.llm_dir if model_args.llm_dir else "..", model_args.llm_version, model_args.llm_task_level,
-        model_args.llm_type, model_args.llm_time_str, model_args.llm_step
+    cur_model_dirpath = "%s/llm/models/%s/%s/checkpoint-step%s" % (
+        model_args.llm_dir,
+        model_args.llm_type,
+        model_args.llm_version,
+        model_args.llm_step
     )
-    if not os.path.exists(cur_model_dirpath):
-        cur_model_dirpath = "%s/llm/models/lucagplm/%s/%s/%s/%s/checkpoint-step%d" % (
-            model_args.llm_dir if model_args.llm_dir else "..", model_args.llm_version, model_args.llm_task_level,
-            model_args.llm_type, model_args.llm_time_str, model_args.llm_step
-        )
     print("model_dirpath: %s" % cur_model_dirpath)
-
-    if not os.path.exists(cur_model_dirpath):
-        cur_model_dirpath = "%s/models/lucagplm/%s/%s/%s/%s/checkpoint-step%d" % (
-            model_args.llm_dir if model_args.llm_dir else "..", model_args.llm_version, model_args.llm_task_level,
-            model_args.llm_type, model_args.llm_time_str, model_args.llm_step
-        )
-        cur_log_filepath = "%s/logs/lucagplm/%s/%s/%s/%s/logs.txt" % (
-            model_args.llm_dir if model_args.llm_dir else "..", model_args.llm_version, model_args.llm_task_level,
-            model_args.llm_type, model_args.llm_time_str
-        )
     if lucaone_global_log_filepath != cur_log_filepath or lucaone_global_model_dirpath != cur_model_dirpath:
         lucaone_global_log_filepath = cur_log_filepath
         lucaone_global_model_dirpath = cur_model_dirpath
@@ -856,12 +905,10 @@ def main(model_args):
     if model_args.gpu_id >= 0:
         gpu_id = model_args.gpu_id
     else:
-        # gpu_id = available_gpu_id()
         gpu_id = -1
         print("gpu_id: ", gpu_id)
     model_args.device = torch.device("cuda:%d" % gpu_id if gpu_id > -1 else "cpu")
     # lucaone_global_model.to(model_args.device)
-
     assert (model_args.input_file is not None and os.path.exists(model_args.input_file)) or model_args.seq is not None
     print("input seq type: %s" % model_args.seq_type)
     print("model_args device: %s" % model_args.device)

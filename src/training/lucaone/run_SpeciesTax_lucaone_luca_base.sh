@@ -43,11 +43,10 @@ embedding_input_size=2560
 matrix_max_length=1502
 # none, avg, max, value_attention
 MATRIX_POOLING_TYPE="value_attention"
+
 # for llm
-llm_type="lucaone_gplm"
-llm_task_level="token_level,span_level,seq_level,structure_level"
-llm_version="v2.0"
-llm_time_str=20231125113045
+llm_type="lucaone"
+llm_version="lucaone"
 llm_step=5600000
 
 # for training
@@ -123,8 +122,6 @@ python run.py \
   --llm_dir .. \
   --llm_type $llm_type \
   --llm_version $llm_version \
-  --llm_task_level $llm_task_level \
-  --llm_time_str $llm_time_str \
   --llm_step $llm_step \
   --ignore_index -100 \
   --hidden_size $hidden_size \
@@ -132,8 +129,8 @@ python run.py \
   --num_hidden_layers $num_hidden_layers \
   --dropout_prob $dropout_prob \
   --classifier_size $classifier_size \
-  --vector_dirpath ../vectors/$DATASET_NAME/$DATASET_TYPE/$TASK_TYPE/$MODEL_TYPE/$llm_version/$llm_type/$llm_time_str/$llm_step  \
-  --matrix_dirpath ../matrices/$DATASET_NAME/$DATASET_TYPE/$TASK_TYPE/$MODEL_TYPE/$llm_version/$llm_type/$llm_time_str/$llm_step \
+  --vector_dirpath ../../vectors/$DATASET_NAME/$DATASET_TYPE/$TASK_TYPE/$MODEL_TYPE/$llm_type/$llm_version/$llm_step  \
+  --matrix_dirpath ../../matrices/$DATASET_NAME/$DATASET_TYPE/$TASK_TYPE/$MODEL_TYPE/$llm_type/$llm_version/$llm_step \
   --seq_fc_size null \
   --matrix_fc_size null \
   --vector_fc_size null \

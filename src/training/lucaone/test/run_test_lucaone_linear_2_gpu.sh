@@ -45,12 +45,11 @@ matrix_max_length=10242
 MATRIX_POOLING_TYPE="value_attention"
 # When the input sequence is too long for your GPU to complete the inference at once, you can specify the fixed length of the inference at once
 embedding_fixed_len_a_time=4096
+
 # for llm
-llm_type="lucaone_gplm"
-llm_task_level="token_level,span_level,seq_level,structure_level"
-llm_version="v2.0"
-llm_time_str=20231125113045
-llm_step=17600000
+llm_type="lucaone"
+llm_version="lucaone"
+llm_step=5600000
 
 # for training
 ## max epochs
@@ -129,8 +128,6 @@ python -W ignore -m torch.distributed.launch --nnodes 1 --node_rank 0 --master_p
   --llm_dir .. \
   --llm_type $llm_type \
   --llm_version $llm_version \
-  --llm_task_level $llm_task_level \
-  --llm_time_str $llm_time_str \
   --llm_step $llm_step \
   --ignore_index -100 \
   --hidden_size $hidden_size \
@@ -138,8 +135,8 @@ python -W ignore -m torch.distributed.launch --nnodes 1 --node_rank 0 --master_p
   --num_hidden_layers $num_hidden_layers \
   --dropout_prob $dropout_prob \
   --classifier_size $classifier_size \
-  --vector_dirpath ../vectors/$DATASET_NAME/$DATASET_TYPE/$TASK_TYPE/$MODEL_TYPE/$llm_version/$llm_type/$llm_time_str/$llm_step  \
-  --matrix_dirpath ../matrices/$DATASET_NAME/$DATASET_TYPE/$TASK_TYPE/$MODEL_TYPE/$llm_version/$llm_type/$llm_time_str/$llm_step  \
+  --vector_dirpath ../../vectors/$DATASET_NAME/$DATASET_TYPE/$TASK_TYPE/$MODEL_TYPE/$llm_type/$llm_version/$llm_step  \
+  --matrix_dirpath ../../matrices/$DATASET_NAME/$DATASET_TYPE/$TASK_TYPE/$MODEL_TYPE/$llm_type/$llm_version/$llm_step  \
   --seq_fc_size null \
   --matrix_fc_size null \
   --vector_fc_size null \

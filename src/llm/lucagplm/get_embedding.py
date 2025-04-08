@@ -121,6 +121,7 @@ def load_model(
                 break
     print("------LLM Model Info ------")
     print("Model dirpath: %s" % model_dirpath)
+    model_dirpath = os.path.abspath(model_dirpath)
     assert model_dirpath is not None and os.path.exists(model_dirpath)
     # create tokenizer
     tokenizer_dir = os.path.join(model_dirpath, "tokenizer")
@@ -158,7 +159,9 @@ def load_model(
         raise Exception("Not support model_type=%s" % args_info["model_type"])
 
     # model config
-    model_config: PretrainedConfig = config_class.from_json_file(os.path.join(model_dirpath, "config.json"))
+    model_config: PretrainedConfig = config_class.from_json_file(
+        os.path.join(model_dirpath, "config.json")
+    )
 
     # load the pretrained model or create the model
     print("Load pretrained model: %s" % model_dirpath)

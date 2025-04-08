@@ -190,7 +190,7 @@ def main(model_args):
     embedding_type = model_args.embedding_type
     seq_type = model_args.seq_type
     emb_save_path = model_args.save_path
-    print("emb save dir: %s" % emb_save_path)
+    print("emb save dir: %s" % os.path.abspath(emb_save_path))
     if seq_type not in ["gene"]:
         print("Error! arg: --seq_type=%s is not 'gene'" % seq_type)
         sys.exit(-1)

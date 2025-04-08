@@ -981,7 +981,7 @@ def download_trained_checkpoint_lucaone_v1(
                 os.makedirs(models_local_dir)
             models_base_url = os.path.join(base_url, models_path)
             download_folder(models_base_url, models_file_names, models_local_dir)
-            print("LucaOne Download Succeed.")
+            print("LucaOne Download Completed.")
             print("*" * 50)
     except Exception as e:
         print(e)
@@ -995,15 +995,13 @@ def download_trained_checkpoint_lucaone(
         llm_type,
         llm_version,
         llm_step,
-        base_url="http://47.93.21.181/lucaone/TrainedCheckPoint"
+        base_url="http://47.93.21.181/lucaone/TrainedCheckPoint/latest"
 ):
     """
     donwload trained checkpoint of LucaOne
     :param llm_dir:
     :param llm_type:
     :param llm_version:
-    :param llm_task_level:
-    :param llm_time_str:
     :param llm_step:
     :param base_url:
     :return:
@@ -1018,7 +1016,7 @@ def download_trained_checkpoint_lucaone(
             llm_step = "36000000"
         elif llm_version == "lucaone-gene":
             llm_step = "36800000"
-        elif llm_version == "lucaone-gene":
+        elif llm_version == "lucaone-prot":
             llm_step = "30000000"
         else:
             llm_version = "lucaone"
@@ -1026,7 +1024,7 @@ def download_trained_checkpoint_lucaone(
     try:
         logs_file_names = ["logs.txt"]
         models_file_names = ["config.json", "pytorch.pth", "training_args.bin", "tokenizer/alphabet.pkl"]
-        logs_path = "logs/%s/" % (llm_type, llm_version)
+        logs_path = "logs/%s/%s/" % (llm_type, llm_version)
         models_path = "models/%s/%s/checkpoint-step%s" % (llm_type, llm_version, llm_step)
         logs_local_dir = os.path.join(llm_dir, logs_path)
         exists = True
@@ -1056,7 +1054,7 @@ def download_trained_checkpoint_lucaone(
                 os.makedirs(models_local_dir)
             models_base_url = os.path.join(base_url, models_path)
             download_folder(models_base_url, models_file_names, models_local_dir)
-            print("LucaOne Download Succeed.")
+            print("LucaOne Download Completed.")
             print("*" * 50)
     except Exception as e:
         print(e)

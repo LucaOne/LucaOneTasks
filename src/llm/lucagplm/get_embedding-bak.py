@@ -22,29 +22,30 @@ sys.path.append("../../")
 sys.path.append("../../../")
 sys.path.append("../../../src")
 try:
-    from ....args import Args
-    from ....file_operator import fasta_reader, csv_reader, tsv_reader
-    from ....utils import set_seed, to_device, get_labels, get_parameter_number, seq_type_is_match_seq, \
-        gene_seq_replace, clean_seq_luca, available_gpu_id, download_trained_checkpoint_lucaone, calc_emb_filename_by_seq_id
-    from .v0_2.lucaone_gplm import LucaGPLM as LucaGPLMV0_2
-    from .v0_2.lucaone_gplm_config import LucaGPLMConfig as LucaGPLMConfigV0_2
-    from .v0_2.alphabet import Alphabet as AlphabetV0_2
-    from .v2_0.lucaone_gplm import LucaGPLM as LucaGPLMV2_0
-    from .v2_0.lucaone_gplm_config import LucaGPLMConfig as LucaGPLMConfigV2_0
-    from .v2_0.alphabet import Alphabet as AlphabetV2_0
+    from args import Args
+    from file_operator import fasta_reader, csv_reader, tsv_reader
+    from utils import set_seed, to_device, get_labels, get_parameter_number, seq_type_is_match_seq, \
+        gene_seq_replace, clean_seq_luca, available_gpu_id, download_trained_checkpoint_lucaone_v1, \
+        calc_emb_filename_by_seq_id
+    from llm.lucagplm.v0_2.lucaone_gplm import LucaGPLM as LucaGPLMV0_2
+    from llm.lucagplm.v0_2.lucaone_gplm_config import LucaGPLMConfig as LucaGPLMConfigV0_2
+    from llm.lucagplm.v0_2.alphabet import Alphabet as AlphabetV0_2
+    from llm.lucagplm.v2_0.lucaone_gplm import LucaGPLM as LucaGPLMV2_0
+    from llm.lucagplm.v2_0.lucaone_gplm_config import LucaGPLMConfig as LucaGPLMConfigV2_0
+    from llm.lucagplm.v2_0.alphabet import Alphabet as AlphabetV2_0
 
 except ImportError as e:
     from src.args import Args
     from src.file_operator import fasta_reader, csv_reader, tsv_reader
     from src.utils import set_seed, to_device, get_labels, get_parameter_number, seq_type_is_match_seq, \
-        gene_seq_replace, clean_seq_luca, available_gpu_id, download_trained_checkpoint_lucaone, calc_emb_filename_by_seq_id
+        gene_seq_replace, clean_seq_luca, available_gpu_id, download_trained_checkpoint_lucaone_v1, \
+        calc_emb_filename_by_seq_id
     from src.llm.lucagplm.v0_2.lucaone_gplm import LucaGPLM as LucaGPLMV0_2
     from src.llm.lucagplm.v0_2.lucaone_gplm_config import LucaGPLMConfig as LucaGPLMConfigV0_2
     from src.llm.lucagplm.v0_2.alphabet import Alphabet as AlphabetV0_2
     from src.llm.lucagplm.v2_0.lucaone_gplm import LucaGPLM as LucaGPLMV2_0
     from src.llm.lucagplm.v2_0.lucaone_gplm_config import LucaGPLMConfig as LucaGPLMConfigV2_0
     from src.llm.lucagplm.v2_0.alphabet import Alphabet as AlphabetV2_0
-
 from transformers import AutoTokenizer, PretrainedConfig, BertTokenizer
 from collections import OrderedDict
 
@@ -101,8 +102,7 @@ def load_model(
             llm_task_level = "token_level,span_level,seq_level,structure_level"
         if llm_type is None:
             llm_type = "lucaone_gplm"
-
-        download_trained_checkpoint_lucaone(
+        download_trained_checkpoint_lucaone_v1(
             llm_dir=llm_dir,
             llm_type=llm_type,
             llm_task_level=llm_task_level,
@@ -110,7 +110,6 @@ def load_model(
             llm_version=llm_version,
             llm_step=llm_step
         )
-
     with open(log_filepath, "r") as rfp:
         for line_idx, line in enumerate(rfp):
             if line_idx == 0:
@@ -759,13 +758,19 @@ def get_args():
                         help="embedding file save dir path")
 
     # for trained LucaOne checkpoint
-    parser.add_argument("--llm_dir", type=str, default="../../..",
+    parser.add_argument("--llm_dir", type=str,
+                        default="../../..",
                         help="the llm model dir")
-    parser.add_argument("--llm_type", type=str, default="lucaone_gplm", choices=["esm", "lucaone_gplm"],
+    parser.add_argument("--llm_type", type=str,
+                        default="lucaone_gplm",
+                        choices=["esm", "lucaone_gplm"],
                         help="the llm type")
-    parser.add_argument("--llm_version", type=str, default="v2.0", choices=["v2.0"],
+    parser.add_argument("--llm_version", type=str,
+                        default="v2.0",
+                        choices=["v2.0"],
                         help="the llm version")
-    parser.add_argument("--llm_task_level", type=str, default="token_level,span_level,seq_level,structure_level",
+    parser.add_argument("--llm_task_level", type=str,
+                        default="token_level,span_level,seq_level,structure_level",
                         choices=["token_level", "token_level,span_level,seq_level,structure_level"],
                         help="the llm task level")
     parser.add_argument("--llm_time_str", type=str, default=None,
@@ -774,11 +779,13 @@ def get_args():
                         help="the llm checkpoint step.")
 
     # for embedding
-    parser.add_argument("--embedding_type",
-                        type=str,
-                        default="matrix",
-                        choices=["matrix", "vector"],
-                        help="the llm embedding type.")
+    parser.add_argument(
+        "--embedding_type",
+        type=str,
+        default="matrix",
+        choices=["matrix", "vector"],
+        help="the llm embedding type."
+    )
     parser.add_argument("--trunc_type", type=str, default="right", choices=["left", "right"],
                         help="llm trunc type when the seq is too longer.")
     parser.add_argument("--truncation_seq_length", type=int, default=4094,
@@ -809,7 +816,7 @@ def main(model_args):
     print("*" * 50)
     if model_args.llm_dir is None:
         model_args.llm_dir = "../../.."
-    download_trained_checkpoint_lucaone(
+    download_trained_checkpoint_lucaone_v1(
         llm_dir=os.path.join(model_args.llm_dir, "llm/"),
         llm_type=model_args.llm_type,
         llm_version=model_args.llm_version,
@@ -822,7 +829,7 @@ def main(model_args):
         model_args.llm_dir if model_args.llm_dir else "..", model_args.llm_version, model_args.llm_task_level,
         model_args.llm_type, model_args.llm_time_str
     )
-    print("log_filepath: %s" % cur_log_filepath)
+    print("log_filepath: %s" % os.path.abspath(cur_log_filepath))
 
     cur_model_dirpath = "%s/llm/models/lucagplm/%s/%s/%s/%s/checkpoint-%d" % (
         model_args.llm_dir if model_args.llm_dir else "..", model_args.llm_version, model_args.llm_task_level,
@@ -833,7 +840,7 @@ def main(model_args):
             model_args.llm_dir if model_args.llm_dir else "..", model_args.llm_version, model_args.llm_task_level,
             model_args.llm_type, model_args.llm_time_str, model_args.llm_step
         )
-    print("model_dirpath: %s" % cur_model_dirpath)
+    print("model_dirpath: %s" % os.path.abspath(cur_model_dirpath))
 
     if not os.path.exists(cur_model_dirpath):
         cur_model_dirpath = "%s/models/lucagplm/%s/%s/%s/%s/checkpoint-step%d" % (
@@ -868,7 +875,7 @@ def main(model_args):
     embedding_type = model_args.embedding_type
     seq_type = model_args.seq_type
     emb_save_path = model_args.save_path
-    print("emb save dir: %s" % emb_save_path)
+    print("emb save dir: %s" % os.path.abspath(emb_save_path))
 
     if seq_type not in ["gene", "prot"]:
         print("Error! arg: --seq_type=%s is not gene or prot" % seq_type)

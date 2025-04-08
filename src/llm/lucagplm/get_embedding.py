@@ -120,10 +120,8 @@ def load_model(
         print("Alphabet, vocab path: %s" % tokenizer_dir)
         if "/v0.2/" in model_dirpath:
             tokenizer = AlphabetV0_2.from_predefined("gene_prot")
-        elif "/v2.0/" in model_dirpath:
-            tokenizer = AlphabetV2_0.from_predefined("gene_prot")
         else:
-            raise Exception("Not support version=%s" % model_dirpath)
+            tokenizer = AlphabetV2_0.from_predefined("gene_prot")
     else:
         print("BertTokenizer, vocab path: %s" % tokenizer_dir)
         tokenizer = BertTokenizer.from_pretrained(
@@ -134,8 +132,6 @@ def load_model(
     if args_info["model_type"] in ["lucaone_gplm", "lucaone", "lucagplm"]:
         if "/v0.2/" in model_dirpath:
             config_class, model_class = LucaGPLMConfigV0_2, LucaGPLMV0_2
-        elif "/v2.0/" in model_dirpath:
-            config_class, model_class = LucaGPLMConfigV2_0, LucaGPLMV2_0
         else:
             config_class, model_class = LucaGPLMConfigV2_0, LucaGPLMV2_0
     else:
@@ -784,7 +780,7 @@ def get_args():
     )
     parser.add_argument(
         "--llm_step",
-        type=int,
+        type=str,
         default=None,
         choices=["5600000", "17600000", "30000000", "36000000", "36800000"],
         help="the llm checkpoint step."
@@ -867,7 +863,7 @@ def main(model_args):
         model_args.llm_version = "lucaone"
     if model_args.llm_step is None or model_args.llm_step not in ["5600000", "17600000", "30000000", "36000000" "36800000"]:
         if model_args.llm_version == "lucaone":
-            model_args.llm_step = "30000000"
+            model_args.llm_step = "36000000"
         elif model_args.llm_version == "lucaone-gene":
             model_args.llm_step = "36800000"
         elif model_args.llm_version == "lucaone-prot":
@@ -884,7 +880,7 @@ def main(model_args):
         model_args.llm_type,
         model_args.llm_version
     )
-    print("log_filepath: %s" % cur_log_filepath)
+    print("log_filepath: %s" % os.path.abspath(cur_log_filepath))
 
     cur_model_dirpath = "%s/llm/models/%s/%s/checkpoint-step%s" % (
         model_args.llm_dir,
@@ -892,7 +888,7 @@ def main(model_args):
         model_args.llm_version,
         model_args.llm_step
     )
-    print("model_dirpath: %s" % cur_model_dirpath)
+    print("model_dirpath: %s" % os.path.abspath(cur_model_dirpath))
     if lucaone_global_log_filepath != cur_log_filepath or lucaone_global_model_dirpath != cur_model_dirpath:
         lucaone_global_log_filepath = cur_log_filepath
         lucaone_global_model_dirpath = cur_model_dirpath
@@ -915,7 +911,7 @@ def main(model_args):
     embedding_type = model_args.embedding_type
     seq_type = model_args.seq_type
     emb_save_path = model_args.save_path
-    print("emb save dir: %s" % emb_save_path)
+    print("emb save dir: %s" % os.path.abspath(emb_save_path))
 
     if seq_type not in ["gene", "prot"]:
         print("Error! arg: --seq_type=%s is not gene or prot" % seq_type)

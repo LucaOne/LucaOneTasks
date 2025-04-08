@@ -124,7 +124,7 @@ def load_model(
     model_dirpath = os.path.abspath(model_dirpath)
     assert model_dirpath is not None and os.path.exists(model_dirpath)
     # create tokenizer
-    tokenizer_dir = os.path.abspath(os.path.join(model_dirpath, "tokenizer"))
+    tokenizer_dir = os.path.join(model_dirpath, "tokenizer")
     assert os.path.exists(tokenizer_dir)
     if args_info["tokenization"]:
         print("AutoTokenizer, tokenizer dir: %s" % tokenizer_dir)

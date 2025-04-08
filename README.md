@@ -1,15 +1,15 @@
 # Downstream Tasks of LucaOne   
 
 ## TimeLine
-* 2025/04/01:
-    * **LucaOne**          
-      add `checkpoint=36000000` for `LucaOne`
+* 2025/04/08:
+    * **LucaOne**            
+      add `checkpoint=36000000` for `LucaOne`     
       location: <a href='http://47.93.21.181/lucaone/TrainedCheckPoint/latest/models/lucaone/lucaone/checkpoint-step36000000/'>checkpoint-step36000000</a>
-    * **LucaOne-Gene**       
-      add `checkpoint=36800000` for `LucaOne-Gene` (only trained using `DNA` and `RNA`)  
+    * **LucaOne-Gene**         
+      add `checkpoint=36800000` for `LucaOne-Gene` (only trained using `DNA` and `RNA`)    
       location: <a href='http://47.93.21.181/lucaone/TrainedCheckPoint/latest/models/lucaone-gene/lucaone/checkpoint-step36800000/'>checkpoint-step36800000</a>
-    * **LucaOne-Prot**      
-      add `checkpoint=30000000` for `LucaOne-Prot` (only trained using `Protein`)  
+    * **LucaOne-Prot**        
+      add `checkpoint=30000000` for `LucaOne-Prot` (only trained using `Protein`)    
       location: <a href='http://47.93.21.181/lucaone/TrainedCheckPoint/latest/models/lucaone-prot/lucaone/checkpoint-step30000000/'>checkpoint-step30000000</a>
 
 * 2024/10/01: optimized embedding inference code: `src/llm/lucagplm/get_embedding.py`

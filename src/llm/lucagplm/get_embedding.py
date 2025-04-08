@@ -104,6 +104,7 @@ def load_model(
                     args_info = json.loads(line.strip())
                 break
     print("------LLM Model Info ------")
+    model_dirpath = os.path.abspath(model_dirpath)
     print("Model dirpath: %s" % model_dirpath)
     assert model_dirpath is not None and os.path.exists(model_dirpath)
     # create tokenizer

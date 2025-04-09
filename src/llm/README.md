@@ -71,7 +71,7 @@ python get_embedding.py \
     --llm_type lucaone \
     --llm_version lucaone \
     --llm_step 36000000 \
-    --truncation_seq_length 10240 \
+    --truncation_seq_length 4096 \
     --trunc_type right \
     --seq_type prot \
     --input_file ../../../data/test_data/prot/test_prot.fasta \
@@ -90,7 +90,7 @@ python get_embedding.py \
     --llm_type lucaone \
     --llm_version lucaone-prot \
     --llm_step 30000000 \
-    --truncation_seq_length 10240 \
+    --truncation_seq_length 4096 \
     --trunc_type right \
     --seq_type prot \
     --input_file ../../../data/test_data/prot/test_prot.fasta \
@@ -111,7 +111,7 @@ export CUDA_VISIBLE_DEVICES="0,1,2,3"
 python predict_embedding.py \
     --llm_type esm2 \
     --llm_version 3B \
-    --truncation_seq_length 10240 \
+    --truncation_seq_length 4096 \
     --trunc_type right \
     --seq_type prot \
     --input_file ../../../data/prot.fasta \

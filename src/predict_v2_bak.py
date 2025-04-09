@@ -27,7 +27,7 @@ sys.path.append("..")
 sys.path.append("../src")
 try:
     from utils import to_device, device_memory, available_gpu_id, load_labels, seq_type_is_match_seq, \
-        download_trained_checkpoint_lucaone, download_trained_checkpoint_downstream_tasks
+        download_trained_checkpoint_lucaone_v1, download_trained_checkpoint_downstream_tasks
     from common.multi_label_metrics import relevant_indexes
     from encoder import Encoder
     from batch_converter import BatchConverter
@@ -38,7 +38,7 @@ try:
     from ppi.models.LucaPPI2 import LucaPPI2
 except ImportError:
     from src.utils import to_device, device_memory, available_gpu_id, load_labels, seq_type_is_match_seq, \
-        download_trained_checkpoint_lucaone, download_trained_checkpoint_downstream_tasks
+        download_trained_checkpoint_lucaone_v1, download_trained_checkpoint_downstream_tasks
     from src.common.multi_label_metrics import relevant_indexes
     from src.encoder import Encoder
     from src.batch_converter import BatchConverter
@@ -782,8 +782,9 @@ if __name__ == "__main__":
         args.llm_time_str = "20231125113045"
     if not hasattr(args, "llm_version"):
         args.llm_version = "v2.0"
-    download_trained_checkpoint_lucaone(
+    download_trained_checkpoint_lucaone_v1(
         llm_dir=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "llm/"),
+        llm_type=args.llm_type,
         llm_version=args.llm_version,
         llm_time_str=args.llm_time_str,
         llm_step=args.llm_step

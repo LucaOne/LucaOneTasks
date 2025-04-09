@@ -1,11 +1,14 @@
 # Downstream Tasks of LucaOne   
 
-## TimeLine   
-* 2024/10/01: optimized embedding inference code: `src/llm/lucagplm/get_embedding.py`       
-* 2024/08/01: add `checkpoint=17600000`, location: <a href='http://47.93.21.181/lucaone/TrainedCheckPoint/models/lucagplm/v2.0/token_level,span_level,seq_level,structure_level/lucaone_gplm/20231125113045/checkpoint-step17600000/'>checkpoint-step17600000</a>      
-This project will download the checkpoint automatically according to the value of parameter **--llm_step**.   
+## TimeLine
+* 2024/10/01: optimized embedding inference code: `src/llm/lucagplm/get_embedding.py`
+* 2024/08/01: add `checkpoint=17600000`, location: <a href='http://47.93.21.181/lucaone/TrainedCheckPoint/models/lucagplm/v2.0/token_level,span_level,seq_level,structure_level/lucaone_gplm/20231125113045/checkpoint-step17600000/'>checkpoint-step17600000</a>
 
-  
+This project will download the checkpoint automatically from our `FTP` according to the value of parameter:
+* **--llm_step**
+* **--llm_version**
+* **--llm_step**   
+
 ## 1. Networks    
 Three distinct networks correspond to three different types of inputs: 
 * LucaBase(Single)   
@@ -94,11 +97,14 @@ source ~/.bashrc
 conda create -n lucaone_tasks python=3.9.13
 
 #### 4) activate lucaone_tasks
-conda activate lucaone_tasks   
+conda activate lucaone_tasks
+
+### step3:  install other requirements
+pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 
 ### for DNABert2 Embedding
-**Notice：** Need to switch the virtual environment         
+**Notice：** Need to switch the virtual environment        
 
 activate deactivate
 
@@ -109,10 +115,6 @@ conda activate lucaone_tasks_dnabert2
 pip install -r requirements_dnabert2.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 
-### step3:  install other requirements
-pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
-
-
 ## 3. Datasets   
 Downstream Tasks Dataset FTP: <a href='http://47.93.21.181/lucaone/DownstreamTasksDataset/dataset/'>Dataset for LucaOneTasks</a>
 
@@ -121,7 +123,7 @@ Copy the 10 datasets from <href> http://47.93.21.181/lucaone/DownstreamTasksData
 
 
 ## 4. LucaOne Trained Checkpoint    
-Trained LucaOne Checkpoint FTP: <a href='http://47.93.21.181/lucaone/TrainedCheckPoint/'>TrainedCheckPoint for LucaOne</a>        
+Trained LucaOne Checkpoint FTP: <a href='http://47.93.21.181/lucaone/TrainedCheckPoint/latest'>TrainedCheckPoint for LucaOne</a>        
 
 **Notice**    
 The project will download automatically LucaOne Trained-CheckPoint from **FTP**.     
@@ -137,19 +139,6 @@ In this project, the sequence is embedded during the training downstream task(`.
 
 We can also embed the dataset and store into a predefined folder, then build and train the downstream network.   
 the script of embedding a dataset(`./src/llm/lucagplm/get_embedding.py`):        
-
-
-**建议与说明:**         
-1）尽量使用显存大进行embedding 推理，如：A100，H100，H200等，这样一次性能够处理较长的序列，LucaOne在A100下可以一次性处理`2800`左右长度的序列；   
-2）对于超长序列，LucaOne会进行Overlap分片进行embedding，最后合并成完整的embedding，请设置`--embedding_complete`与`--embedding_complete_seg_overlap`；    
-3）如果显卡不足以处理输入的序列长度，会调用CPU进行处理，这样速度会变慢，如果你的数据集中长序列不是很多，那么可以使用这种方式: `--gpu_id -1`；      
-4）如果你的数据集中长序列很多，比如: 万条以上，那么再设置`--embedding_complete`与`--embedding_complete_seg_overlap`之外，再加上设置`--embedding_fixed_len_a_time`，表示一次性embedding的最大长度。
-如果序列长度大于这个长度，基于这个长度进行分片embedding，最后进行合并。否则根据序列的实际长度；    
-5）如果不设置`--embedding_complete`，那么根据设置的`--truncation_seq_length`的值对序列进行截断embedding；  
-6）对于蛋白，因为绝大部分蛋白长度在1000以下，因此超长蛋白序列不会很多，因此可以将`--embedding_fixed_len_a_time`设置长一点或者`不设置`；    
-7）对于DNA，因为很多任务的DNA序列很长，那么请设置`--embedding_fixed_len_a_time`。    
-如果数据集中超长序列数据量越多，该值设置越小一点，比如在A100下设置为`2800`，否则设置大一点，如果GPU根据这个长度embedding失败，则会调用CPU。如果数据集数不大，则时间不会很久；          
-8）对于RNA，因为大部分RNA不会很长，因此与蛋白处理方式一致，因此可以将`--embedding_fixed_len_a_time`设置长一点或者不设置；
 
 **Suggestions and Instructions:**
 1) Try to use a large GPU-memory machine for embedding reasoning, such as A100, H100, H200, etc., so that long sequences can be processed once.       
@@ -340,16 +329,16 @@ python predict.py \
 ## 7. Downstream Tasks        
 The running scripts of 10 downstream tasks in three directories:      
 
-1) `src/training/lucaone` :     
+1) `src/training/lucaone_v1` :     
    The running scripts of the 10 downstream tasks were based on LucaOne's embedding **(Fig. 4 in our paper)**.
 
 
-2) `src/training/downstream_tasks` :     
+2) `src/training/downstream_tasks_v1` :     
    A complete comparison on the 10 downstream tasks.   
    These comparisons were based on the embedding of LucaOne, DNABert2, and ESM2-3B. **(Table.S5 in our paper)**.    
 
 
-3) `src/training/lucaone_separated` :      
+3) `src/training/lucaone_separated_v1` :      
    The task script with the embedding based on the LucaOne of separated nucleic acid and protein training(LucaOne-Gene/LucaOne-Prot). **(Fig. 3 in our paper)**.      
 
 

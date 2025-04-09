@@ -45,6 +45,7 @@ matrix_max_length=10242
 MATRIX_POOLING_TYPE="value_attention"
 # When the input sequence is too long for your GPU to complete the inference at once, you can specify the fixed length of the inference at once
 embedding_fixed_len_a_time=4096
+
 # for llm
 llm_type="lucaone_gplm"
 llm_task_level="token_level,span_level,seq_level,structure_level"

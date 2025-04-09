@@ -33,8 +33,8 @@ classifier_size=128
 # binary-class, multi-label: bce, multi-class: cce, regression: l1 or l2
 loss_type="bce"
 
-llm_type="lucaone_separated"
-llm_version="v2.0-v0.2"
+llm_type="lucaone"
+llm_version="lucaone-separated"
 llm_step=5600000-5600000
 
 batch_size=1

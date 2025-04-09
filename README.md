@@ -22,11 +22,11 @@ This project will download the checkpoint automatically from our `FTP` according
 
 
 ## Embedding Recommendation
-| --llm_type | --llm_version  | --llm_step |                 Usage (seq_type)                 |
-|:----------:|:--------------:|:----------:|:------------------------------------------------:|
-| `lucaone`  |   `lucaone`    | `36000000` | both `gene` (i.e. `DNA`, `RNA`) and `prot` sequences |
-| `lucaone`  | `lucaone-gene` | `36800000` |    only for `gene` (i.e. `DNA`, `RNA`) sequences     |
-| `lucaone`  | `lucaone-prot` | `30000000` |             only for `prot` sequence             | 
+| --llm_type | --llm_version  |              --llm_step              |                 Usage (seq_type)                 |
+|:----------:|:--------------:|:------------------------------------:|:------------------------------------------------:|
+| `lucaone`  |   `lucaone`    | `36000000`, `17600000`, or `5600000` | both `gene` (i.e. `DNA`, `RNA`) and `prot` sequences |
+| `lucaone`  | `lucaone-gene` |              `36800000`              |    only for `gene` (i.e. `DNA`, `RNA`) sequences     |
+| `lucaone`  | `lucaone-prot` |              `30000000`              |             only for `prot` sequence             | 
   
 
 
@@ -477,12 +477,12 @@ Other supplementary materials are available at: <a href='http://47.93.21.181/luc
 ## 10. Zenodo        
 We have uploaded the model code, training scripts, and embedding inference scripts of LucaOne;    
 The mode code, training and evaluation scripts, datasets, and trained models for downstream tasks,    
-and additional supplementary materials to Zenodo (10.5281/zenodo.14977739).    
+and additional supplementary materials to Zenodo (10.5281/zenodo.15171943).    
 However, due to the substantial size of the pretraining dataset of LucaOne, it has not been included on Zenodo.     
 Instead, it remains accessible via our publicly available FTP server (**<a href='http://47.93.21.181/lucaone/PreTrainingDataset/'>LucaOne Pretraining dataset</a>**).     
 We are actively seeking an open FTP platform with sufficient storage capacity to host our pretraining dataset.
 
-**<a href='https://doi.org/10.5281/zenodo.14977739'>LucaOne Zenodo</a>**
+**<a href='https://doi.org/10.5281/zenodo.15171943'>LucaOne Zenodo</a>**
 
 ## 11. Citation
 **<a href='https://www.biorxiv.org/content/10.1101/2024.05.10.592927v1'>LucaOne Biorxiv</a>**

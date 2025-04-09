@@ -614,7 +614,7 @@ class Encoder(object):
             elif "molecule" in seq_type:
                 # to do
                 pass
-            elif "lucaone" in self.llm_type and "lucaone_separated" in self.llm_version:
+            elif "lucaone" in self.llm_type and "lucaone-separated" in self.llm_version:
                 if seq_type in ["multi_gene", "multi_prot"]:
                     embedding_info = []
                     cur_seqs = seq.split(",")

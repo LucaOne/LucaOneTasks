@@ -106,6 +106,7 @@ def load_model(
     print("------LLM Model Info ------")
     model_dirpath = os.path.abspath(model_dirpath)
     print("Model dirpath: %s" % model_dirpath)
+    model_dirpath = os.path.abspath(model_dirpath)
     assert model_dirpath is not None and os.path.exists(model_dirpath)
     # create tokenizer
     tokenizer_dir = os.path.join(model_dirpath, "tokenizer")

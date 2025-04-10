@@ -88,7 +88,7 @@ python get_embedding.py \
     --trunc_type right \
     --seq_type prot \
     --input_file ../../../data/test_data/prot/test_prot.fasta \
-    --save_path ../../../embedding/lucaone/test_data/prot/test_prot/30000000 \
+    --save_path ../../../embedding/lucaone-prot/test_data/prot/test_prot/30000000 \
     --embedding_type matrix \
     --matrix_add_special_token \
     --embedding_complete \

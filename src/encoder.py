@@ -18,12 +18,12 @@ sys.path.append(".")
 sys.path.append("../")
 sys.path.append("../src")
 try:
-    from .utils import clean_seq, calc_emb_filename_by_seq_id
-    from .common.alphabet import Alphabet
-    from .llm.lucagplm.get_embedding import predict_embedding as predict_embedding_luca
-    from .llm.esm.predict_embedding import predict_embedding as predict_embedding_esm
-    from .llm.dnabert2.inference_embedding import predict_embedding as predict_embedding_dnabert2
-    from .llm.dnaberts.inference_embedding import predict_embedding as predict_embedding_dnaberts
+    from utils import clean_seq, calc_emb_filename_by_seq_id
+    from common.alphabet import Alphabet
+    from llm.lucagplm.get_embedding import predict_embedding as predict_embedding_luca
+    from llm.esm.predict_embedding import predict_embedding as predict_embedding_esm
+    from llm.dnabert2.inference_embedding import predict_embedding as predict_embedding_dnabert2
+    from llm.dnaberts.inference_embedding import predict_embedding as predict_embedding_dnaberts
 except ImportError as e:
     from src.utils import clean_seq, calc_emb_filename_by_seq_id
     from src.common.alphabet import Alphabet
@@ -262,8 +262,9 @@ def complete_embedding_matrix(
 class Encoder(object):
     def __init__(
             self,
-            llm_type,
             llm_dirpath,
+            llm_type,
+            llm_version,
             input_type,
             trunc_type,
             seq_max_length,
@@ -278,8 +279,9 @@ class Encoder(object):
             **kwargs
     ):
         print("-" * 25 + "Encoder" + "-" * 25)
-        self.llm_type = llm_type
         self.llm_dirpath = llm_dirpath
+        self.llm_type = llm_type
+        self.llm_version = llm_version
         self.input_type = input_type
         self.trunc_type = trunc_type
         self.seq_max_length = seq_max_length
@@ -612,7 +614,7 @@ class Encoder(object):
             elif "molecule" in seq_type:
                 # to do
                 pass
-            elif "luca_separated" in self.llm_type:
+            elif "lucaone" in self.llm_type and "lucaone-separated" in self.llm_version:
                 if seq_type in ["multi_gene", "multi_prot"]:
                     embedding_info = []
                     cur_seqs = seq.split(",")

@@ -26,16 +26,16 @@ sys.path.append(".")
 sys.path.append("..")
 sys.path.append("../src")
 try:
-    from .utils import to_device, device_memory, available_gpu_id, load_labels, seq_type_is_match_seq,\
+    from utils import to_device, device_memory, available_gpu_id, load_labels, seq_type_is_match_seq,\
         download_trained_checkpoint_lucaone, download_trained_checkpoint_downstream_tasks
-    from .common.multi_label_metrics import relevant_indexes
-    from .encoder import Encoder
-    from .batch_converter import BatchConverter
-    from .common.alphabet import Alphabet
-    from .file_operator import csv_reader, fasta_reader, csv_writer, file_reader
-    from .common.luca_base import LucaBase
-    from .ppi.models.LucaPPI import LucaPPI
-    from .ppi.models.LucaPPI2 import LucaPPI2
+    from common.multi_label_metrics import relevant_indexes
+    from encoder import Encoder
+    from batch_converter import BatchConverter
+    from common.alphabet import Alphabet
+    from file_operator import csv_reader, fasta_reader, csv_writer, file_reader
+    from common.luca_base import LucaBase
+    from ppi.models.LucaPPI import LucaPPI
+    from ppi.models.LucaPPI2 import LucaPPI2
 except ImportError:
     from src.utils import to_device, device_memory, available_gpu_id, load_labels, seq_type_is_match_seq, \
         download_trained_checkpoint_lucaone, download_trained_checkpoint_downstream_tasks
@@ -352,10 +352,10 @@ def create_encoder_batch_convecter(model_args, seq_subword, seq_tokenizer):
             model_args.seq_max_length = max(model_args.seq_max_length_a, model_args.seq_max_length_b)
         # encoder_config
         encoder_config = {
+            "llm_dirpath": model_args.llm_dirpath,
             "llm_type": model_args.llm_type,
             "llm_version": model_args.llm_version,
             "llm_step": model_args.llm_step,
-            "llm_dirpath": model_args.llm_dirpath,
             "input_type": model_args.input_type,
             "trunc_type": model_args.trunc_type,
             "seq_max_length": model_args.seq_max_length,
@@ -375,10 +375,10 @@ def create_encoder_batch_convecter(model_args, seq_subword, seq_tokenizer):
     else:
         assert model_args.seq_max_length is not None
         encoder_config = {
+            "llm_dirpath": model_args.llm_dirpath,
             "llm_type": model_args.llm_type,
             "llm_version": model_args.llm_version,
             "llm_step": model_args.llm_step,
-            "llm_dirpath": model_args.llm_dirpath,
             "input_type": model_args.input_type,
             "trunc_type": model_args.trunc_type,
             "seq_max_length": model_args.seq_max_length,
@@ -451,10 +451,13 @@ def run(
         matrix_embedding_exists
 ):
     global global_model_config, global_seq_subword, global_seq_tokenizer, global_trained_model
-    model_dir = "%s/models/%s/%s/%s/%s/%s/%s/%s" % (model_path, dataset_name, dataset_type, task_type, model_type, input_type,
-                                                    time_str, step if step == "best" else "checkpoint-{}".format(step))
-    config_dir = "%s/logs/%s/%s/%s/%s/%s/%s" % (model_path, dataset_name, dataset_type, task_type, model_type, input_type,
-                                                time_str)
+    model_dir = "%s/models/%s/%s/%s/%s/%s/%s/%s" % (
+        model_path, dataset_name, dataset_type, task_type, model_type, input_type,
+        time_str, step if step == "best" else "checkpoint-{}".format(step)
+    )
+    config_dir = "%s/logs/%s/%s/%s/%s/%s/%s" % (
+        model_path, dataset_name, dataset_type, task_type, model_type, input_type, time_str
+    )
 
     model_args = torch.load(os.path.join(model_dir, "training_args.bin"))
     print("-" * 25 + "Trained Model Args" + "-" * 25)
@@ -715,16 +718,16 @@ if __name__ == "__main__":
                 sys.exit(-1)
 
     # download LLM(LucaOne)
+    if not hasattr(args, "llm_type"):
+        args.llm_type = "lucaone"
+    if not hasattr(args, "llm_version"):
+        args.llm_version = "lucaone"
     if not hasattr(args, "llm_step"):
         args.llm_step = "5600000"
-    if not hasattr(args, "llm_time_str"):
-        args.llm_time_str = "20231125113045"
-    if not hasattr(args, "llm_version"):
-        args.llm_version = "v2.0"
     download_trained_checkpoint_lucaone(
         llm_dir=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "llm/"),
+        llm_type=args.llm_type,
         llm_version=args.llm_version,
-        llm_time_str=args.llm_time_str,
         llm_step=args.llm_step
     )
     # download trained downstream task models

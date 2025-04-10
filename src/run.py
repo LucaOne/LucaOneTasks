@@ -28,20 +28,20 @@ sys.path.append("../src")
 from torch.utils.data.dataloader import DataLoader
 from datasets.distributed import split_dataset_by_node
 try:
-    from .common.metrics import metrics_multi_class, metrics_binary
-    from .common.multi_label_metrics import *
-    from .utils import set_seed, save_labels, get_parameter_number, get_labels, load_trained_model
-    from .multi_files_stream_dataloader import *
-    from .trainer import train
-    from .evaluator import evaluate
-    from .tester import test
-    from .common.luca_base import LucaBase
-    from .ppi.models.LucaPPI import LucaPPI
-    from .ppi.models.LucaPPI2 import LucaPPI2
-    from .common.alphabet import Alphabet
-    from .common.model_config import LucaConfig
-    from .encoder import Encoder
-    from .batch_converter import BatchConverter
+    from common.metrics import metrics_multi_class, metrics_binary
+    from common.multi_label_metrics import *
+    from utils import set_seed, save_labels, get_parameter_number, get_labels, load_trained_model
+    from multi_files_stream_dataloader import *
+    from trainer import train
+    from evaluator import evaluate
+    from tester import test
+    from common.luca_base import LucaBase
+    from ppi.models.LucaPPI import LucaPPI
+    from ppi.models.LucaPPI2 import LucaPPI2
+    from common.alphabet import Alphabet
+    from common.model_config import LucaConfig
+    from encoder import Encoder
+    from batch_converter import BatchConverter
 
 except ImportError:
     from src.common.metrics import metrics_multi_class, metrics_binary
@@ -65,382 +65,871 @@ logger = logging.getLogger(__name__)
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--train_data_dir", default=None, type=str, required=True,
-                        help="the train dataset dirpath.")
-    parser.add_argument("--dev_data_dir", default=None, type=str, required=True,
-                        help="the dev dataset dirpath.")
-    parser.add_argument("--test_data_dir", default=None, type=str, required=True,
-                        help="the train dataset dirpath.")
-    parser.add_argument("--buffer_size", default=10000, type=int,
-                        help="how many samples are loaded into memory at once")
-    parser.add_argument("--dataset_name", default=None, type=str, required=True,
-                        help="dataset name")
-    parser.add_argument("--dataset_type", default="protein", type=str, required=True, choices=[
-        "protein",
-        "gene",
-        "gene_gene",
-        "gene_protein",
-        "protein_gene",
-        "protein_protein",
-        "molecule_protein",
-        "protein_molecule",
-        "gene_molecule",
-        "molecule_gene"
-    ],
-                        help="dataset type")
-    parser.add_argument("--task_type", default="binary_class", type=str, required=True, choices=[
-        "multi_label",
-        "multi_class",
-        "binary_class",
-        "regression"
-    ],
-                        help="task type")
-    parser.add_argument("--task_level_type", default="seq_level", type=str, required=True, choices=[
-        "token_level",
-        "span_level",
-        "seq_level",
-        "structure_level"
-    ],
-                        help="task level type")
-    parser.add_argument("--model_type", default=None, type=str, required=True,  choices=[
-        "luca_base",
-        "lucappi2",
-        "lucappi"
-    ], help="the model type of selected")
-    parser.add_argument("--input_type", default=None, type=str, required=True,  choices=[
-        "seq",
-        "matrix",
-        "vector",
-        "seq_matrix",
-        "seq_vector"
-    ], help="the input type of selected")
-    parser.add_argument("--input_mode", type=str, default="single",
-                        choices=["single", "pair"],
-                        help="the input mode")
+    parser.add_argument(
+        "--train_data_dir",
+        default=None,
+        type=str,
+        required=True,
+        help="the train dataset dirpath."
+    )
+    parser.add_argument(
+        "--dev_data_dir",
+        default=None,
+        type=str,
+        required=True,
+        help="the dev dataset dirpath."
+    )
+    parser.add_argument(
+        "--test_data_dir",
+        default=None,
+        type=str,
+        required=True,
+        help="the train dataset dirpath."
+    )
+    parser.add_argument(
+        "--buffer_size",
+        default=10000,
+        type=int,
+        help="how many samples are loaded into memory at once"
+    )
+    parser.add_argument(
+        "--dataset_name",
+        default=None,
+        type=str,
+        required=True,
+        help="dataset name"
+    )
+    parser.add_argument(
+        "--dataset_type",
+        default="protein",
+        type=str,
+        required=True,
+        choices=[
+            "protein",
+            "gene",
+            "gene_gene",
+            "gene_protein",
+            "protein_gene",
+            "protein_protein",
+            "molecule_protein",
+            "protein_molecule",
+            "gene_molecule",
+            "molecule_gene"
+        ],
+        help="dataset type"
+    )
+    parser.add_argument(
+        "--task_type",
+        default="binary_class",
+        type=str,
+        required=True,
+        choices=[
+            "multi_label",
+            "multi_class",
+            "binary_class",
+            "regression"
+        ],
+        help="task type"
+    )
+    parser.add_argument(
+        "--task_level_type",
+        default="seq_level",
+        type=str,
+        required=True,
+        choices=[
+            "token_level",
+            "span_level",
+            "seq_level",
+            "structure_level"
+        ],
+        help="task level type"
+    )
+    parser.add_argument(
+        "--model_type",
+        default=None,
+        type=str,
+        required=True,
+        choices=[
+            "luca_base",
+            "lucappi2",
+            "lucappi"
+        ],
+        help="the model type of selected"
+    )
+    parser.add_argument(
+        "--input_type",
+        default=None,
+        type=str,
+        required=True,
+        choices=[
+            "seq",
+            "matrix",
+            "vector",
+            "seq_matrix",
+            "seq_vector"
+        ],
+        help="the input type of selected")
+    parser.add_argument(
+        "--input_mode",
+        type=str,
+        default="single",
+        choices=["single", "pair"],
+        help="the input mode"
+    )
 
-    parser.add_argument("--alphabet",  type=str, default=None,
-                        help="alphabet")
-    parser.add_argument("--seq_subword",  action="store_true",
-                        help="whether use subword-level for sequence")
-    parser.add_argument("--codes_file",  type=str, default=None,
-                        help="the subword codes filepath")
+    parser.add_argument(
+        "--alphabet",
+        type=str,
+        default=None,
+        help="alphabet"
+    )
+    parser.add_argument(
+        "--seq_subword",
+        action="store_true",
+        help="whether use subword-level for sequence"
+    )
+    parser.add_argument(
+        "--codes_file",
+        type=str,
+        default=None,
+        help="the subword codes filepath"
+    )
 
-    parser.add_argument("--label_type", default=None, type=str, required=True,
-                        help="label type")
-    parser.add_argument("--label_filepath", default=None, type=str, required=True,
-                        help="the label list filepath")
+    parser.add_argument(
+        "--label_type",
+        default=None,
+        type=str,
+        required=True,
+        help="label type"
+    )
+    parser.add_argument(
+        "--label_filepath",
+        default=None,
+        type=str,
+        required=True,
+        help="the label list filepath"
+    )
 
-    parser.add_argument("--output_dir", default=None, type=str, required=True,
-                        help="the output dirpath")
+    parser.add_argument(
+        "--output_dir",
+        default=None,
+        type=str,
+        required=True,
+        help="the output dirpath"
+    )
 
-    parser.add_argument("--log_dir", default="./logs/", type=str, required=True,
-                        help="log dir.")
-    parser.add_argument("--tb_log_dir", default="./tb-logs/", type=str, required=True,
-                        help="tensorboard log dir.")
+    parser.add_argument(
+        "--log_dir",
+        default="./logs/",
+        type=str,
+        required=True,
+        help="log dir."
+    )
+    parser.add_argument(
+        "--tb_log_dir",
+        default="./tb-logs/",
+        type=str,
+        required=True,
+        help="tensorboard log dir."
+    )
 
     # Other parameters
-    parser.add_argument("--config_path", default=None, type=str, required=True,
-                        help="the config filepath of the running model ")
-    parser.add_argument("--seq_vocab_path", default=None, type=str,
-                        help="sequence token vocab filepath")
-    parser.add_argument("--cache_dir", default=None, type=str,
-                        help="cache dirpath")
+    parser.add_argument(
+        "--config_path",
+        default=None,
+        type=str,
+        required=True,
+        help="the config filepath of the running model"
+    )
+    parser.add_argument(
+        "--seq_vocab_path",
+        default=None,
+        type=str,
+        help="sequence token vocab filepath or seq_vocab_type(i.e. gene, prot, gene_prot)"
+    )
+    parser.add_argument(
+        "--cache_dir",
+        default=None,
+        type=str,
+        help="cache dirpath")
 
     # pooling_type
-    parser.add_argument("--seq_pooling_type",  type=str, default=None, choices=[
-        "none",
-        "first",
-        "last",
-        "sum",
-        "max",
-        "avg",
-        "attentive",
-        "attention",
-        "context_attention",
-        "weighted_attention",
-        "value_attention",
-        "transformer"
-    ],
-                        help="pooling type for sequence encoder")
-    parser.add_argument("--matrix_pooling_type",  type=str, default=None, choices=[
-        "none",
-        "first",
-        "last",
-        "sum",
-        "max",
-        "avg",
-        "attentive",
-        "attention",
-        "context_attention",
-        "weighted_attention",
-        "value_attention",
-        "transformer"
-    ],
-                        help="pooling type for embedding encoder")
+    parser.add_argument(
+        "--seq_pooling_type",
+        type=str,
+        default=None,
+        choices=[
+            "none",
+            "first",
+            "last",
+            "sum",
+            "max",
+            "avg",
+            "attentive",
+            "attention",
+            "context_attention",
+            "weighted_attention",
+            "value_attention",
+            "transformer"
+        ],
+        help="pooling type for sequence encoder"
+    )
+    parser.add_argument(
+        "--matrix_pooling_type",
+        type=str,
+        default=None,
+        choices=[
+            "none",
+            "first",
+            "last",
+            "sum",
+            "max",
+            "avg",
+            "attentive",
+            "attention",
+            "context_attention",
+            "weighted_attention",
+            "value_attention",
+            "transformer"
+        ],
+        help="pooling type for embedding encoder"
+    )
     # fusion type
-    parser.add_argument("--fusion_type", default="concat", type=str, required=True,
-                        choices=["concat", "add"],
-                        help="the fusion type")
+    parser.add_argument(
+        "--fusion_type",
+        default="concat",
+        type=str,
+        required=True,
+        choices=["concat", "add"],
+        help="the fusion type"
+    )
 
-    parser.add_argument("--do_train", action="store_true",
-                        help="whether to run training.")
-    parser.add_argument("--do_eval", action="store_true",
-                        help="whether to run eval on the dev set.")
-    parser.add_argument("--do_predict", action="store_true",
-                        help="whether to run predict on the test set.")
-    parser.add_argument("--do_metrics", action="store_true",
-                        help="whether to eval metrics on the dev and test set.")
+    parser.add_argument(
+        "--do_train",
+        action="store_true",
+        help="whether to run training."
+    )
+    parser.add_argument(
+        "--do_eval",
+        action="store_true",
+        help="whether to run eval on the dev set."
+    )
+    parser.add_argument(
+        "--do_predict",
+        action="store_true",
+        help="whether to run predict on the test set."
+    )
+    parser.add_argument(
+        "--do_metrics",
+        action="store_true",
+        help="whether to eval metrics on the dev and test set."
+    )
 
-    parser.add_argument("--evaluate_during_training", action="store_true",
-                        help="evaluation during training at each logging step.")
-    parser.add_argument("--do_lower_case", action="store_true",
-                        help="set this flag if you are using an uncased model.")
+    parser.add_argument(
+        "--evaluate_during_training",
+        action="store_true",
+        help="evaluation during training at each logging step."
+    )
+    parser.add_argument(
+        "--do_lower_case",
+        action="store_true",
+        help="set this flag if you are using an uncased model."
+    )
 
-    parser.add_argument("--per_gpu_train_batch_size", default=16, type=int,
-                        help="Batch size per GPU/CPU for training.")
-    parser.add_argument("--per_gpu_eval_batch_size", default=16, type=int,
-                        help="Batch size per GPU/CPU for evaluation.")
-    parser.add_argument("--gradient_accumulation_steps", type=int, default=1,
-                        help="Number of updates steps to accumulate before performing a backward/update pass.")
-    parser.add_argument("--learning_rate", default=1e-4, type=float,
-                        help="The initial learning rate for Adam.")
-    parser.add_argument("--weight_decay", default=0.01, type=float,
-                        help="Weight decay if we apply some.")
-    parser.add_argument("--adam_epsilon", default=1e-8, type=float,
-                        help="Epsilon for Adam optimizer.")
-    parser.add_argument("--max_grad_norm", default=1.0, type=float,
-                        help="Max gradient norm.")
-    parser.add_argument("--num_train_epochs", default=50, type=int,
-                        help="Total number of training epochs to perform.")
-    parser.add_argument("--max_steps", default=-1, type=int,
-                        help="Set total number of training steps to perform.")
-    parser.add_argument("--warmup_steps", default=-1, type=int,
-                        help="Linear warmup over warmup_steps.")
-    parser.add_argument("--beta1", default=0.9, type=float,
-                        help="Adamw beta1.")
-    parser.add_argument("--beta2", default=0.98, type=float,
-                        help="Adamw beta2.")
-    parser.add_argument("--lr_update_strategy", default="step", choices=["step", "epoch"], type=str,
-                        help="Learning rate update strategy.")
-    parser.add_argument("--lr_decay_rate", default=0.9, type=float,
-                        help="Learning rate decay rate.")
+    parser.add_argument(
+        "--per_gpu_train_batch_size",
+        default=16,
+        type=int,
+        help="Batch size per GPU/CPU for training."
+    )
+    parser.add_argument(
+        "--per_gpu_eval_batch_size",
+        default=16,
+        type=int,
+        help="Batch size per GPU/CPU for evaluation."
+    )
+    parser.add_argument(
+        "--gradient_accumulation_steps",
+        type=int,
+        default=1,
+        help="Number of updates steps to accumulate before performing a backward/update pass."
+    )
+    parser.add_argument(
+        "--learning_rate",
+        default=1e-4,
+        type=float,
+        help="The initial learning rate for Adam."
+    )
+    parser.add_argument(
+        "--weight_decay",
+        default=0.01,
+        type=float,
+        help="Weight decay if we apply some."
+    )
+    parser.add_argument(
+        "--adam_epsilon",
+        default=1e-8,
+        type=float,
+        help="Epsilon for Adam optimizer."
+    )
+    parser.add_argument(
+        "--max_grad_norm",
+        default=1.0,
+        type=float,
+        help="Max gradient norm."
+    )
+    parser.add_argument(
+        "--num_train_epochs",
+        default=50,
+        type=int,
+        help="Total number of training epochs to perform."
+    )
+    parser.add_argument(
+        "--max_steps",
+        default=-1,
+        type=int,
+        help="Set total number of training steps to perform."
+    )
+    parser.add_argument(
+        "--warmup_steps",
+        default=-1,
+        type=int,
+        help="Linear warmup over warmup_steps."
+    )
+    parser.add_argument(
+        "--beta1",
+        default=0.9,
+        type=float,
+        help="Adamw beta1."
+    )
+    parser.add_argument(
+        "--beta2",
+        default=0.98,
+        type=float,
+        help="Adamw beta2."
+    )
+    parser.add_argument(
+        "--lr_update_strategy",
+        default="step",
+        choices=["step", "epoch"],
+        type=str,
+        help="Learning rate update strategy."
+    )
+    parser.add_argument(
+        "--lr_decay_rate",
+        default=0.9,
+        type=float,
+        help="Learning rate decay rate."
+    )
 
-    parser.add_argument("--logging_steps", type=int, default=-1,
-                        help="Log every X updates steps.")
-    parser.add_argument("--save_steps", type=int, default=-1,
-                        help="Save checkpoint every X updates steps.")
-    parser.add_argument("--eval_all_checkpoints", action="store_true",
-                        help="Evaluate all checkpoints starting with the same prefix as model_name ending and ending with step number")
+    parser.add_argument(
+        "--logging_steps",
+        type=int,
+        default=-1,
+        help="Log every X updates steps."
+    )
+    parser.add_argument(
+        "--save_steps",
+        type=int,
+        default=-1,
+        help="Save checkpoint every X updates steps."
+    )
+    parser.add_argument(
+        "--eval_all_checkpoints",
+        action="store_true",
+        help="Evaluate all checkpoints starting with the same prefix as model_name ending and ending with step number"
+    )
     parser.add_argument("--no_cuda", action="store_true", help="Avoid using CUDA when available")
-    parser.add_argument("--overwrite_output_dir", action="store_true",
-                        help="Overwrite the content of the output directory")
-    parser.add_argument("--overwrite_cache", action="store_true",
-                        help="Overwrite the cached training and evaluation sets")
-    parser.add_argument("--seed", type=int, default=42,
-                        help="Random seed for initialization")
+    parser.add_argument(
+        "--overwrite_output_dir",
+        action="store_true",
+        help="Overwrite the content of the output directory"
+    )
+    parser.add_argument(
+        "--overwrite_cache",
+        action="store_true",
+        help="Overwrite the cached training and evaluation sets"
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=42,
+        help="Random seed for initialization"
+    )
 
-    parser.add_argument("--fp16", action="store_true",
-                        help="Whether to use 16-bit (mixed) precision (through NVIDIA apex) instead of 32-bit")
-    parser.add_argument("--fp16_opt_level", type=str, default="O1",
-                        help="For fp16: Apex AMP optimization level selected in ['O0', 'O1', 'O2', and 'O3']." "See details at https://nvidia.github.io/apex/amp.html")
-    parser.add_argument("--local_rank", type=int, default=-1,
-                        help="For distributed training: local_rank")
+    parser.add_argument(
+        "--fp16",
+        action="store_true",
+        help="Whether to use 16-bit (mixed) precision (through NVIDIA apex) instead of 32-bit"
+    )
+    parser.add_argument(
+        "--fp16_opt_level",
+        type=str,
+        default="O1",
+        help="For fp16: Apex AMP optimization level selected in ['O0', 'O1', 'O2', and 'O3']." "See details at https://nvidia.github.io/apex/amp.html"
+    )
+    parser.add_argument(
+        "--local_rank",
+        type=int,
+        default=-1,
+        help="For distributed training: local_rank"
+    )
 
     # multi-label/binary-class
-    parser.add_argument("--sigmoid", action="store_true",
-                        help="Classifier add sigmoid if task_type is binary-class or multi-label")
+    parser.add_argument(
+        "--sigmoid",
+        action="store_true",
+        help="Classifier add sigmoid if task_type is binary-class or multi-label"
+    )
 
     # loss func
-    parser.add_argument("--loss_type",  type=str, default="bce",
-                        choices=["focal_loss", "bce", "multilabel_cce", "asl", "cce", "l1", "l2"],
-                        help="Loss type")
+    parser.add_argument(
+        "--loss_type",
+        type=str,
+        default="bce",
+        choices=["focal_loss", "bce", "multilabel_cce", "asl", "cce", "l1", "l2"],
+        help="Loss type"
+    )
 
     # which metric for model finalization selected
-    parser.add_argument("--best_metric_type", type=str, default="f1",
-                        choices=[
-                            "loss", "acc", "jaccard", "prec", "recall", "f1",
-                            "fmax", "roc_auc", "pr_auc", "mcc", "sp_statistic",
-                            "mse", "mae", "r2", "ps_statistic"
-                        ],
-                        help="Which metric for model selected")
+    parser.add_argument(
+        "--best_metric_type",
+        type=str,
+        default="f1",
+        choices=
+        [
+            "loss",
+            "acc",
+            "jaccard",
+            "prec",
+            "recall",
+            "f1",
+            "fmax",
+            "roc_auc",
+            "pr_auc",
+            "mcc",
+            "mse",
+            "mae",
+            "r2",
+            "sp_statistic",
+            "ps_statistic"
+        ],
+        help="Which metric for model selected。"
+    )
     # for BCE Loss
-    parser.add_argument("--pos_weight", type=float, default=1.0,
-                        help="positive weight for bce")
+    parser.add_argument(
+        "--pos_weight",
+        type=float,
+        default=1.0,
+        help="positive weight for bce"
+    )
 
     # for CE Loss
-    parser.add_argument("--weight", type=str, default=None,
-                        help="every label weight for multi-class")
+    parser.add_argument(
+        "--weight",
+        type=str,
+        default=None,
+        help="every label weight for multi-class."
+    )
 
     # for focal Loss
-    parser.add_argument("--focal_loss_alpha", type=float, default=0.7,
-                        help="focal loss alpha")
-    parser.add_argument("--focal_loss_gamma", type=float, default=2.0,
-                        help="focal loss gamma")
-    parser.add_argument("--focal_loss_reduce", action="store_true",
-                        help="mean for one sample(default sum)")
+    parser.add_argument(
+        "--focal_loss_alpha",
+        type=float,
+        default=0.7,
+        help="focal loss alpha"
+    )
+    parser.add_argument(
+        "--focal_loss_gamma",
+        type=float,
+        default=2.0,
+        help="focal loss gamma"
+    )
+    parser.add_argument(
+        "--focal_loss_reduce",
+        action="store_true",
+        help="mean for one sample(default sum)"
+    )
 
     # for asymmetric Loss
-    parser.add_argument("--asl_gamma_neg", type=float, default=4.0,
-                        help="negative gamma for asl")
-    parser.add_argument("--asl_gamma_pos", type=float, default=1.0,
-                        help="positive gamma for asl")
+    parser.add_argument(
+        "--asl_gamma_neg",
+        type=float,
+        default=4.0,
+        help="negative gamma for asl"
+    )
+    parser.add_argument(
+        "--asl_gamma_pos",
+        type=float,
+        default=1.0,
+        help="positive gamma for asl"
+    )
 
     # for sequence and structure graph node size(contact map shape)
-    parser.add_argument("--seq_max_length", default=None, type=int,
-                        help="the length of input sequence more than max length will be truncated, shorter will be padded.")
+    parser.add_argument(
+        "--seq_max_length",
+        default=None,
+        type=int,
+        help="the length of input sequence more than max length will be truncated, shorter will be padded."
+    )
 
     # for hierarchical transformer
-    parser.add_argument("--max_sentence_length", default=None, type=int,
-                        help="max length of sentences.")
-    parser.add_argument("--max_sentences", default=None, type=int,
-                        help="max nums of sentences.")
+    parser.add_argument(
+        "--max_sentence_length",
+        default=None,
+        type=int,
+        help="max length of sentences."
+    )
+    parser.add_argument(
+        "--max_sentences",
+        default=None,
+        type=int,
+        help="max nums of sentences."
+    )
 
-    parser.add_argument("--no_token_embeddings", action="store_true",
-                        help="Whether not to use token_embeddings")
-    parser.add_argument("--no_position_embeddings", action="store_true",
-                        help="Whether not to use position_embeddings")
-    parser.add_argument("--no_token_type_embeddings", action="store_true",
-                        help="Whether not to use token_type_embeddings")
+    parser.add_argument(
+        "--no_token_embeddings",
+        action="store_true",
+        help="Whether not to use token_embeddings"
+    )
+    parser.add_argument(
+        "--no_position_embeddings",
+        action="store_true",
+        help="Whether not to use position_embeddings"
+    )
+    parser.add_argument(
+        "--no_token_type_embeddings",
+        action="store_true",
+        help="Whether not to use token_type_embeddings"
+    )
 
-    parser.add_argument("--position_embedding_type", default="absolute", type=str,
-                        choices=["absolute", "RoPE"],
-                        help="the position embedding type.")
+    parser.add_argument(
+        "--position_embedding_type",
+        default="absolute",
+        type=str,
+        choices=["absolute", "RoPE"],
+        help="the position embedding type."
+    )
 
     # for embedding input
-    parser.add_argument("--embedding_input_size", default=None, type=int,
-                        help="the length of input embedding dim.")
-    parser.add_argument("--matrix_max_length", default=2048, type=int,
-                        help="the length of input embedding more than max length will be truncated, shorter will be padded.")
-    parser.add_argument("--matrix_encoder", action="store_true",
-                        help="Whether to use matrix encoder")
-    parser.add_argument("--matrix_encoder_act", action="store_true",
-                        help="Whether to use matrix encoder activate function")
+    parser.add_argument(
+        "--embedding_input_size",
+        default=None,
+        type=int,
+        help="the length of input embedding dim."
+    )
+    parser.add_argument(
+        "--matrix_max_length",
+        default=2048,
+        type=int,
+        help="the length of input embedding more than max length will be truncated, shorter will be padded."
+    )
+    parser.add_argument(
+        "--matrix_encoder",
+        action="store_true",
+        help="Whether to use matrix encoder"
+    )
+    parser.add_argument(
+        "--matrix_encoder_act",
+        action="store_true",
+        help="Whether to use matrix encoder activate function"
+    )
 
-    parser.add_argument("--trunc_type", default="right", type=str, required=True,  choices=["left", "right"],
-                        help="truncate type for whole input")
+    parser.add_argument(
+        "--trunc_type",
+        default="right",
+        type=str,
+        required=True,
+        choices=["left", "right"],
+        help="truncate type for whole input"
+    )
 
     # 再次训练加载已经训练好的模型
-    parser.add_argument("--model_dirpath", default=None, type=str,
-                        help="load the trained model to continue training.")
-    parser.add_argument("--save_all",  action="store_true",
-                        help="save all check-point")
-    parser.add_argument("--delete_old",  action="store_true",
-                        help="delete old check-point")
+    parser.add_argument(
+        "--model_dirpath",
+        default=None,
+        type=str,
+        help="load the trained model to continue training."
+    )
+    parser.add_argument(
+        "--save_all",
+        action="store_true",
+        help="save all check-point"
+    )
+    parser.add_argument(
+        "--delete_old",
+        action="store_true",
+        help="delete old check-point"
+    )
 
     # encoder
-    parser.add_argument("--hidden_size", default=None, type=int,
-                        help="hidden size for encoder.")
-    parser.add_argument("--intermediate_size", default=None, type=int,
-                        help="hidden size for encoder.")
-    parser.add_argument("--num_attention_heads",  default=None, type=int,
-                        help="num attention_heads for encoder")
-    parser.add_argument("--num_hidden_layers",  default=None, type=int,
-                        help="num hidden_layers for encoder")
-    parser.add_argument("--dropout_prob",  default=None, type=float,
-                        help="dropout prob for encoder")
+    parser.add_argument(
+        "--hidden_size",
+        default=None,
+        type=int,
+        help="hidden size for encoder."
+    )
+    parser.add_argument(
+        "--intermediate_size",
+        default=None,
+        type=int,
+        help="hidden size for encoder."
+    )
+    parser.add_argument(
+        "--num_attention_heads",
+        default=None,
+        type=int,
+        help="num attention_heads for encoder"
+    )
+    parser.add_argument(
+        "--num_hidden_layers",
+        default=None,
+        type=int,
+        help="num hidden_layers for encoder"
+    )
+    parser.add_argument(
+        "--dropout_prob",
+        default=None,
+        type=float,
+        help="dropout prob for encoder"
+    )
 
     # classifier
-    parser.add_argument("--classifier_size", default=None, type=int,
-                        help="hidden size for classifier.")
+    parser.add_argument(
+        "--classifier_size",
+        default=None,
+        type=int,
+        help="hidden size for classifier."
+    )
 
-    # llm
-    parser.add_argument("--llm_dir", default=None, type=str,
-                        help="llm dir.")
-    parser.add_argument("--llm_type", default=None, type=str,
-                        choices=[
-                            "none", "onehot", "esm", "lucaone_gplm", "luca_separated",
-                            "dnabert", "dnaberts", "dnabert-esm", "lucaone_gplm-unimol"
-                        ],
-                        required=True, help="llm type.")
-    parser.add_argument("--llm_version", type=str, default="v2.0",
-                        choices=[
-                            "none", "onehot", "v0.2", "v0.3", "v2.0", "esm2", "dnabert2",
-                            "dnaberts", "v2.0-v0.2", "dnabert2-esm2", "v0.3-v0.2"],
-                        help="llm version")
-    parser.add_argument("--llm_task_level", type=str,
-                        default="token_level,span_level,seq_level,structure_level",
-                        choices=[
-                            "token_level",
-                            "token_level,span_level,seq_level",
-                            "token_level,span_level,seq_level,structure_level"
-                        ],
-                        help="llm task level")
-    parser.add_argument("--llm_time_str", type=str, default=None,
-                        help="llm time str")
-    parser.add_argument("--llm_step", type=str, default=None,
-                        help="llm step.")
+    # for llm embedding
+    parser.add_argument(
+        "--llm_dir",
+        default=None,
+        type=str,
+        help="llm dir."
+    )
+    parser.add_argument(
+        "--llm_type",
+        default=None,
+        type=str,
+        choices=[
+            "none",
+            "onehot",
+            "lucaone",
+            "dnabert",
+            "dnaberts",
+            "esm",
+            "dnabert-esm"
+        ],
+        required=True, help="llm type."
+    )
+    parser.add_argument(
+        "--llm_version",
+        type=str,
+        default="v2.0",
+        choices=[
+            "none",
+            "onehot",
+            "lucaone",
+            "lucaone-separated",
+            "lucaone-gene",
+            "lucaone-prot",
+            "dnabert2",
+            "dnaberts",
+            "esm2",
+            "dnabert2-esm2"
+        ],
+        help="llm version"
+    )
+    parser.add_argument(
+        "--llm_step",
+        type=str,
+        default=None,
+        help="llm step."
+    )
 
     # others
-    parser.add_argument("--ignore_index", type=int, default=-100,
-                        help="ignore index")
-    parser.add_argument("--non_ignore",  action="store_true",
-                        help="none ignore.")
+    parser.add_argument(
+        "--ignore_index",
+        type=int,
+        default=-100,
+        help="ignore index"
+    )
+    parser.add_argument(
+        "--non_ignore",
+        action="store_true",
+        help="none ignore."
+    )
 
-    parser.add_argument("--vector_dirpath", type=str, default=None,
-                        help="vector dirpath")
-    parser.add_argument("--matrix_dirpath", type=str, default=None,
-                        help="matrix dirpath")
+    parser.add_argument(
+        "--vector_dirpath",
+        type=str,
+        default=None,
+        help="vector dirpath"
+    )
+    parser.add_argument(
+        "--matrix_dirpath",
+        type=str,
+        default=None,
+        help="matrix dirpath"
+    )
 
-    parser.add_argument("--seq_fc_size", default=None, type=str,
-                        help="seq fc size.")
-    parser.add_argument("--matrix_fc_size", default=None, type=str,
-                        help="matrix fc size.")
-    parser.add_argument("--vector_fc_size", default=None, type=str,
-                        help="vector fc size.")
-    parser.add_argument("--emb_activate_func", default="tanh", type=str,
-                        help="emb activate func.")
-    parser.add_argument("--fc_activate_func", default="tanh", type=str,
-                        help="fc activate func.")
-    parser.add_argument("--classifier_activate_func", default="tanh", type=str,
-                        help="classifier activate func.")
+    parser.add_argument(
+        "--seq_fc_size",
+        default=None,
+        type=str,
+        help="seq fc size."
+    )
+    parser.add_argument(
+        "--matrix_fc_size",
+        default=None,
+        type=str,
+        help="matrix fc size."
+    )
+    parser.add_argument(
+        "--vector_fc_size",
+        default=None,
+        type=str,
+        help="vector fc size."
+    )
+    parser.add_argument(
+        "--emb_activate_func",
+        default="tanh",
+        type=str,
+        help="emb activate func."
+    )
+    parser.add_argument(
+        "--fc_activate_func",
+        default="tanh",
+        type=str,
+        help="fc activate func."
+    )
+    parser.add_argument(
+        "--classifier_activate_func",
+        default="tanh",
+        type=str,
+        help="classifier activate func."
+    )
 
-    parser.add_argument("--not_prepend_bos",  action="store_true",
-                        help="not prepend_bos")
-    parser.add_argument("--not_append_eos", action="store_true",
-                        help="not append_eos")
-    parser.add_argument("--loss_reduction", default="mean",
-                        choices=["none", "meansum", "mean", "meanmean"],
-                        type=str, help="loss reduction")
-    parser.add_argument("--cross_atten",  action="store_true",
-                        help="use cross attention")
-    parser.add_argument("--self_atten", action="store_true",
-                        help="use self attention")
+    parser.add_argument(
+        "--not_prepend_bos",
+        action="store_true",
+        help="not prepend_bos"
+    )
+    parser.add_argument(
+        "--not_append_eos",
+        action="store_true",
+        help="not append_eos"
+    )
+    parser.add_argument(
+        "--loss_reduction", default="mean",
+        choices=[
+            "none",
+            "meansum",
+            "mean",
+            "meanmean"
+        ],
+        type=str, help="loss reduction"
+    )
+    parser.add_argument(
+        "--cross_atten",
+        action="store_true",
+        help="use cross attention"
+    )
+    parser.add_argument(
+        "--self_atten",
+        action="store_true",
+        help="use self attention"
+    )
 
     # for pair
-    parser.add_argument("--seq_max_length_a", default=None, type=int,
-                        help="the length of input sequence a more than max length will be truncated, shorter will be padded.")
-    parser.add_argument("--matrix_max_length_a", default=None, type=int,
-                        help="the length of input mbedding a more than max length will be truncated, shorter will be padded.")
-    parser.add_argument("--embedding_input_size_a", default=None, type=int,
-                        help="a embedding_input_size")
+    parser.add_argument(
+        "--seq_max_length_a",
+        default=None,
+        type=int,
+        help="the length of input sequence a more than max length will be truncated, shorter will be padded."
+    )
+    parser.add_argument(
+        "--matrix_max_length_a",
+        default=None,
+        type=int,
+        help="the length of input mbedding a more than max length will be truncated, shorter will be padded.")
+    parser.add_argument(
+        "--embedding_input_size_a",
+        default=None,
+        type=int,
+        help="seq a of a pair: embedding_input_size")
 
-    parser.add_argument("--seq_max_length_b", default=None, type=int,
-                        help="the length of input b sequence more than max length will be truncated, shorter will be padded.")
-    parser.add_argument("--matrix_max_length_b", default=None, type=int,
-                        help="the length of input b embedding more than max length will be truncated, shorter will be padded.")
-    parser.add_argument("--embedding_input_size_b", default=None, type=int,
-                        help="b embedding_input_size")
+    parser.add_argument(
+        "--seq_max_length_b",
+        default=None,
+        type=int,
+        help="the length of input b sequence more than max length will be truncated, shorter will be padded."
+    )
+    parser.add_argument(
+        "--matrix_max_length_b",
+        default=None,
+        type=int,
+        help="the length of input b embedding more than max length will be truncated, shorter will be padded."
+    )
+    parser.add_argument(
+        "--embedding_input_size_b",
+        default=None,
+        type=int,
+        help="seq b of a pair: embedding_input_size"
+    )
 
-    parser.add_argument("--not_seq_encoder_shared", action="store_true",
-                        help="shared the seq encoder for two kind of seq types")
-    parser.add_argument("--not_matrix_encoder_shared", action="store_true",
-                        help="shared the seq encoder for two kind of matrix types")
+    parser.add_argument(
+        "--not_seq_encoder_shared",
+        action="store_true",
+        help="shared the seq encoder for two kind of seq types"
+    )
+    parser.add_argument(
+        "--not_matrix_encoder_shared",
+        action="store_true",
+        help="shared the seq encoder for two kind of matrix types"
+    )
 
-    parser.add_argument('--worker_num', default=0, type=int,
-                        help='worker number for the data loader.')
-    parser.add_argument('--early_stop_epoch', default=-1, type=int,
-                        help='early stop epoch.')
+    parser.add_argument(
+        '--worker_num',
+        default=0,
+        type=int,
+        help='worker number for the data loader.'
+    )
+    parser.add_argument(
+        '--early_stop_epoch',
+        default=-1,
+        type=int,
+        help='early stop epoch.'
+    )
 
-    parser.add_argument("--matrix_embedding_exists",  action="store_true",
-                        help="whether the embedding exists")
-    parser.add_argument("--matrix_add_special_token",  action="store_true",
-                        help="add specical token([CLS], [SEP]) embedding vector into embedding matrix of sequence")
-    parser.add_argument("--embedding_complete",  action="store_true",
-                        help="when the seq len > inference_max_len, then the embedding matrix is completed by segment")
-    parser.add_argument("--embedding_complete_seg_overlap",  action="store_true",
-                        help="overlap segment(overlap sliding window)")
-    parser.add_argument("--embedding_fixed_len_a_time", type=int, default=None,
-                        help="When the input sequence is too long for your GPU to complete the inference at once, you can specify the fixed length of the inference at once")
+    parser.add_argument(
+        "--matrix_embedding_exists",
+        action="store_true",
+        help="whether the embedding exists"
+    )
+    parser.add_argument(
+        "--matrix_add_special_token",
+        action="store_true",
+        help="add specical token([CLS], [SEP]) embedding vector into embedding matrix of sequence"
+    )
+    parser.add_argument(
+        "--embedding_complete",
+        action="store_true",
+        help="when the seq len > inference_max_len, then the embedding matrix is completed by segment"
+    )
+    parser.add_argument(
+        "--embedding_complete_seg_overlap",
+        action="store_true",
+        help="overlap segment(overlap sliding window)"
+    )
+    parser.add_argument(
+        "--embedding_fixed_len_a_time",
+        type=int,
+        default=None,
+        help="When the input sequence is too long for your GPU to complete the inference at once, you can specify the fixed length of the inference at once"
+    )
 
     args = parser.parse_args()
     return args
@@ -751,31 +1240,28 @@ def main():
 
     # create model
     model_config, model_class, model, seq_subword, seq_tokenizer_class, seq_tokenizer, label_list = get_model(args)
-    if "luca_separated" in args.llm_type:
-        llm_version_strs = args.llm_version.split("-")
-        llm_time_str_strs = args.llm_time_str.split("-")
+    if "lucaone-separated" in args.llm_version:
         llm_step_strs = args.llm_step.split("-")
-        dataset_types = args.dataset_type.split("_")
-
-        llm_dirpath_1 = "%s/llm/models/lucagplm/%s/%s/%s/%s/checkpoint-%s" % (
-            args.llm_dir if args.llm_dir else "..", llm_version_strs[0], args.llm_task_level,
-            "lucaone_gplm", llm_time_str_strs[0], llm_step_strs[0]
+        dataset_types = [
+            "gene",
+            "prot"
+        ]
+        # llm/models/lucaone/lucaone-separated/gene/v2.0/checkpoint-step5600000
+        llm_dirpath_1 = "%s/llm/models/%s/%s/gene/v2.0/checkpoint-step%s" % (
+            args.llm_dir if args.llm_dir else "..",
+            args.llm_type,
+            args.llm_version,
+            llm_step_strs[0]
         )
-        if not os.path.exists(llm_dirpath_1):
-            llm_dirpath_1 = "%s/llm/models/lucagplm/%s/%s/%s/%s/checkpoint-step%s" % (
-                args.llm_dir if args.llm_dir else "..", llm_version_strs[0], args.llm_task_level,
-                "lucaone_gplm",llm_time_str_strs[0], llm_step_strs[0]
+
+        if len(llm_step_strs) > 1:
+            # llm/models/lucaone/lucaone-separated/prot/v0.2/checkpoint-step5600000
+            llm_dirpath_2 = "%s/llm/models/%s/%s/prot/v0.2/checkpoint-step%s" % (
+                args.llm_dir if args.llm_dir else "..",
+                args.llm_type,
+                args.llm_version,
+                llm_step_strs[1]
             )
-        if len(llm_version_strs) > 1:
-            llm_dirpath_2 = "%s/llm/models/lucagplm/%s/%s/%s/%s/checkpoint-%s" % (
-                args.llm_dir if args.llm_dir else "..", llm_version_strs[1], args.llm_task_level,
-                "lucaone_gplm", llm_time_str_strs[1], llm_step_strs[1]
-            )
-            if not os.path.exists(llm_dirpath_2):
-                llm_dirpath_2 = "%s/llm/models/lucagplm/%s/%s/%s/%s/checkpoint-step%s" % (
-                    args.llm_dir if args.llm_dir else "..", llm_version_strs[1], args.llm_task_level,
-                    "lucaone_gplm", llm_time_str_strs[1], llm_step_strs[1]
-                )
             llm_dirpath = {
                 dataset_types[0]: llm_dirpath_1,
                 dataset_types[1]: llm_dirpath_2
@@ -784,16 +1270,14 @@ def main():
             llm_dirpath = {
                 dataset_types[0]: llm_dirpath_1
             }
-    elif "luca" in args.llm_type:
-            llm_dirpath = "%s/llm/models/lucagplm/%s/%s/%s/%s/checkpoint-%s" % (
-                args.llm_dir if args.llm_dir else "..", args.llm_version, args.llm_task_level,
-                args.llm_type, args.llm_time_str, args.llm_step
-            )
-            if not os.path.exists(llm_dirpath):
-                llm_dirpath = "%s/llm/models/lucagplm/%s/%s/%s/%s/checkpoint-step%s" % (
-                    args.llm_dir if args.llm_dir else "..", args.llm_version, args.llm_task_level,
-                    args.llm_type, args.llm_time_str, args.llm_step
-            )
+    elif "lucaone" in args.llm_version:
+        # llm/models/lucaone/lucaone or lucaone-gene or lucaone-prot
+        llm_dirpath = "%s/llm/models/%s/%s/checkpoint-step%s" % (
+            args.llm_dir if args.llm_dir else "..",
+            args.llm_type,
+            args.llm_version,
+            args.llm_step
+        )
     else:
         llm_dirpath = None
     args.llm_dirpath = llm_dirpath
@@ -804,10 +1288,10 @@ def main():
             args.seq_max_length = max(args.seq_max_length_a, args.seq_max_length_b)
         # encoder_config
         encoder_config = {
+            "llm_dirpath": llm_dirpath,
             "llm_type": args.llm_type,
             "llm_version": args.llm_version,
             "llm_step": args.llm_step,
-            "llm_dirpath": llm_dirpath,
             "input_type": args.input_type,
             "trunc_type": args.trunc_type,
             "seq_max_length": args.seq_max_length,
@@ -827,10 +1311,10 @@ def main():
     else:
         assert args.seq_max_length is not None
         encoder_config = {
+            "llm_dirpath": llm_dirpath,
             "llm_type": args.llm_type,
             "llm_version": args.llm_version,
             "llm_step": args.llm_step,
-            "llm_dirpath": llm_dirpath,
             "input_type": args.input_type,
             "trunc_type": args.trunc_type,
             "seq_max_length": args.seq_max_length,
@@ -956,10 +1440,12 @@ def main():
         )
     else:
         print("n_gpu: %d, use: DataLoader" % args.n_gpu)
-        train_dataset = load_dataset('csv',
-                                     data_dir=args.train_data_dir,
-                                     split='train',
-                                     streaming=True)
+        train_dataset = load_dataset(
+            'csv',
+            data_dir=args.train_data_dir,
+            split='train',
+            streaming=True
+        )
         if args.input_mode == "pair":
             print("Has Pair: True")
             train_dataset = train_dataset.map(
@@ -1076,7 +1562,6 @@ def main():
         log_fp.close()
     if args.n_gpu > 1:
         dist.barrier()
-
 
 
 if __name__ == "__main__":

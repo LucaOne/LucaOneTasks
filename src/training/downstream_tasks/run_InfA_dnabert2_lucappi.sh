@@ -32,9 +32,11 @@ BEST_METRIC_TYPE="acc"
 classifier_size=128
 # binary-class, multi-label: bce, multi-class: cce, regression: l1 or l2
 loss_type="bce"
+
 llm_type="dnabert"
 llm_version="dnabert2"
-llm_step="117M_3B"
+llm_step="117M"
+
 batch_size=16
 learning_rate=1e-4
 gradient_accumulation_steps=1
@@ -100,8 +102,8 @@ python run.py \
   --num_hidden_layers $num_hidden_layers \
   --dropout_prob $dropout_prob \
   --classifier_size $classifier_size \
-  --vector_dirpath ../vectors/$DATASET_NAME/$DATASET_TYPE/$TASK_TYPE/$MODEL_TYPE/$llm_version/$llm_type/$llm_step   \
-  --matrix_dirpath ../matrices/$DATASET_NAME/$DATASET_TYPE/$TASK_TYPE/$MODEL_TYPE/$llm_version/$llm_type/$llm_step  \
+  --vector_dirpath ../../vectors/$DATASET_NAME/$llm_type/$llm_version/$llm_step   \
+  --matrix_dirpath ../../matrices/$DATASET_NAME/$llm_type/$llm_version/$llm_step  \
   --seq_fc_size null \
   --matrix_fc_size 128 \
   --vector_fc_size null \

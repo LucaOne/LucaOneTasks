@@ -32,14 +32,15 @@ BEST_METRIC_TYPE="acc"
 classifier_size=128
 # binary-class, multi-label: bce, multi-class: cce, regression: l1 or l2
 loss_type="bce"
-llm_type="luca_separated"
-llm_task_level="token_level,span_level,seq_level,structure_level"
-llm_version="v2.0-v0.2"
-llm_time_str=20231125124404-20230930150211
+
+llm_type="lucaone"
+llm_version="lucaone-separated"
 llm_step=5600000-5600000
+
 batch_size=1
 learning_rate=1e-4
 gradient_accumulation_steps=8
+
 time_str=$(date "+%Y%m%d%H%M%S")
 cd ../../
 python run.py \
@@ -97,8 +98,6 @@ python run.py \
   --llm_dir .. \
   --llm_type $llm_type \
   --llm_version $llm_version \
-  --llm_task_level $llm_task_level \
-  --llm_time_str $llm_time_str \
   --llm_step $llm_step \
   --ignore_index -100 \
   --hidden_size $hidden_size \
@@ -106,8 +105,8 @@ python run.py \
   --num_hidden_layers $num_hidden_layers \
   --dropout_prob $dropout_prob \
   --classifier_size $classifier_size \
-  --vector_dirpath ../vectors/$DATASET_NAME/$DATASET_TYPE/$TASK_TYPE/$MODEL_TYPE/$llm_version/$llm_type/$llm_time_str/$llm_step  \
-  --matrix_dirpath ../matrices/$DATASET_NAME/$DATASET_TYPE/$TASK_TYPE/$MODEL_TYPE/$llm_version/$llm_type/$llm_time_str/$llm_step  \
+  --vector_dirpath ../../vectors/$DATASET_NAME/$llm_type/$llm_version/$llm_step  \
+  --matrix_dirpath ../../matrices/$DATASET_NAME/$llm_type/$llm_version/$llm_step  \
   --seq_fc_size null \
   --matrix_fc_size 128 \
   --vector_fc_size null \

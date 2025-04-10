@@ -141,8 +141,8 @@ python run.py \
   --num_hidden_layers $num_hidden_layers \
   --dropout_prob $dropout_prob \
   --classifier_size $classifier_size \
-  --vector_dirpath ../../vectors/$DATASET_NAME/$DATASET_TYPE/$TASK_TYPE/$MODEL_TYPE/$llm_type/$llm_version/$llm_step   \
-  --matrix_dirpath ../../matrices/$DATASET_NAME/$DATASET_TYPE/$TASK_TYPE/$MODEL_TYPE/$llm_type/$llm_version/$llm_step  \
+  --vector_dirpath ../../vectors/$DATASET_NAME/$llm_type/$llm_version/$llm_step   \
+  --matrix_dirpath ../../matrices/$DATASET_NAME/$llm_type/$llm_version/$llm_step  \
   --seq_fc_size $fc_size \
   --matrix_fc_size $fc_size \
   --vector_fc_size $fc_size \

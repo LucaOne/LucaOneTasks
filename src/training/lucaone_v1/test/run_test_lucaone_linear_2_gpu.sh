@@ -138,8 +138,8 @@ python -W ignore -m torch.distributed.launch --nnodes 1 --node_rank 0 --master_p
   --num_hidden_layers $num_hidden_layers \
   --dropout_prob $dropout_prob \
   --classifier_size $classifier_size \
-  --vector_dirpath ../../vectors/$DATASET_NAME/$DATASET_TYPE/$TASK_TYPE/$MODEL_TYPE/$llm_type/$llm_version/$llm_time_str/$llm_step  \
-  --matrix_dirpath ../../matrices/$DATASET_NAME/$DATASET_TYPE/$TASK_TYPE/$MODEL_TYPE/$llm_type/$llm_version/$llm_time_str/$llm_step  \
+  --vector_dirpath ../../vectors/$DATASET_NAME/$llm_type/$llm_version/$llm_time_str/$llm_step  \
+  --matrix_dirpath ../../matrices/$DATASET_NAME/$llm_type/$llm_version/$llm_time_str/$llm_step  \
   --seq_fc_size null \
   --matrix_fc_size null \
   --vector_fc_size null \

@@ -468,11 +468,18 @@ def get_args():
         default="O1",
         help="For fp16: Apex AMP optimization level selected in ['O0', 'O1', 'O2', and 'O3']." "See details at https://nvidia.github.io/apex/amp.html"
     )
+    # for GPU, 单卡默认为-1，不需要显示的设置
     parser.add_argument(
         "--local_rank",
-        type=int,
         default=-1,
-        help="For distributed training: local_rank"
+        type=int,
+        help="main node local rank, for pytorch<1.9."
+    )
+    parser.add_argument(
+        "--local-rank",
+        default=-1,
+        type=int,
+        help="main node local rank, for pytorch>=1.9."
     )
 
     # multi-label/binary-class

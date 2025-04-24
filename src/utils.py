@@ -986,7 +986,10 @@ def download_trained_checkpoint_lucaone_v1(
     except Exception as e:
         print(e)
         print("Download automatically LucaOne Trained CheckPoint failed!")
-        print("You can manually download 'logs/' and 'models/' into local directory: %s/ from %s" % (os.path.abspath(llm_dir), os.path.join(base_url, "TrainedCheckPoint/")))
+        print("You can manually download 'logs/' and 'models/' into local directory: %s/ from %s" % (
+            os.path.abspath(llm_dir),
+            base_url
+        ))
         raise Exception(e)
 
 
@@ -1061,7 +1064,7 @@ def download_trained_checkpoint_lucaone(
         print("Download automatically LucaOne Trained CheckPoint failed!")
         print("You can manually download 'logs/' and 'models/' into local directory: %s/ from %s" % (
             os.path.abspath(llm_dir),
-            os.path.join(base_url, "TrainedCheckPoint/")
+            base_url
         ))
         raise Exception(e)
 
@@ -1153,6 +1156,9 @@ def download_trained_checkpoint_downstream_tasks(
         except Exception as e:
             print(e)
             print("Download automatically LucaDownstream Task: %s Trained CheckPoint failed!" %  dataset_name[idx])
-            print("You can manually download 'logs/' and 'models/' into local directory: %s/ from %s" % (os.path.abspath(save_dir), os.path.join(base_url, dataset_name[idx])))
+            print("You can manually download 'logs/' and 'models/' into local directory: %s/ from %s" % (
+                os.path.abspath(save_dir),
+                os.path.join(base_url, dataset_name[idx])
+            ))
             raise Exception(e)
     print("%d Downstream Task Trained Model Download Succeed." % download_succeed_task_num)

@@ -13,12 +13,14 @@
 
 import csv
 import json
+import uuid
 import os, sys
 import torch
 import codecs
 import time, shutil
 import numpy as np
 import argparse
+from datetime import datetime
 from collections import OrderedDict
 from subword_nmt.apply_bpe import BPE
 from transformers import BertConfig
@@ -497,6 +499,13 @@ def run(
     model_args.truncation_matrix_length = max(model_args.matrix_max_length, llm_truncation_seq_length)
 
     model_args.matrix_embedding_exists = matrix_embedding_exists
+    # embedding saved dir during prediction
+    if emb_dir:
+        # now = datetime.now()
+        # formatted_time = now.strftime("%Y%m%d%H%M%S")
+        # emb_dir = os.path.join(emb_dir, "%s-%d" % (formatted_time, gpu_id))
+        unique_string = str(uuid.uuid4())
+        emb_dir = os.path.join(emb_dir, "%s-%d" % (unique_string, gpu_id))
     model_args.emb_dir = emb_dir
     model_args.vector_dirpath = model_args.emb_dir if model_args.emb_dir else None
     model_args.matrix_dirpath = model_args.emb_dir if model_args.emb_dir else None

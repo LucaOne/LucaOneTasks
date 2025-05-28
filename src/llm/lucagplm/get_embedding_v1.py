@@ -182,6 +182,7 @@ def load_model(
                 os.path.join(model_dirpath, "pytorch.pt"),
                 map_location=torch.device("cpu")
             )
+            model.embedding_inference = embedding_inference
         except Exception as e:
             model = model_class(model_config, args=args)
             pretrained_net_dict = torch.load(

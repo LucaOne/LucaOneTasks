@@ -141,6 +141,14 @@ def metrics_multi_class(targets, probs, average="macro"):
         })
     except Exception as e:
         pass
+    try:
+        cm = confusion_matrix(targets, preds)
+        cm = cm.tolist()
+        result.update({
+            "confusion_matrix": cm
+        })
+    except Exception as e:
+        pass
     return result
 
 
@@ -223,6 +231,14 @@ def metrics_multi_class_for_pred(targets, preds, probs=None, average="macro", sa
         sp_avg = metrics_multi_class_sp(targets, preds)
         result.update({
             "sp": sp_avg
+        })
+    except Exception as e:
+        pass
+    try:
+        cm = confusion_matrix(targets, preds)
+        cm = cm.tolist()
+        result.update({
+            "confusion_matrix": cm
         })
     except Exception as e:
         pass

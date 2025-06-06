@@ -32,11 +32,14 @@ BEST_METRIC_TYPE="acc"
 classifier_size=128
 # binary-class, multi-label: bce, multi-class: cce, regression: l1 or l2
 loss_type="bce"
+
+# for llm
 llm_type="lucaone_gplm"
 llm_task_level="token_level,span_level,seq_level,structure_level"
 llm_version="v2.0"
 llm_time_str=20231125113045
 llm_step=5600000
+
 batch_size=1
 learning_rate=1e-4
 gradient_accumulation_steps=16

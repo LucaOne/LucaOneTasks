@@ -29,6 +29,8 @@ BEST_METRIC_TYPE="sp_statistic"
 classifier_size=128
 # binary-class, multi-label: bce, multi-class: cce, regression: l1 or l2
 loss_type="l2"
+
+# for llm
 llm_type="lucaone_gplm"
 llm_task_level="token_level,span_level,seq_level,structure_level"
 llm_version="v2.0"

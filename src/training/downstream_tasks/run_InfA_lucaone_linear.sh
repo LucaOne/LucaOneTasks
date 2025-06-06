@@ -35,7 +35,8 @@ loss_type="bce"
 
 llm_type="lucaone"
 llm_version="lucaone"
-llm_step=5600000
+# llm_step=5600000
+llm_step=36000000
 
 
 batch_size=16

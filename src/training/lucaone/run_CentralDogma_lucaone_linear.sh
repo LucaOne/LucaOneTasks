@@ -53,7 +53,8 @@ MATRIX_POOLING_TYPE="value_attention"
 # for llm
 llm_type="lucaone"
 llm_version="lucaone"
-llm_step=5600000
+# llm_step=5600000
+llm_step=36000000
 
 
 # for training

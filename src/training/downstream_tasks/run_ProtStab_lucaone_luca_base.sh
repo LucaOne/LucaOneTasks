@@ -32,7 +32,8 @@ loss_type="l2"
 
 llm_type="lucaone"
 llm_version="lucaone"
-llm_step=5600000
+# llm_step=5600000
+llm_step=36000000
 
 batch_size=16
 learning_rate=1e-4

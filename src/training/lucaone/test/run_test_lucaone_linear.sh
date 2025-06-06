@@ -49,7 +49,8 @@ embedding_fixed_len_a_time=4096
 # for llm
 llm_type="lucaone"
 llm_version="lucaone"
-llm_step=5600000\
+# llm_step=5600000
+llm_step=36000000
 
 # for training
 ## max epochs

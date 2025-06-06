@@ -46,7 +46,8 @@ MATRIX_POOLING_TYPE="max"
 # for llm
 llm_type="lucaone"
 llm_version="lucaone"
-llm_step=5600000
+# llm_step=5600000
+llm_step=36000000
 
 
 # for training

@@ -49,6 +49,7 @@ matrix_max_length_a=2460
 matrix_max_length_b=620
 # none, avg, max, value_attention
 MATRIX_POOLING_TYPE="value_attention"
+
 # for llm
 llm_type="lucaone_gplm"
 llm_task_level="token_level,span_level,seq_level,structure_level"

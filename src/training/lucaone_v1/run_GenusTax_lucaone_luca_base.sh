@@ -43,6 +43,7 @@ embedding_input_size=2560
 matrix_max_length=1502
 # none, avg, max, value_attention
 MATRIX_POOLING_TYPE="max"
+
 # for llm
 llm_type="lucaone_gplm"
 llm_task_level="token_level,span_level,seq_level,structure_level"

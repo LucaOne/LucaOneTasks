@@ -151,8 +151,10 @@ def get_args():
         required=True,
         choices=[
             "luca_base",
+            "lucappi",
             "lucappi2",
-            "lucappi"
+            "lucapair_homo",
+            "lucapair_heter"
         ],
         help="the model type of selected"
     )
@@ -166,7 +168,13 @@ def get_args():
             "matrix",
             "vector",
             "seq_matrix",
-            "seq_vector"
+            "seq_vector",
+            "seq_vs_seq",
+            "seq_vs_vector",
+            "seq_vs_matrix",
+            "vector_vs_vector",
+            "vector_vs_matrix",
+            "matrix_vs_matrix",
         ],
         help="the input type of selected")
     parser.add_argument(

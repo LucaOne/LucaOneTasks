@@ -35,6 +35,8 @@ try:
     from trainer import train
     from evaluator import evaluate
     from tester import test
+    from ppi.models.LucaPairHeter import LucaPairHeter
+    from ppi.models.LucaPairHomo import LucaPairHomo
     from common.luca_base import LucaBase
     from ppi.models.LucaPPI import LucaPPI
     from ppi.models.LucaPPI2 import LucaPPI2
@@ -50,6 +52,8 @@ except ImportError:
     from src.trainer import train
     from src.evaluator import evaluate
     from src.tester import test
+    from src.ppi.models.LucaPairHeter import LucaPairHeter
+    from src.ppi.models.LucaPairHomo import LucaPairHomo
     from src.common.luca_base import LucaBase
     from src.ppi.models.LucaPPI import LucaPPI
     from src.ppi.models.LucaPPI2 import LucaPPI2
@@ -1194,6 +1198,10 @@ def get_model(args):
         model_class = LucaPPI2
     elif args.model_type == "luca_base":
         model_class = LucaBase
+    elif args.model_type == "lucapair_homo":
+        model_class = LucaPairHomo
+    elif args.model_type == "lucapair_heter":
+        model_class = LucaPairHeter
     else:
         raise Exception("Not support the model_type=%s" % args.model_type)
     if args.model_dirpath and os.path.exists(args.model_dirpath):

@@ -73,6 +73,7 @@ class LucaPairHeter(BertPreTrainedModel):
         self.linear_idx_b = [-1, -1, -1]
 
         if self.input_type == "seq_vs_seq":
+            # input_a is seq vs # input_b is seq
             # seq_a -> bert -> (pooler)
             self.input_size_list_a[0] = config.hidden_size
             config.max_position_embeddings = config.seq_max_length_a
@@ -97,6 +98,7 @@ class LucaPairHeter(BertPreTrainedModel):
             self.linear_idx_a[0] = 0
             self.linear_idx_b[0] = 0
         elif self.input_type == "seq_vs_vector":
+            # input_a is seq vs # input_b is embedding vector
             # seq_a -> bert -> (pooler)
             self.input_size_list_a[0] = config.hidden_size
             config.max_position_embeddings = config.seq_max_length_a
@@ -116,6 +118,7 @@ class LucaPairHeter(BertPreTrainedModel):
             self.encoder_type_list_b[2] = True
             self.linear_idx_b[2] = 0
         elif self.input_type == "seq_vs_matrix":
+            # input_a is seq vs # input_b is embedding matrix
             # seq_a -> bert -> (pooler)
             self.input_size_list_a[0] = config.hidden_size
             config.max_position_embeddings = config.seq_max_length_a
@@ -165,6 +168,7 @@ class LucaPairHeter(BertPreTrainedModel):
             self.linear_idx_b[1] = 0
             config.embedding_input_size = ori_embedding_input_size
         elif self.input_type == "vector_vs_vector":
+            # input_a and input_b both are embedding vector
             # seq_a ->
             self.input_size_list_a[2] = config.embedding_input_size_a
             self.encoder_type_list_a[2] = True
@@ -174,6 +178,7 @@ class LucaPairHeter(BertPreTrainedModel):
             self.encoder_type_list_b[2] = True
             self.linear_idx_b[2] = 0
         elif self.input_type == "vector_vs_matrix":
+            # input_a is embedding vector vs # input_b is embedding matrix
             # for input a(vector)
             self.input_size_list_a[2] = config.embedding_input_size_a
             self.encoder_type_list_a[2] = True
@@ -195,6 +200,7 @@ class LucaPairHeter(BertPreTrainedModel):
             self.encoder_type_list_b[1] = True
             self.linear_idx_b[1] = 0
         elif self.input_type == "matrix_vs_matrix":
+            # input_a and input_b both are embedding matrix
             # emb matrix -> (encoder) - > (pooler) -> fc * -> classifier
             if args.matrix_encoder:
                 matrix_encoder_config_a = copy.deepcopy(config)

@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 class LucaPairHomo(BertPreTrainedModel):
     def __init__(self, config, args):
         super(LucaPairHomo, self).__init__(config)
-        # seq, matrix, vector, seq+matrix, seq+vector
+        # only for input_type= seq_vs_seq, vector_vs_vector, matrix_vs_matrix
         if config.seq_max_length is None and config.seq_max_length_a == config.seq_max_length_b:
             config.seq_max_length = config.seq_max_length_a
         if config.matrix_max_length is None and config.matrix_max_length_a == config.matrix_max_length_b:
@@ -61,6 +61,7 @@ class LucaPairHomo(BertPreTrainedModel):
         self.input_size_list = [0, 0, 0]
         self.linear_idx = [-1, -1, -1]
         if self.input_type == "seq_vs_seq":
+            # input_a and input_b both are seq
             # seq -> bert -> (pooler) -> fc * -> classifier
             self.input_size_list[0] = config.hidden_size
             config.max_position_embeddings = config.seq_max_length
@@ -70,11 +71,13 @@ class LucaPairHomo(BertPreTrainedModel):
             self.encoder_type_list[0] = True
             self.linear_idx[0] = 0
         elif self.input_type == "vector_vs_vector":
+            # input_a and input_b both are embedding vector
             # emb vector -> fc * -> classifier
             self.input_size_list[2] = config.embedding_input_size
             self.encoder_type_list[2] = True
             self.linear_idx[2] = 0
         elif self.input_type == "matrix_vs_matrix":
+            # input_a and input_b both are embedding matrix
             # emb matrix -> (encoder) - > (pooler) -> fc * -> classifier
             if args.matrix_encoder:
                 matrix_encoder_config = copy.deepcopy(config)
@@ -85,15 +88,20 @@ class LucaPairHomo(BertPreTrainedModel):
                     self.matrix_encoder = nn.ModuleList([
                         nn.Linear(config.embedding_input_size, config.hidden_size),
                         create_activate(config.emb_activate_func),
-                        # nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps),
-                        BertModel(matrix_encoder_config, use_pretrained_embedding=True, add_pooling_layer=(args.matrix_pooling_type is None or args.matrix_pooling_type == "none") and self.task_level_type in ["seq_level"])
+                        BertModel(
+                            matrix_encoder_config,
+                            use_pretrained_embedding=True,
+                            add_pooling_layer=(args.matrix_pooling_type is None or args.matrix_pooling_type == "none") and self.task_level_type in ["seq_level"]
+                        )
                     ])
 
                 else:
                     self.matrix_encoder = nn.ModuleList([
-                        # nn.Linear(config.embedding_input_size, config.hidden_size),
-                        # nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps),
-                        BertModel(matrix_encoder_config, use_pretrained_embedding=True, add_pooling_layer=(args.matrix_pooling_type is None or args.matrix_pooling_type == "none") and self.task_level_type in ["seq_level"])
+                        BertModel(
+                            matrix_encoder_config,
+                            use_pretrained_embedding=True,
+                            add_pooling_layer=(args.matrix_pooling_type is None or args.matrix_pooling_type == "none") and self.task_level_type in ["seq_level"]
+                        )
                     ])
                 ori_embedding_input_size = config.embedding_input_size
                 config.embedding_input_size = config.hidden_size

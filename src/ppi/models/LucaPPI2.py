@@ -51,13 +51,17 @@ class LucaPPI2(BertPreTrainedModel):
 
         self.seq_encoder_a, self.seq_pooler_a, self.matrix_encoder_a, self.matrix_pooler_a = None, None, None, None
         self.seq_encoder_b, self.seq_pooler_b, self.matrix_encoder_b, self.matrix_pooler_b = None, None, None, None
+        # for input a
         self.encoder_type_list_a = [False, False, False]
         self.input_size_list_a = [0, 0, 0]
         self.linear_idx_a = [-1, -1, -1]
+        # for input b
         self.encoder_type_list_b = [False, False, False]
         self.input_size_list_b = [0, 0, 0]
         self.linear_idx_b = [-1, -1, -1]
-        if self.input_type == "seq": # seq -> bert -> (pooler) -> fc * -> classifier
+        if self.input_type == "seq":
+            # input_a and input_b both are seq
+            # seq -> bert -> (pooler) -> fc * -> classifier
             self.input_size_list_a[0] = config.hidden_size
             config.max_position_embeddings = config.seq_max_length_a
             self.seq_encoder_a = BertModel(config, use_pretrained_embedding=False, add_pooling_layer=(args.seq_pooling_type is None or args.seq_pooling_type == "none") and self.task_level_type in ["seq_level"])
@@ -71,7 +75,9 @@ class LucaPPI2(BertPreTrainedModel):
             self.encoder_type_list_b[0] = True
             self.linear_idx_a[0] = 0
             self.linear_idx_b[0] = 0
-        elif self.input_type == "matrix": # emb matrix -> (encoder) - > (pooler) -> fc * -> classifier
+        elif self.input_type == "matrix":
+            # input_a and input_b both are embedding matrix
+            # emb matrix -> (encoder) - > (pooler) -> fc * -> classifier
             if args.matrix_encoder:
                 matrix_encoder_config_a = copy.deepcopy(config)
                 matrix_encoder_config_a.no_position_embeddings = True
@@ -132,14 +138,18 @@ class LucaPPI2(BertPreTrainedModel):
             self.encoder_type_list_b[1] = True
             self.linear_idx_a[1] = 0
             self.linear_idx_b[1] = 0
-        elif self.input_type == "vector": # emb vector -> fc * -> classifier
+        elif self.input_type == "vector":
+            # input_a and input_b both are seq + embedding vector
+            # emb vector -> fc * -> classifier
             self.input_size_list_a[2] = config.embedding_input_size_a
             self.encoder_type_list_a[2] = True
             self.linear_idx_a[2] = 0
             self.input_size_list_b[2] = config.embedding_input_size_b
             self.encoder_type_list_b[2] = True
             self.linear_idx_b[2] = 0
-        elif self.input_type == "seq_matrix": # seq + matrix
+        elif self.input_type == "seq_matrix":
+            # input_a and input_b both are seq + embedding matrix
+            # seq + matrix
             self.input_size_list_a[0] = config.hidden_size
             self.input_size_list_b[0] = config.hidden_size
             config.max_position_embeddings = config.seq_max_length_a
@@ -212,7 +222,9 @@ class LucaPPI2(BertPreTrainedModel):
             self.linear_idx_b[0] = 0
             self.linear_idx_a[1] = 1
             self.linear_idx_b[1] = 1
-        elif self.input_type == "seq_vector": # seq + vector
+        elif self.input_type == "seq_vector":
+            # input_a and input_b both are seq + embedding vector
+            # seq + vector
             self.input_size_list_a[0] = config.hidden_size
             self.input_size_list_b[0] = config.hidden_size
             config.max_position_embeddings = config.seq_max_length_a

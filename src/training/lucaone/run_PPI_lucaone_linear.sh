@@ -142,13 +142,13 @@ python run.py \
   --emb_activate_func gelu \
   --fc_activate_func gelu \
   --classifier_activate_func gelu \
-  --warmup_steps warmup_steps \
+  --warmup_steps $warmup_steps \
   --beta1 0.9 \
   --beta2 0.98 \
   --weight_decay 0.01 \
   --save_steps $save_steps \
   --max_steps $max_steps \
-  --logging_steps logging_steps
+  --logging_steps $logging_steps
 
 
 

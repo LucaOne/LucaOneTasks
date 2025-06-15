@@ -947,7 +947,8 @@ def get_args():
         "--embedding_fixed_len_a_time",
         type=int,
         default=None,
-        help="When the input sequence is too long for your GPU to complete the inference at once, you can specify the fixed length of the inference at once"
+        help="When the input sequence is too long for your GPU to complete the inference at once, "
+             "you can specify the fixed length of the inference at once"
     )
 
     args = parser.parse_args()
@@ -1000,6 +1001,16 @@ def get_input_cols(args):
         input_col_names = [args.dataset_type, "seq_a", "seq_b", "embedding_matrix_a", "embedding_matrix_b"]
     elif args.input_mode == "pair" and args.input_type == "seq_vector":
         input_col_names = [args.dataset_type, "seq_a", "seq_b", "embedding_vector_a", "embedding_vector_b"]
+    elif args.input_mode == "pair" and args.input_type == "seq_vs_seq":
+        input_col_names = [args.dataset_type, "seq_a", "seq_b"]
+    elif args.input_mode == "pair" and args.input_type == "seq_vs_vector":
+        input_col_names = [args.dataset_type, "seq_a", "embedding_vector_b"]
+    elif args.input_mode == "pair" and args.input_type == "seq_vs_matrix":
+        input_col_names = [args.dataset_type, "seq_a", "embedding_matrix_b"]
+    elif args.input_mode == "pair" and args.input_type == "vector_vs_matrix":
+        input_col_names = [args.dataset_type, "embedding_vector_a", "embedding_matrix_b"]
+    elif args.input_mode == "pair" and args.input_type == "matrix_vs_matrix":
+        input_col_names = [args.dataset_type, "embedding_matrix_a", "embedding_matrix_b"]
     else:
         raise Exception("Not support input_mode=%s" % args.input_mode)
     return input_col_names
@@ -1119,9 +1130,9 @@ def get_model(args):
 
     if args.hidden_size:
         model_config.hidden_size = args.hidden_size
-    if args.num_attention_heads:
+    if args.num_attention_heads is not None:
         model_config.num_attention_heads = args.num_attention_heads
-    if args.num_hidden_layers:
+    if args.num_hidden_layers is not None:
         model_config.num_hidden_layers = args.num_hidden_layers
     if args.dropout_prob is not None and args.dropout_prob > -1:
         model_config.attention_probs_dropout_prob = args.dropout_prob

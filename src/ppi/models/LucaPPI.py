@@ -8,7 +8,7 @@
 @datetime: 2023/6/21 17:32
 @project: LucaOneTasks
 @file: LucaPPI
-@desc: LucaPPI for homogeneous double sequence
+@desc: LucaPPI for homogeneous double for each input
 '''
 
 import sys
@@ -18,12 +18,12 @@ sys.path.append("../..")
 sys.path.append("../../..")
 sys.path.append("../../../src")
 try:
-    from ....common.pooling import *
-    from ....common.loss import *
-    from ....utils import *
-    from ....common.multi_label_metrics import *
-    from ....common.modeling_bert import BertModel, BertPreTrainedModel
-    from ....common.metrics import *
+    from common.pooling import *
+    from common.loss import *
+    from utils import *
+    from common.multi_label_metrics import *
+    from common.modeling_bert import BertModel, BertPreTrainedModel
+    from common.metrics import *
 except ImportError:
     from src.common.pooling import *
     from src.common.loss import *

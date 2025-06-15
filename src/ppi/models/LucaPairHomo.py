@@ -7,8 +7,8 @@
 @tel: 137****6540
 @datetime: 2023/6/21 17:32
 @project: LucaOneTasks
-@file: LucaPPI
-@desc: LucaPPI for homogeneous double sequence
+@file: LucaPairHomo
+@desc: LucaPairHomo for homogeneous pair input
 '''
 
 import sys
@@ -140,7 +140,8 @@ class LucaPairHomo(BertPreTrainedModel):
                     input_size = fc_size[idx]
                 all_linear_list[encoder_idx] = nn.ModuleList(linear_list)
                 self.output_size[encoder_idx] = fc_size[-1]
-            else: # 没有全连接层
+            else:
+                # 没有全连接层
                 self.linear_idx[encoder_idx] = -1
                 self.output_size[encoder_idx] = input_size
         all_linear_list = [linear for linear in all_linear_list if linear is not None]
@@ -154,26 +155,30 @@ class LucaPairHomo(BertPreTrainedModel):
             last_hidden_size = sum(self.output_size)
         last_hidden_size = last_hidden_size * 2
         self.dropout, self.hidden_layer, self.hidden_act, self.classifier, self.output, self.loss_fct = \
-            create_loss_function(config,
-                                 args,
-                                 hidden_size=last_hidden_size,
-                                 classifier_size=args.classifier_size,
-                                 sigmoid=args.sigmoid,
-                                 output_mode=args.output_mode,
-                                 num_labels=self.num_labels,
-                                 loss_type=args.loss_type,
-                                 ignore_index=args.ignore_index,
-                                 return_types=["dropout", "hidden_layer", "hidden_act", "classifier", "output", "loss"])
+            create_loss_function(
+                config,
+                args,
+                hidden_size=last_hidden_size,
+                classifier_size=args.classifier_size,
+                sigmoid=args.sigmoid,
+                output_mode=args.output_mode,
+                num_labels=self.num_labels,
+                loss_type=args.loss_type,
+                ignore_index=args.ignore_index,
+                return_types=["dropout", "hidden_layer", "hidden_act", "classifier", "output", "loss"]
+            )
         self.post_init()
 
-    def __forworrd__(self,
-                     input_ids,
-                     seq_attention_masks,
-                     token_type_ids,
-                     position_ids,
-                     vectors,
-                     matrices,
-                     matrix_attention_masks):
+    def __forworrd__(
+            self,
+            input_ids,
+            seq_attention_masks,
+            token_type_ids,
+            position_ids,
+            vectors,
+            matrices,
+            matrix_attention_masks
+    ):
         if input_ids is not None and self.seq_encoder is not None:
             seq_outputs = self.seq_encoder(
                 input_ids,
@@ -240,50 +245,45 @@ class LucaPairHomo(BertPreTrainedModel):
                 for i, layer_module in enumerate(self.linear[matrix_linear_idx]):
                     matrix_vector = layer_module(matrix_vector)
 
-        if self.input_type == "seq":
+        if self.input_type == "seq_vs_seq":
             concat_vector = seq_vector
-        elif self.input_type == "matrix":
-            concat_vector = matrix_vector
-        elif self.input_type == "vector":
+        elif self.input_type == "vector_vs_vector":
             concat_vector = vector_vector
-        elif self.input_type == "seq_matrix":
-            if self.fusion_type == "add":
-                concat_vector = torch.add(seq_vector, matrix_vector)
-            else:
-                concat_vector = torch.cat([seq_vector, matrix_vector], dim=-1)
-        elif self.input_type == "seq_vector":
-            if self.fusion_type == "add":
-                concat_vector = torch.add(seq_vector, vector_vector)
-            else:
-                concat_vector = torch.cat([seq_vector, vector_vector], dim=-1)
+        elif self.input_type == "matrix_vs_matrix":
+            concat_vector = matrix_vector
         else:
             raise Exception("Not support input_type=%s" % self.input_type)
         return concat_vector
 
-    def forward(self,
-                input_ids_a=None, input_ids_b=None,
-                position_ids_a=None, position_ids_b=None,
-                token_type_ids_a=None, token_type_ids_b=None,
-                seq_attention_masks_a=None, seq_attention_masks_b=None,
-                vectors_a=None, vectors_b=None,
-                matrices_a=None, matrices_b=None,
-                matrix_attention_masks_a=None, matrix_attention_masks_b=None,
-                labels=None
-                ):
-        representation_vector_a = self.__forworrd__(input_ids_a,
-                                                    seq_attention_masks_a,
-                                                    token_type_ids_a,
-                                                    position_ids_a,
-                                                    vectors_a,
-                                                    matrices_a,
-                                                    matrix_attention_masks_a)
-        representation_vector_b = self.__forworrd__(input_ids_b,
-                                                    seq_attention_masks_b,
-                                                    token_type_ids_b,
-                                                    position_ids_b,
-                                                    vectors_b,
-                                                    matrices_b,
-                                                    matrix_attention_masks_b)
+    def forward(
+            self,
+            input_ids_a=None, input_ids_b=None,
+            position_ids_a=None, position_ids_b=None,
+            token_type_ids_a=None, token_type_ids_b=None,
+            seq_attention_masks_a=None, seq_attention_masks_b=None,
+            vectors_a=None, vectors_b=None,
+            matrices_a=None, matrices_b=None,
+            matrix_attention_masks_a=None, matrix_attention_masks_b=None,
+            labels=None
+    ):
+        representation_vector_a = self.__forworrd__(
+            input_ids_a,
+            seq_attention_masks_a,
+            token_type_ids_a,
+            position_ids_a,
+            vectors_a,
+            matrices_a,
+            matrix_attention_masks_a
+        )
+        representation_vector_b = self.__forworrd__(
+            input_ids_b,
+            seq_attention_masks_b,
+            token_type_ids_b,
+            position_ids_b,
+            vectors_b,
+            matrices_b,
+            matrix_attention_masks_b
+        )
 
         concat_vector = torch.cat([representation_vector_a, representation_vector_b], dim=-1)
         if self.dropout is not None:

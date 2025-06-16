@@ -1150,76 +1150,95 @@ class Encoder(object):
         seq_type_b = seq_type_b.strip().lower()
         # for embedding vector
         vector_a, vector_b = None, None
-        if self.input_type in ["vector", "seq_vector"]:
-            if vector_filename_a is None:
-                if seq_a is None:
-                    raise Exception("seq_a is none and vector_filename_a is none")
-                elif seq_type_a == "molecule":
-                    raise Exception("now not support embedding of the seq_type_a=%s" % seq_type_a)
+        if self.input_type in [
+            "vector",
+            "seq_vector",
+            "seq_vs_vector",
+            "vector_vs_seq",
+            "vector_vs_vector",
+            "vector_vs_matrix",
+            "matrix_vs_vector"
+        ]:
+            if self.input_type not in ["seq_vs_vector", "matrix_vs_vector"]:
+                if vector_filename_a is None:
+                    if seq_a is None:
+                        raise Exception("seq_a is none and vector_filename_a is none")
+                    elif seq_type_a == "molecule":
+                        raise Exception("now not support embedding of the seq_type_a=%s" % seq_type_a)
+                    else:
+                        vector_a = self.__get_embedding__(seq_id_a, seq_type_a, seq_a, "vector")
+                elif isinstance(vector_filename_a, str):
+                    for vector_dir in self.vector_dirpath:
+                        vector_filepath_a = os.path.join(vector_dir, vector_filename_a)
+                        if os.path.exists(vector_filepath_a):
+                            vector_a = torch.load(vector_filepath_a)
+                            break
+                elif isinstance(vector_filename_a, np.ndarray):
+                    vector_a = vector_filename_a
                 else:
-                    vector_a = self.__get_embedding__(seq_id_a, seq_type_a, seq_a, "vector")
-            elif isinstance(vector_filename_a, str):
-                for vector_dir in self.vector_dirpath:
-                    vector_filepath_a = os.path.join(vector_dir, vector_filename_a)
-                    if os.path.exists(vector_filepath_a):
-                        vector_a = torch.load(vector_filepath_a)
-                        break
-            elif isinstance(vector_filename_a, np.ndarray):
-                vector_a = vector_filename_a
-            else:
-                raise Exception("vector_a is not filepath-str and np.ndarray")
-
-            if vector_filename_b is None:
-                if seq_b is None:
-                    raise Exception("seq_b is none and vector_filename_b is none")
-                elif seq_type_b == "molecule":
-                    raise Exception("now not support embedding of the seq_type_b=%s" % seq_type_b)
+                    raise Exception("vector_a is not filepath-str and np.ndarray")
+            if self.input_type not in ["vector_vs_seq", "vector_vs_matrix"]:
+                if vector_filename_b is None:
+                    if seq_b is None:
+                        raise Exception("seq_b is none and vector_filename_b is none")
+                    elif seq_type_b == "molecule":
+                        raise Exception("now not support embedding of the seq_type_b=%s" % seq_type_b)
+                    else:
+                        vector_b = self.__get_embedding__(seq_id_b, seq_type_b, seq_b, "vector")
+                elif isinstance(vector_filename_b, str):
+                    for vector_dir in self.vector_dirpath:
+                        vector_filepath_b = os.path.join(vector_dir, vector_filename_b)
+                        if os.path.exists(vector_filepath_b):
+                            vector_b = torch.load(vector_filepath_b)
+                            break
+                elif isinstance(vector_filename_b, np.ndarray):
+                    vector_b = vector_filename_b
                 else:
-                    vector_b = self.__get_embedding__(seq_id_b, seq_type_b, seq_b, "vector")
-            elif isinstance(vector_filename_b, str):
-                for vector_dir in self.vector_dirpath:
-                    vector_filepath_b = os.path.join(vector_dir, vector_filename_b)
-                    if os.path.exists(vector_filepath_b):
-                        vector_b = torch.load(vector_filepath_b)
-                        break
-            elif isinstance(vector_filename_b, np.ndarray):
-                vector_b = vector_filename_b
-            else:
-                raise Exception("vector_b is not filepath-str and np.ndarray")
+                    raise Exception("vector_b is not filepath-str and np.ndarray")
 
         # for embedding matrix
         matrix_a, matrix_b = None, None
-        if self.input_type in ["matrix", "seq_matrix"]:
-            if matrix_filename_a is None:
-                if seq_a is None:
-                    raise Exception("seq_a is none and matrix_filename_a is none")
+        if self.input_type in [
+            "matrix",
+            "seq_matrix",
+            "seq_vs_matrix",
+            "vector_vs_matrix",
+            "matrix_vs_seq",
+            "matrix_vs_vector",
+            "matrix_vs_matrix"
+        ]:
+            if self.input_type not in ["seq_vs_matrix", "vector_vs_matrix"]:
+                if matrix_filename_a is None:
+                    if seq_a is None:
+                        raise Exception("seq_a is none and matrix_filename_a is none")
+                    else:
+                        matrix_a = self.__get_embedding__(seq_id_a, seq_type_a, seq_a, "matrix")
+                elif isinstance(matrix_filename_a, str):
+                    for matrix_dir in self.matrix_dirpath:
+                        matrix_filepath_a = os.path.join(matrix_dir, matrix_filename_a)
+                        if os.path.exists(matrix_filepath_a):
+                            matrix_a = torch.load(matrix_filepath_a)
+                            break
+                elif isinstance(matrix_filename_a, np.ndarray):
+                    matrix_a = matrix_filename_a
                 else:
-                    matrix_a = self.__get_embedding__(seq_id_a, seq_type_a, seq_a, "matrix")
-            elif isinstance(matrix_filename_a, str):
-                for matrix_dir in self.matrix_dirpath:
-                    matrix_filepath_a = os.path.join(matrix_dir, matrix_filename_a)
-                    if os.path.exists(matrix_filepath_a):
-                        matrix_a = torch.load(matrix_filepath_a)
-                        break
-            elif isinstance(matrix_filename_a, np.ndarray):
-                matrix_a = matrix_filename_a
-            else:
-                raise Exception("matrix_a is not filepath-str and np.ndarray")
-            if matrix_filename_b is None:
-                if seq_b is None:
-                    raise Exception("seq_b is none and matrix_filename_b is none")
+                    raise Exception("matrix_a is not filepath-str and np.ndarray")
+            if self.input_type not in ["matrix_vs_seq", "matrix_vs_vector"]:
+                if matrix_filename_b is None:
+                    if seq_b is None:
+                        raise Exception("seq_b is none and matrix_filename_b is none")
+                    else:
+                        matrix_b = self.__get_embedding__(seq_id_b, seq_type_b, seq_b, "matrix")
+                elif isinstance(matrix_filename_b, str):
+                    for matrix_dir in self.matrix_dirpath:
+                        matrix_filepath_b = os.path.join(matrix_dir, matrix_filename_b)
+                        if os.path.exists(matrix_filepath_b):
+                            matrix_b = torch.load(matrix_filepath_b)
+                            break
+                elif isinstance(matrix_filename_b, np.ndarray):
+                    matrix_b = matrix_filename_b
                 else:
-                    matrix_b = self.__get_embedding__(seq_id_b, seq_type_b, seq_b, "matrix")
-            elif isinstance(matrix_filename_b, str):
-                for matrix_dir in self.matrix_dirpath:
-                    matrix_filepath_b = os.path.join(matrix_dir, matrix_filename_b)
-                    if os.path.exists(matrix_filepath_b):
-                        matrix_b = torch.load(matrix_filepath_b)
-                        break
-            elif isinstance(matrix_filename_b, np.ndarray):
-                matrix_b = matrix_filename_b
-            else:
-                raise Exception("matrix_b is not filepath-str and np.ndarray")
+                    raise Exception("matrix_b is not filepath-str and np.ndarray")
 
         # for seq
         if seq_type_a == "molecule":
@@ -1233,16 +1252,17 @@ class Encoder(object):
         else:
             seq_b = seq_b.upper()
         # 蛋白质且使用esm进行embedding，则需要去掉蛋白质J
-        if self.input_type in ["matrix", "seq_matrix"] and "esm" in self.llm_type:
-            if seq_type_a == "prot":
-                seq_a = clean_seq(seq_id_a, seq_a)
-            elif seq_type_a == "multi_prot":
-                seq_a = ",".join([clean_seq(seq_id_a, v) for v in seq_a.split(",")])
-
-            if seq_type_b == "prot":
-                seq_b = clean_seq(seq_id_b, seq_b)
-            elif seq_type_b == "multi_prot":
-                seq_b = ",".join([clean_seq(seq_id_b, v) for v in seq_b.split(",")])
+        if "matrix" in self.input_type and "esm" in self.llm_type:
+            if self.input_type not in ["seq_vs_matrix", "vector_vs_matrix"]:
+                if seq_type_a == "prot":
+                    seq_a = clean_seq(seq_id_a, seq_a)
+                elif seq_type_a == "multi_prot":
+                    seq_a = ",".join([clean_seq(seq_id_a, v) for v in seq_a.split(",")])
+            if self.input_type not in ["matrix_vs_seq", "matrix_vs_vector"]:
+                if seq_type_b == "prot":
+                    seq_b = clean_seq(seq_id_b, seq_b)
+                elif seq_type_b == "multi_prot":
+                    seq_b = ",".join([clean_seq(seq_id_b, v) for v in seq_b.split(",")])
 
         return {
             "seq_id_a": seq_id_a,

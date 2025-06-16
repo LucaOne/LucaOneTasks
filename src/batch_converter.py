@@ -466,7 +466,7 @@ class BatchConverter(object):
             return input_ids, labels
         else:
             # non [MASK]， random one position, convect to [MASK]
-            rand_idx = random.randint(int(self.atom_prepend_bos), seq_len + int(self.atom_pprepend_bos) - 1)
+            rand_idx = random.randint(int(self.atom_prepend_bos), seq_len + int(self.atom_prepend_bos) - 1)
             labels[rand_idx] = input_ids[rand_idx]
             input_ids[rand_idx] = self.atom_mask_idx
             return input_ids, labels
@@ -879,7 +879,7 @@ class BatchConverter(object):
         seq_part_of_input = False
         molecule_flag = False
         multi_seq_flag = False
-        if seqs:
+        if seqs and (self.input_type is None or "seq" in self.input_type):
             new_seqs = []
             for seq_idx, seq_type in enumerate(seq_types):
                 if seq_type == "gene":
@@ -1276,7 +1276,9 @@ class BatchConverter(object):
                     matrices_b.append(item["matrix_b"])
                 if "label" in item and item["label"] is not None:
                     labels.append(item["label"])
-            input_ids_a, position_ids_a, token_type_ids_a, seq_attention_masks_a, encoded_vectors_a, encoded_matrices_a, matrix_attention_masks_a, num_sentences_a, sentence_length_a, labels \
+            input_ids_a, position_ids_a, token_type_ids_a, seq_attention_masks_a, \
+            encoded_vectors_a, encoded_matrices_a, matrix_attention_masks_a, \
+            num_sentences_a, sentence_length_a, labels \
                 = self.__call_single__(batch_size, seq_types_a, seqs_a, vectors_a, matrices_a, labels)
             if not hasattr(self, "max_sentences") or self.max_sentences is None:
                 res.update({
@@ -1302,7 +1304,9 @@ class BatchConverter(object):
                     "sentence_length_a": sentence_length_a,
                     "labels": labels if labels is not None and len(labels) > 0 else None
                 })
-            input_ids_b, position_ids_b, token_type_ids_b, seq_attention_masks_b, encoded_vectors_b, encoded_matrices_b, matrix_attention_masks_b, num_sentences_b, sentence_length_b,  _ \
+            input_ids_b, position_ids_b, token_type_ids_b, seq_attention_masks_b, \
+            encoded_vectors_b, encoded_matrices_b, matrix_attention_masks_b, \
+            num_sentences_b, sentence_length_b,  _ \
                 = self.__call_single__(batch_size, seq_types_b, seqs_b, vectors_b, matrices_b, labels=None)
             if not hasattr(self, "max_sentences") or self.max_sentences is None:
                 res.update({

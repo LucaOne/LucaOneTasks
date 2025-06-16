@@ -1369,7 +1369,7 @@ def main():
     # 文件记录解析函数
     encoder = Encoder(**encoder_config)
     # pair对数据集
-    if args.model_type in ["lucappi", "lucappi2"] or args.input_mode in ["pair"]:
+    if args.model_type in ["lucappi", "lucappi2"] or args.input_mode in ["pair"] or "lucapair" in args.model_type:
         parse_row_func = encoder.encode_pair
     else:
         # 基因或者蛋白单记录数据集
@@ -1397,7 +1397,8 @@ def main():
         append_eos=not args.not_append_eos,
         max_sentence_length=args.max_sentence_length,
         max_sentences=args.max_sentences,
-        matrix_add_special_token=args.matrix_add_special_token
+        matrix_add_special_token=args.matrix_add_special_token,
+        input_type=args.input_type,
     )
 
     if args.local_rank in [0, -1]:

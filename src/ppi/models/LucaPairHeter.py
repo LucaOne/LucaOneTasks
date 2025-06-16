@@ -207,7 +207,7 @@ class LucaPairHeter(BertPreTrainedModel):
             else:
                 self.input_size_list_b[1] = config.embedding_input_size_b
             if self.task_level_type in ["seq_level"]:
-                self.seq_pooler_b = create_pooler(pooler_type="seq", config=config, args=args)
+                self.matrix_pooler_b = create_pooler(pooler_type="matrix", config=config, args=args)
             self.encoder_type_list_b[1] = True
             self.linear_idx_b[1] = 0
             if args.matrix_encoder:

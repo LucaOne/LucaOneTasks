@@ -205,12 +205,12 @@ class MultiFilesStreamLoader(object):
                     res.update({
                         "label": label
                     })
-                if self.input_type in ["vector", "seq_vector"]:
+                if "vector" in self.input_type:
                     res.update({
                         "vector_filename_a": vector_filename_a,
                         "vector_filename_b": vector_filename_b
                     })
-                if self.input_type in ["matrix", "seq_matrix"]:
+                if "matrix" in self.input_type:
                     res.update({
                         "matrix_filename_a": matrix_filename_a,
                         "matrix_filename_b": matrix_filename_b
@@ -236,11 +236,11 @@ class MultiFilesStreamLoader(object):
                     res.update({
                         "label": label
                     })
-                if self.input_type in ["vector", "seq_vector"]:
+                if "vector" in self.input_type:
                     res.update({
                         "vector_filename": vector_filename
                     })
-                if self.input_type in ["matrix", "seq_matrix"]:
+                if "matrix" in self.input_type:
                     res.update({
                         "matrix_filename": matrix_filename
                     })

@@ -1244,12 +1244,12 @@ class Encoder(object):
         if seq_type_a == "molecule":
             # to do
             pass
-        else:
+        elif "seq" in self.input_type:
             seq_a = seq_a.upper()
         if seq_type_b == "molecule":
             # to do
             pass
-        else:
+        elif "seq" in self.input_type:
             seq_b = seq_b.upper()
         # 蛋白质且使用esm进行embedding，则需要去掉蛋白质J
         if "matrix" in self.input_type and "esm" in self.llm_type:

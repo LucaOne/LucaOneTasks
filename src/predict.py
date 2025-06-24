@@ -727,6 +727,7 @@ def run_args():
             "seq_vs_seq",
             "seq_vs_vector",
             "seq_vs_matrix",
+            "vector_vs_vector",
             "vector_vs_matrix",
             "matrix_vs_matrix"
         ],

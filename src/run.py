@@ -1007,6 +1007,8 @@ def get_input_cols(args):
         input_col_names = [args.dataset_type, "seq_a", "embedding_vector_b"]
     elif args.input_mode == "pair" and args.input_type == "seq_vs_matrix":
         input_col_names = [args.dataset_type, "seq_a", "embedding_matrix_b"]
+    elif args.input_mode == "pair" and args.input_type == "vector_vs_vector":
+        input_col_names = [args.dataset_type, "embedding_vector_a", "embedding_vector_b"]
     elif args.input_mode == "pair" and args.input_type == "vector_vs_matrix":
         input_col_names = [args.dataset_type, "embedding_vector_a", "embedding_matrix_b"]
     elif args.input_mode == "pair" and args.input_type == "matrix_vs_matrix":

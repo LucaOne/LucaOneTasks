@@ -60,29 +60,65 @@ except ImportError:
 def transform_one_sample_2_feature(
         device,
         input_mode,
+        input_type,
         encoder,
         batch_convecter,
         row
 ):
     batch_info = []
     if input_mode == "pair":
-        en = encoder.encode_pair(
-            row[0],
-            row[1],
-            row[2],
-            row[3],
-            row[4],
-            row[5],
-            vector_filename_a=None,
-            vector_filename_b=None,
-            matrix_filename_a=None,
-            matrix_filename_b=None,
-            label=None
-
-        )
-        en_list = en
-        batch_info.append([row[0], row[1], row[4], row[5]])
-        seq_lens = [len(row[4]), len(row[5])]
+        if input_type in ["seq_vs_seq", "seq_vs_vector", "seq_vs_matrix", "vector_vs_vector", "vector_vs_matrix", "matrix_vs_matrix"]:
+            en = encoder.encode_pair(
+                row[0],
+                row[1],
+                row[2],
+                row[3],
+                row[4],
+                row[5],
+                vector_filename_a=row[6],
+                vector_filename_b=row[7],
+                matrix_filename_a=row[8],
+                matrix_filename_b=row[9],
+                label=None
+            )
+            en_list = en
+            if input_type == "seq_vs_seq":
+                batch_info.append([row[0], row[1], row[4], row[5]])
+                seq_lens = [len(row[4]), len(row[5])]
+            elif input_type == "seq_vs_vector":
+                batch_info.append([row[0], row[1], row[4], row[7]])
+                seq_lens = [len(row[4]), 1]
+            elif input_type == "seq_vs_matrix":
+                batch_info.append([row[0], row[1], row[4], row[9]])
+                seq_lens = [len(row[4]), en["matrix_b"].shape[0]]
+            elif input_type == "vector_vs_vector":
+                batch_info.append([row[0], row[1], row[6], row[7]])
+                seq_lens = [1, 1]
+            elif input_type == "vector_vs_matrix":
+                batch_info.append([row[0], row[1], row[6], row[9]])
+                seq_lens = [1, en["matrix_b"].shape[0]]
+            elif input_type == "matrix_vs_matrix":
+                batch_info.append([row[0], row[1], row[8], row[9]])
+                seq_lens = [en["matrix_a"].shape[0], en["matrix_b"].shape[0]]
+            else:
+                raise Exception("Not support input_mode=%s, input_type=%s" % (input_mode, input_type))
+        else:
+            en = encoder.encode_pair(
+                row[0],
+                row[1],
+                row[2],
+                row[3],
+                row[4],
+                row[5],
+                vector_filename_a=None,
+                vector_filename_b=None,
+                matrix_filename_a=None,
+                matrix_filename_b=None,
+                label=None
+            )
+            en_list = en
+            batch_info.append([row[0], row[1], row[4], row[5]])
+            seq_lens = [len(row[4]), len(row[5])]
     else:
         seq_lens = []
         en_list = []
@@ -141,7 +177,14 @@ def transform_one_sample_2_feature(
 
 def predict_probs(args, encoder, batch_convecter, model, row):
     model.to(torch.device("cpu"))
-    batch_info, batch_features, seq_lens = transform_one_sample_2_feature(args.device, args.input_mode, encoder, batch_convecter, row)
+    batch_info, batch_features, seq_lens = transform_one_sample_2_feature(
+        args.device,
+        args.input_mode,
+        args.input_type,
+        encoder,
+        batch_convecter,
+        row
+    )
     model.to(args.device)
     if isinstance(batch_features, list):
         probs = []
@@ -531,7 +574,7 @@ def run(
 
     model_args.matrix_embedding_exists = matrix_embedding_exists
     # embedding saved dir during prediction
-    if emb_dir:
+    if emb_dir and not matrix_embedding_exists:
         # now = datetime.now()
         # formatted_time = now.strftime("%Y%m%d%H%M%S")
         # emb_dir = os.path.join(emb_dir, "%s-%d" % (formatted_time, gpu_id))
@@ -674,26 +717,59 @@ def run(
             seq_a = item[4]
             seq_b = item[5]
             row = [seq_id_a, seq_id_b, seq_type_a, seq_type_b, seq_a, seq_b]
+            if "_vs_" in model_args.input_type:
+                vector_filename_a = item[6]
+                vector_filename_b = item[7]
+                matrix_filename_a = item[8]
+                matrix_filename_b = item[9]
+                row = row + [vector_filename_a, vector_filename_b, matrix_filename_a, matrix_filename_b]
             if task_level_type in ["seq_level", "seq-level"] and task_type in ["multi_class", "multi-class"]:
-                cur_res = predict_func(model_args,
-                                       encoder,
-                                       batch_convecter,
-                                       label_id_2_name,
-                                       trained_model,
-                                       row,
-                                       topk=topk)
+                cur_res = predict_func(
+                    model_args,
+                    encoder,
+                    batch_convecter,
+                    label_id_2_name,
+                    trained_model,
+                    row,
+                    topk=topk
+                )
                 if topk is not None and topk > 1:
-                    predicted_results.append([seq_id_a, seq_id_b, seq_a, seq_b, cur_res[0][4], cur_res[0][5], cur_res[0][6], cur_res[0][7]])
+                    predicted_results.append([
+                        cur_res[0][0],
+                        cur_res[0][1],
+                        cur_res[0][2],
+                        cur_res[0][3],
+                        cur_res[0][4],
+                        cur_res[0][5],
+                        cur_res[0][6],
+                        cur_res[0][7]
+                    ])
                 else:
-                    predicted_results.append([seq_id_a, seq_id_b, seq_a, seq_b, cur_res[0][4], cur_res[0][5]])
+                    predicted_results.append([
+                        cur_res[0][0],
+                        cur_res[0][1],
+                        cur_res[0][2],
+                        cur_res[0][3],
+                        cur_res[0][4],
+                        cur_res[0][5]
+                    ])
             else:
-                cur_res = predict_func(model_args,
-                                       encoder,
-                                       batch_convecter,
-                                       label_id_2_name,
-                                       trained_model,
-                                       row)
-                predicted_results.append([seq_id_a, seq_id_b, seq_a, seq_b, cur_res[0][4], cur_res[0][5]])
+                cur_res = predict_func(
+                    model_args,
+                    encoder,
+                    batch_convecter,
+                    label_id_2_name,
+                    trained_model,
+                    row
+                )
+                predicted_results.append([
+                    cur_res[0][0],
+                    cur_res[0][1],
+                    cur_res[0][2],
+                    cur_res[0][3],
+                    cur_res[0][4],
+                    cur_res[0][5]
+                ])
     else:
         for item in sequences:
             seq_id = item[0]
@@ -702,25 +778,35 @@ def run(
             row = [seq_id, seq_type, seq]
             if task_level_type in ["seq_level", "seq-level"] and task_type in ["multi_class", "multi-class"]:
                 # print("task_level_type: %s, task_type: %s" % (task_level_type, task_type))
-                cur_res = predict_func(model_args,
-                                       encoder,
-                                       batch_convecter,
-                                       label_id_2_name,
-                                       trained_model,
-                                       row,
-                                       topk=topk)
+                cur_res = predict_func(
+                    model_args,
+                    encoder,
+                    batch_convecter,
+                    label_id_2_name,
+                    trained_model,
+                    row,
+                    topk=topk
+                )
                 if topk is not None and topk > 1:
-                    predicted_results.append([seq_id, seq, cur_res[0][2], cur_res[0][3], cur_res[0][4], cur_res[0][5]])
+                    predicted_results.append([
+                        seq_id, seq, cur_res[0][2], cur_res[0][3], cur_res[0][4], cur_res[0][5]
+                    ])
                 else:
-                    predicted_results.append([seq_id, seq, cur_res[0][2], cur_res[0][3]])
+                    predicted_results.append([
+                        seq_id, seq, cur_res[0][2], cur_res[0][3]
+                    ])
             else:
-                cur_res = predict_func(model_args,
-                                       encoder,
-                                       batch_convecter,
-                                       label_id_2_name,
-                                       trained_model,
-                                       row)
-                predicted_results.append([seq_id, seq, cur_res[0][2], cur_res[0][3]])
+                cur_res = predict_func(
+                    model_args,
+                    encoder,
+                    batch_convecter,
+                    label_id_2_name,
+                    trained_model,
+                    row
+                )
+                predicted_results.append([
+                    seq_id, seq, cur_res[0][2], cur_res[0][3]
+                ])
     # torch.cuda.empty_cache()
     # 删除embedding
     if not matrix_embedding_exists and os.path.exists(model_args.emb_dir) and input_type != "seq":
@@ -744,31 +830,162 @@ def run_args():
     parser.add_argument("--seq_b", default=None, type=str,  help="the sequence b")
 
     # for many samples
-    parser.add_argument("--input_file", default=None, type=str, 
-                        help="the fasta or csv format file for single-seq model,"
-                             " or the csv format file for pair-seq model")
+    parser.add_argument(
+        "--input_file",
+        default=None,
+        type=str,
+        help="the fasta or csv format file for single-seq model,or the csv format file for pair-seq model"
+    )
+    # for csv
+    parser.add_argument(
+        "--seq_id_col_idx",
+        default=None,
+        type=int,
+        help="the seq_id column index for csv/tsv file"
+    )
+    parser.add_argument(
+        "--seq_type_col_idx",
+        default=None,
+        type=int,
+        help="the seq_type idx column index for csv/tsv file"
+    )
+    parser.add_argument(
+        "--seq_col_idx",
+        default=None,
+        type=int,
+        help="the seq idx column index for csv/tsv file"
+    )
+    parser.add_argument(
+        "--vector_col_idx",
+        default=None,
+        type=int,
+        help="the vector_filename column index for csv/tsv file"
+    )
+    parser.add_argument(
+        "--matrix_col_idx",
+        default=None,
+        type=int,
+        help="the matrix_filename column index for csv/tsv file"
+    )
+
+    parser.add_argument(
+        "--seq_id_col_idx_a",
+        default=None,
+        type=int,
+        help="the seq_id_a column index for csv/tsv file"
+    )
+    parser.add_argument(
+        "--seq_type_col_idx_a",
+        default=None,
+        type=int,
+        help="the seq_type_a idx column index for csv/tsv file"
+    )
+    parser.add_argument(
+        "--seq_col_idx_a",
+        default=None,
+        type=int,
+        help="the seq_a column index for csv/tsv file"
+    )
+    parser.add_argument(
+        "--vector_col_idx_a",
+        default=None,
+        type=int,
+        help="the vector_filename_a column index for csv/tsv file"
+    )
+    parser.add_argument(
+        "--matrix_col_idx_a",
+        default=None,
+        type=int,
+        help="the matrix_filename_a column index for csv/tsv file"
+    )
+    parser.add_argument(
+        "--seq_id_col_idx_b",
+        default=None,
+        type=int,
+        help="the seq_id_b column index for csv/tsv file"
+    )
+    parser.add_argument(
+        "--seq_type_col_idx_b",
+        default=None,
+        type=int,
+        help="the seq_type_b idx column index for csv/tsv file"
+    )
+    parser.add_argument(
+        "--seq_col_idx_b",
+        default=None,
+        type=int,
+        help="the seq_b column index for csv/tsv file"
+    )
+    parser.add_argument(
+        "--vector_col_idx_b",
+        default=None,
+        type=int,
+        help="the vector_filename_b column index for csv/tsv file"
+    )
+    parser.add_argument(
+        "--matrix_col_idx_b",
+        default=None,
+        type=int,
+        help="the matrix_filename_b column index for csv/tsv file"
+    )
 
     # for embedding
-    parser.add_argument("--llm_truncation_seq_length", default=4096, type=int, required=True, 
-                        help="the max seq-length for llm embedding")
-    parser.add_argument("--matrix_embedding_exists", action="store_true",
-                        help="the structural embedding is or not in advance. default: False")
-    parser.add_argument("--emb_dir", default=None, type=str,
-                        help="the structural embedding save dir. default: None")
+    parser.add_argument(
+        "--llm_truncation_seq_length",
+        default=4096,
+        type=int,
+        required=True,
+        help="the max seq-length for llm embedding"
+    )
+    parser.add_argument(
+        "--matrix_embedding_exists",
+        action="store_true",
+        help="the structural embedding is or not in advance. default: False"
+    )
+    parser.add_argument(
+        "--emb_dir",
+        default=None,
+        type=str,
+        help="the structural embedding save dir. default: None"
+    )
 
     # for trained model
-    parser.add_argument("--model_path", default=None, type=str,
-                        help="the model dir. default: None")
-    parser.add_argument("--dataset_name", default=None, type=str, required=True,
-                        help="the dataset name for model building.")
-    parser.add_argument("--dataset_type", default=None, type=str, required=True, 
-                        help="the dataset type for model building.")
-    parser.add_argument("--task_type", default=None, type=str, required=True, 
-                        choices=["multi_label", "multi_class", "binary_class", "regression"], 
-                        help="the task type for model building.")
-    parser.add_argument("--task_level_type", default=None, type=str, required=True, 
-                        choices=["seq_level", "token_level"], 
-                        help="the task level type for model building.")
+    parser.add_argument(
+        "--model_path",
+        default=None,
+        type=str,
+        help="the model dir. default: None"
+    )
+    parser.add_argument(
+        "--dataset_name",
+        default=None,
+        type=str,
+        required=True,
+        help="the dataset name for model building."
+    )
+    parser.add_argument(
+        "--dataset_type",
+        default=None,
+        type=str,
+        required=True,
+        help="the dataset type for model building."
+    )
+    parser.add_argument(
+        "--task_type",
+        default=None,
+        type=str,
+        required=True,
+        choices=["multi_label", "multi_class", "binary_class", "regression"],
+        help="the task type for model building."
+    )
+    parser.add_argument(
+        "--task_level_type",
+        default=None,
+        type=str,
+        required=True,
+        choices=["seq_level", "token_level"],
+        help="the task level type for model building."
+    )
     parser.add_argument(
         "--model_type",
         default=None,
@@ -788,31 +1005,73 @@ def run_args():
             "seq_vs_seq",
             "seq_vs_vector",
             "seq_vs_matrix",
+            "vector_vs_vector",
             "vector_vs_matrix",
             "matrix_vs_matrix"
         ],
         help="the input type."
     )
-    parser.add_argument("--input_mode", default=None, type=str, required=True, 
-                        choices=["single", "pair"],
-                        help="the input mode.")
-    parser.add_argument("--time_str", default=None, type=str, required=True, 
-                        help="the running time string(yyyymmddHimiss) of model building.")
-    parser.add_argument("--step", default=None, type=str, required=True, 
-                        help="the training global checkpoint step of model finalization.")
+    parser.add_argument(
+        "--input_mode",
+        default=None,
+        type=str,
+        required=True,
+        choices=["single", "pair"],
+        help="the input mode."
+    )
+    parser.add_argument(
+        "--time_str",
+        default=None,
+        type=str,
+        required=True,
+        help="the running time string(yyyymmddHimiss) of model building."
+    )
+    parser.add_argument(
+        "--step",
+        default=None,
+        type=str,
+        required=True,
+        help="the training global checkpoint step of model finalization."
+    )
 
-    parser.add_argument("--topk", default=None, type=int, help="the topk labels for multi-class")
-    parser.add_argument("--threshold",  default=0.5, type=float, 
-                        help="sigmoid threshold for binary-class or multi-label classification, "
-                             "None for multi-class classification or regression, default: 0.5.")
-    parser.add_argument("--ground_truth_idx", default=None, type=int, 
-                        help="the ground truth idx, when the input file contains")
+    parser.add_argument(
+        "--topk",
+        default=None,
+        type=int, help="the topk labels for multi-class"
+    )
+    parser.add_argument(
+        "--threshold",
+        default=0.5,
+        type=float,
+        help="sigmoid threshold for binary-class or multi-label classification, None for multi-class classification or regression, default: 0.5."
+    )
+    parser.add_argument(
+        "--ground_truth_idx",
+        default=None,
+        type=int,
+        help="the ground truth idx, when the input file contains"
+    )
 
     # for results(csv format, contain header)
-    parser.add_argument("--save_path", default=None, type=str, help="the result save path")
+    parser.add_argument(
+        "--save_path",
+        default=None,
+        type=str,
+        help="the result save path"
+    )
     # for print info
-    parser.add_argument("--print_per_num", default=10000, type=int, help="per num to print")
-    parser.add_argument("--gpu_id", default=None, type=int, help="the used gpu index, -1 for cpu")
+    parser.add_argument(
+        "--print_per_num",
+        default=10000,
+        type=int,
+        help="per num to print"
+    )
+    parser.add_argument(
+        "--gpu_id",
+        default=None,
+        type=int,
+        help="the used gpu index, -1 for cpu"
+    )
     args = parser.parse_args()
     return args
 
@@ -857,10 +1116,44 @@ if __name__ == "__main__":
         with open(args.save_path, "w") as wfp:
             writer = csv.writer(wfp)
             if args.input_mode == "pair":
-                if args.task_type == "multi_class" and args.topk is not None and args.topk > 1 and args.task_level_type == "seq_level":
-                    header = ["seq_id_a", "seq_id_b", "seq_a", "seq_b", "top1_prob", "top1_label", "top%d_probs" % args.topk, "top%d_labels" % args.topk]
+                if "_vs_" in args.input_type:
+                    if args.input_type == "seq_vs_seq":
+                        if args.task_type == "multi_class" and args.topk is not None and args.topk > 1 and args.task_level_type == "seq_level":
+                            header = ["seq_id_a", "seq_id_b", "seq_a", "seq_b", "top1_prob", "top1_label", "top%d_probs" % args.topk, "top%d_labels" % args.topk]
+                        else:
+                            header = ["seq_id_a", "seq_id_b", "seq_a", "seq_b", "prob", "label"]
+                    elif args.input_type == "seq_vs_vector":
+                        if args.task_type == "multi_class" and args.topk is not None and args.topk > 1 and args.task_level_type == "seq_level":
+                            header = ["seq_id_a", "seq_id_b", "seq_a", "vector_filename_b", "top1_prob", "top1_label", "top%d_probs" % args.topk, "top%d_labels" % args.topk]
+                        else:
+                            header = ["seq_id_a", "seq_id_b", "seq_a", "vector_filename_b", "prob", "label"]
+                    elif args.input_type == "seq_vs_matrix":
+                        if args.task_type == "multi_class" and args.topk is not None and args.topk > 1 and args.task_level_type == "seq_level":
+                            header = ["seq_id_a", "seq_id_b", "seq_a", "matrix_filename_b", "top1_prob", "top1_label", "top%d_probs" % args.topk, "top%d_labels" % args.topk]
+                        else:
+                            header = ["seq_id_a", "seq_id_b", "seq_a", "matrix_filename_b", "prob", "label"]
+                    elif args.input_type == "vector_vs_vector":
+                        if args.task_type == "multi_class" and args.topk is not None and args.topk > 1 and args.task_level_type == "seq_level":
+                            header = ["seq_id_a", "seq_id_b", "vector_filename_a", "vector_filename_b", "top1_prob", "top1_label", "top%d_probs" % args.topk, "top%d_labels" % args.topk]
+                        else:
+                            header = ["seq_id_a", "seq_id_b", "vector_filename_a", "vector_filename_b", "prob", "label"]
+                    elif args.input_type == "vector_vs_matrix":
+                        if args.task_type == "multi_class" and args.topk is not None and args.topk > 1 and args.task_level_type == "seq_level":
+                            header = ["seq_id_a", "seq_id_b", "vector_filename_a", "matrix_filename_b", "top1_prob", "top1_label", "top%d_probs" % args.topk, "top%d_labels" % args.topk]
+                        else:
+                            header = ["seq_id_a", "seq_id_b", "vector_filename_a", "matrix_filename_b", "prob", "label"]
+                    elif args.input_type == "matrix_vs_matrix":
+                        if args.task_type == "multi_class" and args.topk is not None and args.topk > 1 and args.task_level_type == "seq_level":
+                            header = ["seq_id_a", "seq_id_b", "matrix_filename_a", "matrix_filename_b", "top1_prob", "top1_label", "top%d_probs" % args.topk, "top%d_labels" % args.topk]
+                        else:
+                            header = ["seq_id_a", "seq_id_b", "matrix_filename_a", "matrix_filename_b", "prob", "label"]
+                    else:
+                        raise Exception("Not support input_mode=%s, input_type=%s" % (args.input_mode, args.input_type))
                 else:
-                    header = ["seq_id_a", "seq_id_b", "seq_a", "seq_b", "prob", "label"]
+                    if args.task_type == "multi_class" and args.topk is not None and args.topk > 1 and args.task_level_type == "seq_level":
+                        header = ["seq_id_a", "seq_id_b", "seq_a", "seq_b", "top1_prob", "top1_label", "top%d_probs" % args.topk, "top%d_labels" % args.topk]
+                    else:
+                        header = ["seq_id_a", "seq_id_b", "seq_a", "seq_b", "prob", "label"]
             else:
                 if args.task_type == "multi_class" and args.topk is not None and args.topk > 1 and args.task_level_type == "seq_level":
                     header = ["seq_id", "seq", "top1_prob", "top1_label", "top%d_probs" % args.topk, "top%d_labels" % args.topk]
@@ -879,37 +1172,112 @@ if __name__ == "__main__":
             reader = file_reader(args.input_file) if args.input_file.endswith(".csv") or args.input_file.endswith(".tsv") else fasta_reader(args.input_file)
             for row in reader:
                 if args.input_mode == "pair":
-                    if row[0] + "_" + row[1] in exists_ids:
+                    if args.seq_id_col_idx_a is None:
+                        args.seq_id_col_idx_a = 0
+                    if args.seq_id_col_idx_b is None:
+                        args.seq_id_col_idx_b = 1
+                    if args.seq_type_col_idx_a is None:
+                        args.seq_type_col_idx_a = 2
+                    if args.seq_type_col_idx_b is None:
+                        args.seq_type_col_idx_b = 3
+                    if args.seq_col_idx_a is None:
+                        args.seq_col_idx_a = 4
+                    if args.seq_col_idx_b is None:
+                        args.seq_col_idx_b = 5
+                    if args.vector_col_idx_a is None:
+                        args.vector_col_idx_a = 6
+                    if args.vector_col_idx_b is None:
+                        args.vector_col_idx_b = 7
+                    if args.matrix_col_idx_a is None:
+                        args.matrix_col_idx_a = 8
+                    if args.matrix_col_idx_b is None:
+                        args.matrix_col_idx_b = 9
+
+                    if row[args.seq_id_col_idx_a] + "_" + row[args.seq_id_col_idx_b] in exists_ids:
                         continue
                     # seq_id_a, seq_id_b, seq_type_a, seq_type_b, seq_a, seq_b
-                    if not seq_type_is_match_seq(row[2], row[4]):
-                        print("Error! the input seq_a(seq_id_a=%s) not match the seq_type_a=%s: %s" % (row[0], row[2], row[4]))
+                    if args.input_type in ["seq", "seq_vector", "seq_matrix", "seq_vs_seq", "seq_vs_vector", "seq_vs_matrix"] \
+                            and not seq_type_is_match_seq(
+                            row[args.seq_type_col_idx_a], row[args.seq_col_idx_a]
+                    ):
+                        print("Error! the input seq_a(seq_id_a=%s) not match the seq_type_a=%s: %s" % (
+                            row[args.seq_id_col_idx_a],
+                            row[args.seq_type_col_idx_a],
+                            row[args.seq_col_idx_a]
+                        ))
                         sys.exit(-1)
-                    if not seq_type_is_match_seq(row[3], row[5]):
-                        print("Error! the input seq_b(seq_id_b=%s) not match the seq_type_b=%s: %s" % (row[1], row[3], row[5]))
+                    if args.input_type in ["seq", "seq_vector", "seq_matrix", "seq_vs_seq", "seq_vs_vector", "seq_vs_matrix"] \
+                            and not seq_type_is_match_seq(
+                            row[args.seq_type_col_idx_b], row[args.seq_col_idx_b]
+                    ):
+                        print("Error! the input seq_b(seq_id_b=%s) not match the seq_type_b=%s: %s" % (
+                            row[args.seq_id_col_idx_b],
+                            row[args.seq_type_col_idx_b],
+                            row[args.seq_col_idx_b]
+                        ))
                         sys.exit(-1)
-                    batch_data.append([row[0], row[1], row[2], row[3], row[4], row[5]])
+                    if "_vs_" in args.input_type:
+                        batch_data.append([
+                            row[args.seq_id_col_idx_a],
+                            row[args.seq_id_col_idx_b],
+                            row[args.seq_type_col_idx_a],
+                            row[args.seq_type_col_idx_b],
+                            row[args.seq_col_idx_a],
+                            row[args.seq_col_idx_b],
+                            row[args.vector_col_idx_a],
+                            row[args.vector_col_idx_b],
+                            row[args.matrix_col_idx_a],
+                            row[args.matrix_col_idx_b]
+                        ])
+                    else:
+                        batch_data.append([
+                            row[args.seq_id_col_idx_a],
+                            row[args.seq_id_col_idx_b],
+                            row[args.seq_type_col_idx_a],
+                            row[args.seq_type_col_idx_b],
+                            row[args.seq_col_idx_a],
+                            row[args.seq_col_idx_b]
+                        ])
                     if args.ground_truth_idx is not None and args.ground_truth_idx >= 0:
                         batch_ground_truth.append(row[args.ground_truth_idx])
                 else:
-                    if row[0] in exists_ids:
+                    if args.seq_id_col_idx is None:
+                        args.seq_id_col_idx = 0
+                    if args.seq_type_col_idx is None:
+                        args.seq_type_col_idx = 1
+                    if args.seq_col_idx is None:
+                        args.seq_col_idx = 2
+                    if row[args.seq_id_col_idx] in exists_ids:
                         continue
                     if len(row) == 2:
-                        if not seq_type_is_match_seq(args.seq_type, row[1]):
-                            print("Error! the input seq(seq_id=%s) not match the arg: --seq_type=%s: %s" % (row[0], args.seq_type, row[1]))
+                        args.seq_type_col_idx = None
+                        args.seq_col_idx = 1
+                        if not seq_type_is_match_seq(args.seq_type, row[args.seq_col_idx]):
+                            print("Error! the input seq(seq_id=%s) not match the arg: --seq_type=%s: %s" % (
+                                row[args.seq_id_col_idx],
+                                args.seq_type,
+                                row[args.seq_col_idx]
+                            ))
                             sys.exit(-1)
-                        batch_data.append([row[0], args.seq_type, row[1]])
+                        batch_data.append([row[args.seq_id_col_idx], args.seq_type, row[args.seq_col_idx ]])
                     elif len(row) > 2:
-                        if not seq_type_is_match_seq(row[1], row[2]):
-                            print("Error! the input seq(seq_id=%s) not match the seq_type=%s: %s" % (row[0], row[1], row[2]))
+                        if not seq_type_is_match_seq(row[args.seq_type_col_idx], row[args.seq_col_idx]):
+                            print("Error! the input seq(seq_id=%s) not match the seq_type=%s: %s" % (
+                                row[args.seq_id_col_idx],
+                                row[args.seq_type_col_idx],
+                                row[args.seq_col_idx]
+                            ))
                             sys.exit(-1)
                         if args.ground_truth_idx is not None and args.ground_truth_idx >= 0:
                             batch_ground_truth.append(row[args.ground_truth_idx])
                         # seq_id, seq_type, seq
-                        batch_data.append([row[0], row[1], row[2]])
+                        batch_data.append([
+                            row[args.seq_id_col_idx],
+                            row[args.seq_type_col_idx],
+                            row[args.seq_col_idx]
+                        ])
                     else:
                         continue
-
                 if len(batch_data) % args.print_per_num == 0:
                     batch_results = run(
                         batch_data,

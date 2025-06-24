@@ -31,6 +31,7 @@ try:
     from utils import to_device, device_memory, available_gpu_id, load_labels, seq_type_is_match_seq, \
         download_trained_checkpoint_lucaone, download_trained_checkpoint_downstream_tasks
     from common.multi_label_metrics import relevant_indexes
+    from common.model_config import LucaConfig
     from encoder import Encoder
     from batch_converter import BatchConverter
     from common.alphabet import Alphabet
@@ -42,6 +43,7 @@ except ImportError:
     from src.utils import to_device, device_memory, available_gpu_id, load_labels, seq_type_is_match_seq, \
         download_trained_checkpoint_lucaone, download_trained_checkpoint_downstream_tasks
     from src.common.multi_label_metrics import relevant_indexes
+    from src.common.model_config import LucaConfig
     from src.encoder import Encoder
     from src.batch_converter import BatchConverter
     from src.common.alphabet import Alphabet
@@ -345,6 +347,10 @@ def load_model(args, model_name, model_dir):
         config_class, seq_tokenizer_class, model_class = BertConfig, Alphabet, LucaPPI2
     elif args.model_type in ["luca_base"]:
         config_class, seq_tokenizer_class, model_class = BertConfig, Alphabet, LucaBase
+    elif args.model_type in ["lucapair_homo"]:
+        config_class, seq_tokenizer_class, model_class = LucaConfig, Alphabet, LucaBase
+    elif args.model_type in ["luca_base"]:
+        config_class, seq_tokenizer_class, model_class = LucaConfig, Alphabet, LucaBase
     else:
         raise Exception("Not support the model_type=%s" % args.model_type)
     seq_subword, seq_tokenizer = load_tokenizer(args, model_dir, seq_tokenizer_class)
@@ -738,12 +744,30 @@ def run_args():
     parser.add_argument("--task_level_type", default=None, type=str, required=True, 
                         choices=["seq_level", "token_level"], 
                         help="the task level type for model building.")
-    parser.add_argument("--model_type", default=None, type=str, required=True,
-                        choices=["luca_base", "lucappi", "lucappi2"], 
-                        help="the model type.")
-    parser.add_argument("--input_type", default=None, type=str, required=True, 
-                        choices=["seq", "matrix", "vector", "seq-matrix", "seq-vector"], 
-                        help="the input type.")
+    parser.add_argument(
+        "--model_type",
+        default=None,
+        type=str,
+        required=True,
+        choices=["luca_base", "lucappi", "lucappi2", "lucapair_homo", "lucapair_heter"],
+        help="the model type."
+    )
+    parser.add_argument(
+        "--input_type", default=None, type=str, required=True,
+        choices=[
+            "seq",
+            "matrix",
+            "vector",
+            "seq-matrix",
+            "seq-vector",
+            "seq_vs_seq",
+            "seq_vs_vector",
+            "seq_vs_matrix",
+            "vector_vs_matrix",
+            "matrix_vs_matrix"
+        ],
+        help="the input type."
+    )
     parser.add_argument("--input_mode", default=None, type=str, required=True, 
                         choices=["single", "pair"],
                         help="the input mode.")

@@ -32,6 +32,7 @@ try:
     from encoder import Encoder
     from batch_converter import BatchConverter
     from common.alphabet import Alphabet
+    from common.model_config import LucaConfig
     from file_operator import csv_reader, fasta_reader, csv_writer, file_reader
     from common.luca_base import LucaBase
     from ppi.models.LucaPPI import LucaPPI
@@ -40,6 +41,7 @@ except ImportError:
     from src.utils import to_device, device_memory, available_gpu_id, load_labels, seq_type_is_match_seq, \
         download_trained_checkpoint_lucaone, download_trained_checkpoint_downstream_tasks
     from src.common.multi_label_metrics import relevant_indexes
+    from src.common.model_config import LucaConfig
     from src.encoder import Encoder
     from src.batch_converter import BatchConverter
     from src.common.alphabet import Alphabet
@@ -49,25 +51,28 @@ except ImportError:
     from src.ppi.models.LucaPPI2 import LucaPPI2
 
 
-def transform_one_sample_2_feature(device,
-                                   input_mode,
-                                   encoder,
-                                   batch_convecter,
-                                   row):
+def transform_one_sample_2_feature(
+        device,
+        input_mode,
+        encoder,
+        batch_convecter,
+        row
+):
     batch_info = []
     if input_mode in ["pair"]:
-        en = encoder.encode_pair(row[0],
-                                 row[1],
-                                 row[2],
-                                 row[3],
-                                 row[4],
-                                 row[5],
-                                 vector_filename_a=None,
-                                 vector_filename_b=None,
-                                 matrix_filename_a=None,
-                                 matrix_filename_b=None,
-                                 label=None
-                                 )
+        en = encoder.encode_pair(
+            row[0],
+            row[1],
+            row[2],
+            row[3],
+            row[4],
+            row[5],
+            vector_filename_a=None,
+            vector_filename_b=None,
+            matrix_filename_a=None,
+            matrix_filename_b=None,
+            label=None
+        )
         en_list = en
         batch_info.append([row[0], row[1], row[4], row[5]])
         seq_lens = [len(row[4]), len(row[5])]
@@ -87,22 +92,24 @@ def transform_one_sample_2_feature(device,
                 split_seqs.append(cur_seq)
                 seq_lens.append(len(cur_seq))
             for split_seq in split_seqs:
-                en = encoder.encode_single(row[0],
-                                           row[1],
-                                           split_seq,
-                                           vector_filename=None,
-                                           matrix_filename=None,
-                                           label=None
-                                           )
+                en = encoder.encode_single(
+                    row[0],
+                    row[1],
+                    split_seq,
+                    vector_filename=None,
+                    matrix_filename=None,
+                    label=None
+                )
                 en_list.append(en)
         else:
-            en = encoder.encode_single(row[0],
-                                       row[1],
-                                       row[2],
-                                       vector_filename=None,
-                                       matrix_filename=None,
-                                       label=None
-                                       )
+            en = encoder.encode_single(
+                row[0],
+                row[1],
+                row[2],
+                vector_filename=None,
+                matrix_filename=None,
+                label=None
+            )
             en_list = en
             seq_lens = len(row[2])
             if "matrix" in en and en["matrix"] is not None:
@@ -332,6 +339,10 @@ def load_model(args, model_name, model_dir):
         config_class, seq_tokenizer_class, model_class = BertConfig, Alphabet, LucaPPI2
     elif args.model_type in ["luca_base"]:
         config_class, seq_tokenizer_class, model_class = BertConfig, Alphabet, LucaBase
+    elif args.model_type in ["lucapair_homo"]:
+        config_class, seq_tokenizer_class, model_class = LucaConfig, Alphabet, LucaBase
+    elif args.model_type in ["luca_base"]:
+        config_class, seq_tokenizer_class, model_class = LucaConfig, Alphabet, LucaBase
     else:
         raise Exception("Not support the model_type=%s" % args.model_type)
     seq_subword, seq_tokenizer = load_tokenizer(args, model_dir, seq_tokenizer_class)
@@ -671,15 +682,38 @@ def run_args():
     parser.add_argument("--task_level_type", default=None, type=str, required=True, 
                         choices=["seq_level", "token_level"], 
                         help="the task level type for model building.")
-    parser.add_argument("--model_type", default=None, type=str, required=True,
-                        choices=["luca_base", "lucappi", "lucappi2"], 
-                        help="the model type.")
-    parser.add_argument("--input_type", default=None, type=str, required=True, 
-                        choices=["seq", "matrix", "vector", "seq-matrix", "seq-vector"], 
-                        help="the input type.")
-    parser.add_argument("--input_mode", default=None, type=str, required=True, 
-                        choices=["single", "pair"],
-                        help="the input mode.")
+    parser.add_argument(
+        "--model_type",
+        default=None,
+        type=str,
+        required=True,
+        choices=["luca_base", "lucappi", "lucappi2", "lucapair_homo", "lucapair_heter"],
+        help="the model type."
+    )
+    parser.add_argument(
+        "--input_type", default=None, type=str, required=True,
+        choices=[
+            "seq",
+            "matrix",
+            "vector",
+            "seq-matrix",
+            "seq-vector",
+            "seq_vs_seq",
+            "seq_vs_vector",
+            "seq_vs_matrix",
+            "vector_vs_matrix",
+            "matrix_vs_matrix"
+        ],
+        help="the input type."
+    )
+    parser.add_argument(
+        "--input_mode",
+        default=None,
+        type=str,
+        required=True,
+        choices=["single", "pair"],
+        help="the input mode."
+    )
     parser.add_argument("--time_str", default=None, type=str, required=True, 
                         help="the running time string(yyyymmddHimiss) of model building.")
     parser.add_argument("--step", default=None, type=str, required=True, 

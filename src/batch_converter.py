@@ -1140,7 +1140,8 @@ class BatchConverter(object):
                     if molecule_flag:
                         # real_seq_len = real_seq_len - int(self.atom_prepend_bos) - int(self.atom_append_eos)
                         real_seq_len = min(real_seq_len, self.atom_truncation_matrix_length)
-                        matrix = torch.tensor(matrix_encoded, dtype=torch.float32)
+                        # matrix = torch.tensor(matrix_encoded, dtype=torch.float32)
+                        matrix = matrix_encoded.clone().detach()
                         if self.matrix_add_special_token:
                             encoded_matrices[sample_idx, 0: real_seq_len + 2] \
                                 = matrix[0: real_seq_len + 2]
@@ -1157,7 +1158,8 @@ class BatchConverter(object):
                     else:
                         # real_seq_len = real_seq_len - int(self.prepend_bos) - int(self.append_eos)
                         real_seq_len = min(real_seq_len, self.truncation_matrix_length)
-                        matrix = torch.tensor(matrix_encoded, dtype=torch.float32)
+                        # matrix = torch.tensor(matrix_encoded, dtype=torch.float32)
+                        matrix = matrix_encoded.clone().detach()
                         if self.matrix_add_special_token:
                             encoded_matrices[sample_idx, 0: real_seq_len + 2] = matrix[0: real_seq_len + 2]
                             matrix_attention_masks[sample_idx, 0: real_seq_len + 2] = 1

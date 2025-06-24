@@ -518,7 +518,7 @@ def run(
 
     model_args.matrix_embedding_exists = matrix_embedding_exists
     # embedding saved dir during prediction
-    if emb_dir:
+    if emb_dir and not matrix_embedding_exists:
         # now = datetime.now()
         # formatted_time = now.strftime("%Y%m%d%H%M%S")
         # emb_dir = os.path.join(emb_dir, "%s-%d" % (formatted_time, gpu_id))

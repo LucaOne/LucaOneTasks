@@ -39,6 +39,8 @@ try:
     from common.luca_base import LucaBase
     from ppi.models.LucaPPI import LucaPPI
     from ppi.models.LucaPPI2 import LucaPPI2
+    from ppi.models.LucaPairHomo import LucaPairHomo
+    from ppi.models.LucaPairHeter import LucaPairHeter
 except ImportError:
     from src.utils import to_device, device_memory, available_gpu_id, load_labels, seq_type_is_match_seq, \
         download_trained_checkpoint_lucaone, download_trained_checkpoint_downstream_tasks
@@ -51,6 +53,8 @@ except ImportError:
     from src.common.luca_base import LucaBase
     from src.ppi.models.LucaPPI import LucaPPI
     from src.ppi.models.LucaPPI2 import LucaPPI2
+    from src.ppi.models.LucaPairHomo import LucaPairHomo
+    from src.ppi.models.LucaPairHeter import LucaPairHeter
 
 
 def transform_one_sample_2_feature(
@@ -348,9 +352,9 @@ def load_model(args, model_name, model_dir):
     elif args.model_type in ["luca_base"]:
         config_class, seq_tokenizer_class, model_class = BertConfig, Alphabet, LucaBase
     elif args.model_type in ["lucapair_homo"]:
-        config_class, seq_tokenizer_class, model_class = LucaConfig, Alphabet, LucaBase
-    elif args.model_type in ["luca_base"]:
-        config_class, seq_tokenizer_class, model_class = LucaConfig, Alphabet, LucaBase
+        config_class, seq_tokenizer_class, model_class = LucaConfig, Alphabet, LucaPairHomo
+    elif args.model_type in ["lucapair_heter"]:
+        config_class, seq_tokenizer_class, model_class = LucaConfig, Alphabet, LucaPairHeter
     else:
         raise Exception("Not support the model_type=%s" % args.model_type)
     seq_subword, seq_tokenizer = load_tokenizer(args, model_dir, seq_tokenizer_class)
@@ -491,6 +495,27 @@ def run(
     print("-" * 25 + "Trained Model Args" + "-" * 25)
     print(model_args.__dict__)
     print("-" * 50)
+
+    # download LLM(LucaOne)
+    if not hasattr(model_args, "llm_type"):
+        model_args.llm_type = "lucaone"
+    if not hasattr(model_args, "llm_version"):
+        model_args.llm_version = "lucaone"
+    if not hasattr(model_args, "llm_step"):
+        model_args.llm_step = "5600000"
+    download_trained_checkpoint_lucaone(
+        llm_dir=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "llm/"),
+        llm_type=model_args.llm_type,
+        llm_version=model_args.llm_version,
+        llm_step=model_args.llm_step
+    )
+    # download trained downstream task models
+    '''
+    download_trained_checkpoint_downstream_tasks(
+        save_dir=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
+    '''
+
     '''
     model_args.llm_truncation_seq_length = llm_truncation_seq_length
     model_args.seq_max_length = llm_truncation_seq_length
@@ -808,23 +833,6 @@ if __name__ == "__main__":
                 print("Error! input a fasta file, please set arg: --seq_type, value: gene or prot")
                 sys.exit(-1)
 
-    # download LLM(LucaOne)
-    if not hasattr(args, "llm_type"):
-        args.llm_type = "lucaone"
-    if not hasattr(args, "llm_version"):
-        args.llm_version = "lucaone"
-    if not hasattr(args, "llm_step"):
-        args.llm_step = "5600000"
-    download_trained_checkpoint_lucaone(
-        llm_dir=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "llm/"),
-        llm_type=args.llm_type,
-        llm_version=args.llm_version,
-        llm_step=args.llm_step
-    )
-    # download trained downstream task models
-    download_trained_checkpoint_downstream_tasks(
-        save_dir=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    )
     if args.input_file is not None and os.path.exists(args.input_file):
         exists_ids = set()
         exists_res = []

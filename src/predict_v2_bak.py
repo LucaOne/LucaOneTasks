@@ -485,6 +485,26 @@ def run(
     print("-" * 25 + "Trained Model Args" + "-" * 25)
     print(model_args.__dict__)
     print("-" * 50)
+
+    # download LLM(LucaOne)
+    if not hasattr(model_args, "llm_step"):
+        model_args.llm_step = "5600000"
+    if not hasattr(model_args, "llm_time_str"):
+        model_args.llm_time_str = "20231125113045"
+    if not hasattr(model_args, "llm_version"):
+        model_args.llm_version = "v2.0"
+    download_trained_checkpoint_lucaone_v1(
+        llm_dir=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "llm/"),
+        llm_type=model_args.llm_type,
+        llm_version=model_args.llm_version,
+        llm_time_str=model_args.llm_time_str,
+        llm_step=model_args.llm_step
+    )
+    # download trained downstream task models
+    download_trained_checkpoint_downstream_tasks(
+        save_dir=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
+
     '''
     model_args.llm_truncation_seq_length = llm_truncation_seq_length
     model_args.seq_max_length = llm_truncation_seq_length
@@ -500,7 +520,7 @@ def run(
 
     model_args.matrix_embedding_exists = matrix_embedding_exists
     # embedding saved dir during prediction
-    if emb_dir:
+    if emb_dir and not matrix_embedding_exists:
         # now = datetime.now()
         # formatted_time = now.strftime("%Y%m%d%H%M%S")
         # emb_dir = os.path.join(emb_dir, "%s-%d" % (formatted_time, gpu_id))
@@ -784,24 +804,6 @@ if __name__ == "__main__":
                 print("Error! input a fasta file, please set arg: --seq_type, value: gene or prot")
                 sys.exit(-1)
 
-    # download LLM(LucaOne)
-    if not hasattr(args, "llm_step"):
-        args.llm_step = "5600000"
-    if not hasattr(args, "llm_time_str"):
-        args.llm_time_str = "20231125113045"
-    if not hasattr(args, "llm_version"):
-        args.llm_version = "v2.0"
-    download_trained_checkpoint_lucaone_v1(
-        llm_dir=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "llm/"),
-        llm_type=args.llm_type,
-        llm_version=args.llm_version,
-        llm_time_str=args.llm_time_str,
-        llm_step=args.llm_step
-    )
-    # download trained downstream task models
-    download_trained_checkpoint_downstream_tasks(
-        save_dir=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    )
     if args.input_file is not None and os.path.exists(args.input_file):
         exists_ids = set()
         exists_res = []

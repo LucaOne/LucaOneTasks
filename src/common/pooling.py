@@ -10,6 +10,7 @@
 @file: pooling
 @desc: pooling strategies
 '''
+import os
 import sys
 import copy
 import torch
@@ -191,7 +192,13 @@ class GlobalMaskWeightedAttentionPooling1D(nn.Module):
             self.b = nn.Parameter(torch.Tensor(1))
             nn.init.trunc_normal_(self.b, std=0.01)
 
-    def forward(self, x, mask=None):
+    def forward(
+            self,
+            x,
+            mask=None,
+            sample_ids=None,
+            attention_scores_savepath=None
+    ):
         # (B, Len, Embed) x (Embed,) = (B, Len)
         logits = torch.matmul(x, self.W)
         if self.use_bias:
@@ -202,10 +209,16 @@ class GlobalMaskWeightedAttentionPooling1D(nn.Module):
         else:
             attention_probs = nn.Softmax(dim=-1)(logits)
         x = torch.sum(torch.unsqueeze(attention_probs, dim=-1) * x, dim=1)
+        if attention_scores_savepath and sample_ids and attention_probs is not None:
+            attention_probs_cpu = attention_probs.detach().cpu()
+            for sample_idx, sample_id in enumerate(sample_ids):
+                filepath = os.path.join(attention_scores_savepath, "%s__attention_scores.pt" % sample_id)
+                cur_attention_probs_cpu = attention_probs_cpu[sample_idx]
+                torch.save(cur_attention_probs_cpu, filepath)
         return x
 
     def __repr__(self):
-        return self.__class__.__name__ + ' (' + str(self.embed_size) + (', bias=%r)' % self.use_bias)
+        return self.__class__.__name__ + '(' + str(self.embed_size) + (', bias=%r)' % self.use_bias)
 
 
 class GlobalMaskContextAttentionPooling1D(nn.Module):
@@ -231,7 +244,13 @@ class GlobalMaskContextAttentionPooling1D(nn.Module):
         nn.init.trunc_normal_(self.V, std=0.01)
         nn.init.trunc_normal_(self.c, std=0.01)
 
-    def forward(self, x, mask=None):
+    def forward(
+            self,
+            x,
+            mask=None,
+            sample_ids=None,
+            attention_scores_savepath=None
+    ):
         # (B, Len, Embed) x (Embed, Units) = (B, Len, Units)
         q = torch.matmul(x, self.U)
         k = torch.matmul(x, self.V)
@@ -249,10 +268,16 @@ class GlobalMaskContextAttentionPooling1D(nn.Module):
         else:
             attention_probs = nn.Softmax(dim=-1)(e)
         x = torch.sum(torch.unsqueeze(attention_probs, dim=-1) * x, dim=1)
+        if attention_scores_savepath and sample_ids and attention_probs is not None:
+            attention_probs_cpu = attention_probs.detach().cpu()
+            for sample_idx, sample_id in enumerate(sample_ids):
+                filepath = os.path.join(attention_scores_savepath, "%s__attention_scores.pt" % sample_id)
+                cur_attention_probs_cpu = attention_probs_cpu[sample_idx]
+                torch.save(cur_attention_probs_cpu, filepath)
         return x
 
     def __repr__(self):
-        return self.__class__.__name__ + ' (' + str(self.embed_size) + ' -> ' + str(self.units) + ', bias=(%r, %r))' % (self.use_additive_bias, self.use_attention_bias)
+        return self.__class__.__name__ + '(' + str(self.embed_size) + ' -> ' + str(self.units) + ', bias=(%r, %r))' % (self.use_additive_bias, self.use_attention_bias)
 
 
 class GlobalMaskValueAttentionPooling1D(nn.Module):
@@ -283,7 +308,7 @@ class GlobalMaskValueAttentionPooling1D(nn.Module):
             x,
             mask=None,
             sample_ids=None,
-            save_attention_scores=False
+            attention_scores_savepath=None
     ):
         # (B, Len, Embed) x (Embed, Units) = (B, Len, Units)
         q = torch.matmul(x, self.U)
@@ -303,21 +328,16 @@ class GlobalMaskValueAttentionPooling1D(nn.Module):
         else:
             attention_probs = nn.Softmax(dim=1)(e)
         x = torch.sum(attention_probs * x, dim=1)
-        if save_attention_scores and sample_ids:
-            import os
-            dirpath = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), "attention_scores")
-            if not os.path.exists(dirpath):
-                os.makedirs(dirpath)
+        if attention_scores_savepath and sample_ids and attention_probs is not None:
+            attention_probs_cpu = attention_probs.detach().cpu()
             for sample_idx, sample_id in enumerate(sample_ids):
-                filepath = os.path.join(dirpath, "%s.pt" % sample_id)
-                if attention_probs is not None:
-                    attention_probs_cpu = attention_probs.detach().cpu()
-                    torch.save(attention_probs_cpu, filepath)
-
+                filepath = os.path.join(attention_scores_savepath, "%s__attention_scores.pt" % sample_id)
+                cur_attention_probs_cpu = attention_probs_cpu[sample_idx]
+                torch.save(cur_attention_probs_cpu, filepath)
         return x
 
     def __repr__(self):
-        return self.__class__.__name__ + ' (' + str(self.embed_size) + ' -> ' + str(self.units) + ', bias=(%r, %r))' % (self.use_additive_bias, self.use_attention_bias)
+        return self.__class__.__name__ + '(' + str(self.embed_size) + ' -> ' + str(self.units) + ', bias=(%r, %r))' % (self.use_additive_bias, self.use_attention_bias)
 
 
 class GlobalMaskTransformerPooling1D(nn.Module):
@@ -339,14 +359,16 @@ class GlobalMaskTransformerPooling1D(nn.Module):
             mask = torch.cat([cls_mask, mask], dim=1)
             mask = mask[:, None, None, :]
 
-        sequence_output = self.encoder(merged_output,
-                                       attention_mask=mask,
-                                       head_mask=None,
-                                       encoder_hidden_states=None,
-                                       encoder_attention_mask=None,
-                                       output_attentions=False,
-                                       output_hidden_states=False,
-                                       return_dict=False)[0]
+        sequence_output = self.encoder(
+            merged_output,
+            attention_mask=mask,
+            head_mask=None,
+            encoder_hidden_states=None,
+            encoder_attention_mask=None,
+            output_attentions=False,
+            output_hidden_states=False,
+            return_dict=False
+        )[0]
         pooled_output = self.pooler(sequence_output)
         return pooled_output
 

@@ -375,7 +375,7 @@ class LucaPairHeter(BertPreTrainedModel):
             matrices,
             matrix_attention_masks,
             sample_ids=None,
-            save_attention_scores=False
+            attention_scores_savepath=None
     ):
         if input_ids is not None and self.seq_encoder_a is not None:
             seq_outputs = self.seq_encoder_a(
@@ -401,7 +401,7 @@ class LucaPairHeter(BertPreTrainedModel):
                     seq_outputs[0],
                     mask=seq_attention_masks,
                     sample_ids=sample_ids,
-                    save_attention_scores=save_attention_scores
+                    attention_scores_savepath=attention_scores_savepath
                 )
             elif self.task_level_type in ["seq_level"]:
                 seq_vector = seq_outputs[1]
@@ -439,7 +439,7 @@ class LucaPairHeter(BertPreTrainedModel):
                     matrices,
                     mask=matrix_attention_masks,
                     sample_ids=sample_ids,
-                    save_attention_scores=save_attention_scores
+                    attention_scores_savepath=attention_scores_savepath
                 )
             elif self.task_level_type in ["seq_level"]:
                 tmp_mask = torch.unsqueeze(matrix_attention_masks, dim=-1)
@@ -478,7 +478,7 @@ class LucaPairHeter(BertPreTrainedModel):
             matrices,
             matrix_attention_masks,
             sample_ids=None,
-            save_attention_scores=False
+            attention_scores_savepath=None
     ):
         if input_ids is not None and self.seq_encoder_b is not None:
             seq_outputs = self.seq_encoder_b(
@@ -504,7 +504,7 @@ class LucaPairHeter(BertPreTrainedModel):
                     seq_outputs[0],
                     mask=seq_attention_masks,
                     sample_ids=sample_ids,
-                    save_attention_scores=save_attention_scores
+                    attention_scores_savepath=attention_scores_savepath
                 )
             elif self.task_level_type in ["seq_level"]:
                 seq_vector = seq_outputs[1]
@@ -542,7 +542,7 @@ class LucaPairHeter(BertPreTrainedModel):
                     matrices,
                     mask=matrix_attention_masks,
                     sample_ids=sample_ids,
-                    save_attention_scores=save_attention_scores
+                    attention_scores_savepath=attention_scores_savepath
                 )
             elif self.task_level_type in ["seq_level"]:
                 tmp_mask = torch.unsqueeze(matrix_attention_masks, dim=-1)
@@ -582,7 +582,7 @@ class LucaPairHeter(BertPreTrainedModel):
             matrix_attention_masks_a=None, matrix_attention_masks_b=None,
             labels=None,
             sample_ids=None,
-            save_attention_scores=False
+            attention_scores_savepath=None
     ):
         representation_vector_a = self.__forworrd_a__(
             input_ids_a,
@@ -593,7 +593,7 @@ class LucaPairHeter(BertPreTrainedModel):
             matrices_a,
             matrix_attention_masks_a,
             sample_ids=sample_ids,
-            save_attention_scores=save_attention_scores
+            attention_scores_savepath=attention_scores_savepath
         )
         representation_vector_b = self.__forworrd_b__(
             input_ids_b,
@@ -604,9 +604,8 @@ class LucaPairHeter(BertPreTrainedModel):
             matrices_b,
             matrix_attention_masks_b,
             sample_ids=sample_ids,
-            save_attention_scores=save_attention_scores
+            attention_scores_savepath=attention_scores_savepath
         )
-
         concat_vector = torch.cat([representation_vector_a, representation_vector_b], dim=-1)
         if self.dropout is not None:
             concat_vector = self.dropout(concat_vector)

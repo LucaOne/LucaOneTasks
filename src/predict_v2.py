@@ -66,7 +66,9 @@ def transform_one_sample_2_feature(
         row
 ):
     batch_info = []
+    sample_ids = []
     if input_mode == "pair":
+        sample_ids.append(row[0] + "#" + row[1])
         if input_type in ["seq_vs_seq", "seq_vs_vector", "seq_vs_matrix", "vector_vs_vector", "vector_vs_matrix", "matrix_vs_matrix"]:
             en = encoder.encode_pair(
                 row[0],
@@ -120,6 +122,7 @@ def transform_one_sample_2_feature(
             batch_info.append([row[0], row[1], row[4], row[5]])
             seq_lens = [len(row[4]), len(row[5])]
     else:
+        sample_ids.append(row[0])
         seq_lens = []
         en_list = []
         cur_seq = row[2]
@@ -134,7 +137,6 @@ def transform_one_sample_2_feature(
             if len(cur_seq) > 0:
                 split_seqs.append(cur_seq)
                 seq_lens.append(len(cur_seq))
-
             for split_seq in split_seqs:
                 en = encoder.encode_single(
                     row[0],
@@ -168,16 +170,15 @@ def transform_one_sample_2_feature(
             cur_batch_features = batch_convecter([cur_batch])
             cur_batch_features, cur_sample_num = to_device(device, cur_batch_features)
             batch_features.append(cur_batch_features)
-
     else:
         batch_features = batch_convecter(batch)
         batch_features, cur_sample_num = to_device(device, batch_features)
-    return batch_info, batch_features, [seq_lens]
+    return batch_info, batch_features, [seq_lens], sample_ids
 
 
 def predict_probs(args, encoder, batch_convecter, model, row):
     model.to(torch.device("cpu"))
-    batch_info, batch_features, seq_lens = transform_one_sample_2_feature(
+    batch_info, batch_features, seq_lens, sample_ids = transform_one_sample_2_feature(
         args.device,
         args.input_mode,
         args.input_type,
@@ -189,14 +190,22 @@ def predict_probs(args, encoder, batch_convecter, model, row):
     if isinstance(batch_features, list):
         probs = []
         for cur_batch_features in batch_features:
-            cur_probs = model(**cur_batch_features)[1]
+            cur_probs = model(
+                **cur_batch_features,
+                sample_ids=sample_ids,
+                attention_scores_savepath=args.output_attention_pooling_scores_dirpath
+            )[1]
             if cur_probs.is_cuda:
                 cur_probs = cur_probs.detach().cpu().numpy()
             else:
                 cur_probs = cur_probs.detach().numpy()
             probs.append(cur_probs)
     else:
-        probs = model(**batch_features)[1]
+        probs = model(
+            **batch_features,
+            sample_ids=sample_ids,
+            attention_scores_savepath=args.output_attention_pooling_scores_dirpath
+        )[1]
         if probs.is_cuda:
             probs = probs.detach().cpu().numpy()
         else:
@@ -1067,13 +1076,19 @@ def run_args():
         help="per num to print"
     )
     parser.add_argument(
+        "--output_attention_pooling_scores_dirpath",
+        default=None,
+        type=str,
+        help="the save path output the attention pooling scores(one file for each one sample)"
+    )
+    parser.add_argument(
         "--gpu_id",
         default=None,
         type=int,
         help="the used gpu index, -1 for cpu"
     )
-    args = parser.parse_args()
-    return args
+    input_args = parser.parse_args()
+    return input_args
 
 
 if __name__ == "__main__":
@@ -1081,6 +1096,10 @@ if __name__ == "__main__":
     print("-" * 25 + "Run Args" + "-" * 25)
     print(args.__dict__)
     print("-" * 50)
+    if args.output_attention_pooling_scores_dirpath:
+        args.output_attention_pooling_scores = True
+        if not os.path.exists(args.output_attention_pooling_scores_dirpath):
+            os.makedirs(args.output_attention_pooling_scores_dirpath)
     if args.input_file is not None:
         input_file_suffix = os.path.basename(args.input_file).split(".")[-1]
         if args.input_mode == "pair":

@@ -405,6 +405,9 @@ def train(args, train_dataloader, model_config, model, seq_tokenizer, parse_row_
         log_fp.flush()
 
     if args.n_gpu > 1:
+        dist.barrier()
+
+    if args.n_gpu > 1:
         cleanup()
 
     if args.local_rank in [0, -1]:

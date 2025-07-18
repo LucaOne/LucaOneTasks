@@ -1058,6 +1058,7 @@ class Encoder(object):
             seq,
             vector_filename=None,
             matrix_filename=None,
+            express_list=None,
             label=None
     ):
         seq_type = seq_type.strip().lower()
@@ -1122,12 +1123,17 @@ class Encoder(object):
                 seq = clean_seq(seq_id, seq)
             elif seq_type == "multi_prot":
                 seq = ",".join([clean_seq(seq_id, v) for v in seq.split(",")])
+
+        if express_list is not None:
+            if not isinstance(express_list, list):
+                express_list = eval(express_list)
         return {
             "seq_id": seq_id,
             "seq": seq,
             "seq_type": seq_type,
             "vector": vector,
             "matrix": matrix,
+            "express_list": express_list,
             "label": label
         }
 
@@ -1143,6 +1149,8 @@ class Encoder(object):
             vector_filename_b=None,
             matrix_filename_a=None,
             matrix_filename_b=None,
+            express_list_a=None,
+            express_list_b=None,
             label=None
 
     ):
@@ -1205,7 +1213,9 @@ class Encoder(object):
             "vector_vs_matrix",
             "matrix_vs_seq",
             "matrix_vs_vector",
-            "matrix_vs_matrix"
+            "matrix_vs_matrix",
+            "matrix_express_vs_matrix",
+            "matrix_express_vs_matrix_express"
         ]:
             if self.input_type not in ["seq_vs_matrix", "vector_vs_matrix"]:
                 if matrix_filename_a is None:
@@ -1263,7 +1273,12 @@ class Encoder(object):
                     seq_b = clean_seq(seq_id_b, seq_b)
                 elif seq_type_b == "multi_prot":
                     seq_b = ",".join([clean_seq(seq_id_b, v) for v in seq_b.split(",")])
-
+        if express_list_a is not None:
+            if not isinstance(express_list_a, list):
+                express_list_a = eval(express_list_a)
+        if express_list_b is not None:
+            if not isinstance(express_list_b, list):
+                express_list_b = eval(express_list_b)
         return {
             "seq_id_a": seq_id_a,
             "seq_a": seq_a,
@@ -1275,6 +1290,8 @@ class Encoder(object):
             "seq_type_b": seq_type_b,
             "vector_b": vector_b,
             "matrix_b": matrix_b,
+            "express_list_a": express_list_a,
+            "express_list_b": express_list_b,
             "label": label
         }
 

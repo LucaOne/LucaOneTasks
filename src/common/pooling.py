@@ -197,7 +197,8 @@ class GlobalMaskWeightedAttentionPooling1D(nn.Module):
             x,
             mask=None,
             sample_ids=None,
-            attention_scores_savepath=None
+            prefix=None,
+            attention_pooling_scores_savepath=None
     ):
         # (B, Len, Embed) x (Embed,) = (B, Len)
         logits = torch.matmul(x, self.W)
@@ -209,10 +210,12 @@ class GlobalMaskWeightedAttentionPooling1D(nn.Module):
         else:
             attention_probs = nn.Softmax(dim=-1)(logits)
         x = torch.sum(torch.unsqueeze(attention_probs, dim=-1) * x, dim=1)
-        if attention_scores_savepath and sample_ids and attention_probs is not None:
+        if attention_pooling_scores_savepath and sample_ids and attention_probs is not None:
+            if prefix is None:
+                prefix = ""
             attention_probs_cpu = attention_probs.detach().cpu()
             for sample_idx, sample_id in enumerate(sample_ids):
-                filepath = os.path.join(attention_scores_savepath, "%s__attention_scores.pt" % sample_id)
+                filepath = os.path.join(attention_pooling_scores_savepath, "%s_%s_attention_pooling_scores.pt" % (sample_id, prefix))
                 cur_attention_probs_cpu = attention_probs_cpu[sample_idx]
                 torch.save(cur_attention_probs_cpu, filepath)
         return x
@@ -249,7 +252,8 @@ class GlobalMaskContextAttentionPooling1D(nn.Module):
             x,
             mask=None,
             sample_ids=None,
-            attention_scores_savepath=None
+            prefix=None,
+            attention_pooling_scores_savepath=None
     ):
         # (B, Len, Embed) x (Embed, Units) = (B, Len, Units)
         q = torch.matmul(x, self.U)
@@ -268,10 +272,12 @@ class GlobalMaskContextAttentionPooling1D(nn.Module):
         else:
             attention_probs = nn.Softmax(dim=-1)(e)
         x = torch.sum(torch.unsqueeze(attention_probs, dim=-1) * x, dim=1)
-        if attention_scores_savepath and sample_ids and attention_probs is not None:
+        if attention_pooling_scores_savepath and sample_ids and attention_probs is not None:
+            if prefix is None:
+                prefix = ""
             attention_probs_cpu = attention_probs.detach().cpu()
             for sample_idx, sample_id in enumerate(sample_ids):
-                filepath = os.path.join(attention_scores_savepath, "%s__attention_scores.pt" % sample_id)
+                filepath = os.path.join(attention_pooling_scores_savepath, "%s_%s_attention_pooling_scores.pt" % (sample_id, prefix))
                 cur_attention_probs_cpu = attention_probs_cpu[sample_idx]
                 torch.save(cur_attention_probs_cpu, filepath)
         return x
@@ -308,7 +314,8 @@ class GlobalMaskValueAttentionPooling1D(nn.Module):
             x,
             mask=None,
             sample_ids=None,
-            attention_scores_savepath=None
+            prefix=None,
+            attention_pooling_scores_savepath=None
     ):
         # (B, Len, Embed) x (Embed, Units) = (B, Len, Units)
         q = torch.matmul(x, self.U)
@@ -328,10 +335,12 @@ class GlobalMaskValueAttentionPooling1D(nn.Module):
         else:
             attention_probs = nn.Softmax(dim=1)(e)
         x = torch.sum(attention_probs * x, dim=1)
-        if attention_scores_savepath and sample_ids and attention_probs is not None:
+        if attention_pooling_scores_savepath and sample_ids and attention_probs is not None:
+            if prefix is None:
+                prefix = ""
             attention_probs_cpu = attention_probs.detach().cpu()
             for sample_idx, sample_id in enumerate(sample_ids):
-                filepath = os.path.join(attention_scores_savepath, "%s__attention_scores.pt" % sample_id)
+                filepath = os.path.join(attention_pooling_scores_savepath, "%s_%s_attention_pooling_scores.pt" % (sample_id, prefix))
                 cur_attention_probs_cpu = attention_probs_cpu[sample_idx]
                 torch.save(cur_attention_probs_cpu, filepath)
         return x

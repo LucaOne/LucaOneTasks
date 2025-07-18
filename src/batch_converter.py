@@ -27,30 +27,32 @@ except ImportError:
 
 class BatchConverter(object):
 
-    def __init__(self,
-                 task_level_type,
-                 label_size,
-                 output_mode,
-                 seq_subword,
-                 seq_tokenizer,
-                 no_position_embeddings,
-                 no_token_type_embeddings,
-                 truncation_seq_length: int = None,
-                 truncation_matrix_length: int = None,
-                 atom_tokenizer: AlphabetAtom = None,
-                 atom_truncation_seq_length: int = None,
-                 atom_truncation_matrix_length: int = None,
-                 ignore_index: int = -100,
-                 padding_idx: int = 0,
-                 unk_idx: int = 1,
-                 cls_idx: int = 2,
-                 eos_idx: int = 3,
-                 mask_idx: int = 4,
-                 non_ignore: bool = False,
-                 mlm_probability=0.15,
-                 prepend_bos=None,
-                 append_eos=None,
-                 **kwargs):
+    def __init__(
+            self,
+            task_level_type,
+            label_size,
+            output_mode,
+            seq_subword,
+            seq_tokenizer,
+            no_position_embeddings,
+            no_token_type_embeddings,
+            truncation_seq_length: int = None,
+            truncation_matrix_length: int = None,
+            atom_tokenizer: AlphabetAtom = None,
+            atom_truncation_seq_length: int = None,
+            atom_truncation_matrix_length: int = None,
+            ignore_index: int = -100,
+            padding_idx: int = 0,
+            unk_idx: int = 1,
+            cls_idx: int = 2,
+            eos_idx: int = 3,
+            mask_idx: int = 4,
+            non_ignore: bool = False,
+            mlm_probability=0.15,
+            prepend_bos=None,
+            append_eos=None,
+            **kwargs
+    ):
         print("------BatchConverter------")
         print("BatchConverter, kwargs:")
         print(kwargs)
@@ -540,6 +542,50 @@ class BatchConverter(object):
 
         return seq_encoded_list, input_ids, position_ids, token_type_ids, attention_masks, max_len
 
+    def __express_encode__(self, batch_size, express_list):
+        '''
+        该函数不加特殊字符[CLS]与[SEP]
+        :param batch_size:
+        :param express_list:
+        :return:
+        '''
+        max_len = max(len(express) for express in express_list)
+        if self.matrix_add_special_token:
+            max_len -= 2
+        if self.truncation_matrix_length:
+            max_len = min(max_len, self.truncation_matrix_length)
+        if self.matrix_add_special_token:
+            max_len += 2
+        else:
+            max_len = max_len + int(self.prepend_bos) + int(self.append_eos)
+
+        express_encoded_list = express_list
+        # 该长度已经减去了需要增加的特殊字符的个数
+        if self.truncation_matrix_length:
+            express_encoded_list = [encoded[:self.truncation_matrix_length] for encoded in express_encoded_list]
+
+        max_len = max_len + int(self.prepend_bos) + int(self.append_eos)
+        # for input
+        express_input_ids = torch.empty(
+            (
+                batch_size,
+                max_len,
+            ),
+            dtype=torch.int64,
+        )
+        express_input_ids.fill_(self.padding_idx)
+        for sample_idx in range(batch_size):
+            real_len = len(express_encoded_list[sample_idx])
+            cur_express_encoded = torch.tensor(express_encoded_list[sample_idx], dtype=torch.long)
+            if self.prepend_bos:
+                express_input_ids[sample_idx, 0] = self.cls_idx
+            express_input_ids[sample_idx, int(self.prepend_bos):real_len + int(self.prepend_bos)] = cur_express_encoded
+            cur_len = real_len + int(self.prepend_bos) + int(self.append_eos)
+            if self.append_eos:
+                express_input_ids[sample_idx, cur_len] = self.eos_idx
+
+        return express_input_ids
+
     def __multi_seq_encode__(self, batch_size, seqs):
         '''
         该函数是多sentence的表征器，每个sentence都加[CLS]与[SEP]
@@ -948,7 +994,8 @@ class BatchConverter(object):
                 # 根据标记位填充，根据标记位填充，句子数量，根据标记位是否加上特殊字符长度
                 encoded_matrices, matrix_attention_masks, matrix_max_num, matrix_max_len = self.__multi_matrix_encode__(
                     batch_size=batch_size,
-                    matrices=matrices)
+                    matrices=matrices
+                )
                 '''
                 print("matrix_max_num: %d" % matrix_max_num)
                 print("matrix_max_len: %d" % matrix_max_len)
@@ -962,13 +1009,16 @@ class BatchConverter(object):
                 '''
             elif molecule_flag:
                 # 根据标记位填充，根据标记位填充，句子数量，根据标记位是否加上特殊字符长度
-                encoded_matrices, matrix_attention_masks, matrix_max_length = self.__atom_matrix_encode__(batch_size=batch_size,
-                                                                                                          matrices=matrices
-                                                                                                          )
+                encoded_matrices, matrix_attention_masks, matrix_max_length = self.__atom_matrix_encode__(
+                    batch_size=batch_size,
+                    matrices=matrices
+                )
             else:
                 # 根据标记位填充，根据标记位填充，句子数量，根据标记位是否加上特殊字符长度
-                encoded_matrices, matrix_attention_masks, matrix_max_length = self.__matrix_encode__(batch_size=batch_size,
-                                                                                                     matrices=matrices)
+                encoded_matrices, matrix_attention_masks, matrix_max_length = self.__matrix_encode__(
+                    batch_size=batch_size,
+                    matrices=matrices
+                )
             if multi_seq_flag:
                 max_length = min(max_length, matrix_max_num * matrix_max_len)
             else:
@@ -1332,6 +1382,20 @@ class BatchConverter(object):
                     "sentence_length_b": sentence_length_b,
                     "matrix_attention_masks_b": matrix_attention_masks_b
                 })
+            if "express_list_a" in raw_batch[0] and raw_batch[0]["express_list_a"] is not None:
+                express_list_a = []
+                for item in raw_batch:
+                    express_list_a.append(item["express_list_a"])
+                res.update({
+                    "express_input_ids_a": self.__express_encode__(batch_size=batch_size, express_list=express_list_a)
+                })
+            if "express_list_b" in raw_batch[0] and raw_batch[0]["express_list_b"] is not None:
+                express_list_b = []
+                for item in raw_batch:
+                    express_list_b.append(item["express_list_b"])
+                res.update({
+                    "express_input_ids_b": self.__express_encode__(batch_size=batch_size, express_list=express_list_b)
+                })
             return res
         else:
             res = {}
@@ -1363,7 +1427,8 @@ class BatchConverter(object):
             print(labels)
             print([len(eval(label)) for label in labels])
             '''
-            input_ids, position_ids, token_type_ids, seq_attention_masks, encoded_vectors, encoded_matrices, matrix_attention_masks, num_sentences, sentence_length, labels = self.__call_single__(
+            input_ids, position_ids, token_type_ids, seq_attention_masks, encoded_vectors, \
+            encoded_matrices, matrix_attention_masks, num_sentences, sentence_length, labels = self.__call_single__(
                 batch_size, seq_types, seqs, vectors, matrices, labels=labels)
 
             if not hasattr(self, "max_sentences") or self.max_sentences is None:
@@ -1390,7 +1455,13 @@ class BatchConverter(object):
                     "sentence_length": sentence_length,
                     "labels": labels if labels is not None and len(labels) > 0 else None
                 })
-
+            if "express_list" in raw_batch[0] and raw_batch[0]["express_list"] is not None:
+                express_list = []
+                for item in raw_batch:
+                    express_list.append(item["express_list"])
+                res.update({
+                    "express_input_ids": self.__express_encode__(batch_size=batch_size, express_list=express_list)
+                })
             '''
             for item in res.items():
                 key_name = item[0]

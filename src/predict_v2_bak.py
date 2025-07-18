@@ -762,7 +762,7 @@ def run_args():
                         choices=["luca_base", "lucappi", "lucappi2"], 
                         help="the model type.")
     parser.add_argument("--input_type", default=None, type=str, required=True, 
-                        choices=["seq", "matrix", "vector", "seq-matrix", "seq-vector"], 
+                        choices=["seq", "matrix", "vector", "seq_matrix", "seq_vector"],
                         help="the input type.")
     parser.add_argument("--input_mode", default=None, type=str, required=True, 
                         choices=["single", "pair"],

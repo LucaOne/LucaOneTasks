@@ -1085,7 +1085,7 @@ class Encoder(object):
 
         # for embedding matrix
         matrix = None
-        if self.input_type in ["matrix", "seq_matrix"]:
+        if self.input_type in ["matrix", "seq_matrix", "matrix_express"]:
             if matrix_filename is None:
                 if seq is None:
                     raise Exception("seq is none and matrix_filename is none")
@@ -1285,12 +1285,12 @@ class Encoder(object):
             "seq_type_a": seq_type_a,
             "vector_a": vector_a,
             "matrix_a": matrix_a,
+            "express_list_a": express_list_a,
             "seq_id_b": seq_id_b,
             "seq_b": seq_b,
             "seq_type_b": seq_type_b,
             "vector_b": vector_b,
             "matrix_b": matrix_b,
-            "express_list_a": express_list_a,
             "express_list_b": express_list_b,
             "label": label
         }

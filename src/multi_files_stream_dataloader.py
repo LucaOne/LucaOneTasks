@@ -195,9 +195,10 @@ class MultiFilesStreamLoader(object):
                     seq_id_a, seq_id_b, seq_type_a, seq_type_b, seq_a, seq_b, vector_filename_a, vector_filename_b, matrix_filename_a, matrix_filename_b, label = row[0:11]
                     express_list_a, express_list_b = None, None
                 elif len(row) == 13:
-                    seq_id_a, seq_id_b, seq_type_a, seq_type_b, seq_a, seq_b, vector_filename_a, vector_filename_b, matrix_filename_a, matrix_filename_b, express_list_a, express_list_b, label = row[0:13]
+                    seq_id_a, seq_id_b, seq_type_a, seq_type_b, seq_a, seq_b, vector_filename_a, vector_filename_b, \
+                    matrix_filename_a, matrix_filename_b, express_list_a, express_list_b, label = row[0:13]
                 else:
-                    raise Exception("the cols num not in [5, 7, 11]")
+                    raise Exception("the cols num not in [5, 7, 11, 13]")
                 res = {
                     "seq_id_a": seq_id_a,
                     "seq_id_b": seq_id_b,
@@ -241,7 +242,7 @@ class MultiFilesStreamLoader(object):
                 elif len(row) == 7:
                     seq_id, seq_type, seq, vector_filename, matrix_filename, express_list, label = row[0:7]
                 else:
-                    raise Exception("the cols num not in [3, 4, 6]")
+                    raise Exception("the cols num not in [3, 4, 6, 7]")
                 res = {
                     "seq_id": seq_id,
                     "seq_type": seq_type,

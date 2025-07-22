@@ -17,10 +17,12 @@ sys.path.append(".")
 sys.path.append("..")
 sys.path.append("../src")
 try:
-    from utils import to_device, print_shape, process_outputs, print_batch, eval_metrics, sample_size
+    from utils import to_device, print_shape, process_outputs, print_batch, eval_metrics, sample_size, \
+        save_prediction_results_during_training
     from multi_files_stream_dataloader import *
 except ImportError:
-    from src.utils import to_device, print_shape, process_outputs, print_batch, eval_metrics, sample_size
+    from src.utils import to_device, print_shape, process_outputs, print_batch, eval_metrics, sample_size, \
+        save_prediction_results_during_training
     from src.multi_files_stream_dataloader import *
 logger = logging.getLogger(__name__)
 
@@ -43,23 +45,24 @@ def evaluate(args, model, parse_row_func, batch_data_func, prefix="", log_fp=Non
     if args.local_rank in [-1, 0] and not os.path.exists(save_output_dir):
         os.makedirs(save_output_dir)
     dev_sample_num = sample_size(args.dev_data_dir)
-    dev_dataloader = MultiFilesStreamLoader(args.dev_data_dir,
-                                            args.per_gpu_eval_batch_size,
-                                            args.buffer_size,
-                                            parse_row_func=parse_row_func,
-                                            batch_data_func=batch_data_func,
-                                            task_level_type=args.task_level_type,
-                                            input_mode=args.input_mode,
-                                            input_type=args.input_type,
-                                            output_mode=args.output_mode,
-                                            label_size=args.label_size,
-                                            dataset_type="dev",
-                                            vector_dirpath=args.vector_dirpath,
-                                            matrix_dirpath=args.matrix_dirpath,
-                                            inference=False,
-                                            header=True,
-                                            shuffle=False
-                                            )
+    dev_dataloader = MultiFilesStreamLoader(
+        args.dev_data_dir,
+        args.per_gpu_eval_batch_size,
+        args.buffer_size,
+        parse_row_func=parse_row_func,
+        batch_data_func=batch_data_func,
+        task_level_type=args.task_level_type,
+        input_mode=args.input_mode,
+        input_type=args.input_type,
+        output_mode=args.output_mode,
+        label_size=args.label_size,
+        dataset_type="dev",
+        vector_dirpath=args.vector_dirpath,
+        matrix_dirpath=args.matrix_dirpath,
+        inference=False,
+        header=True,
+        shuffle=False
+    )
     # evaluate
     if log_fp is not None:
         log_fp.write("***** Running evaluation {} *****\n".format(prefix))
@@ -126,6 +129,7 @@ def evaluate(args, model, parse_row_func, batch_data_func, prefix="", log_fp=Non
         "avg_loss": round(float(avg_loss), 6),
         "total_loss": round(float(eval_loss), 6)
     }
+    save_prediction_results_during_training("dev", truths, preds, args.output_mode,  save_output_dir)
     if args.do_metrics and truths is not None and len(truths) > 0:
         dev_metrics = eval_metrics(args.output_mode, truths, preds, threshold=0.5)
         all_result.update(

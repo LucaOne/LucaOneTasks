@@ -931,6 +931,12 @@ def run_args():
         type=int,
         help="the matrix_filename column index for csv/tsv file"
     )
+    parser.add_argument(
+        "--express_col_idx",
+        default=None,
+        type=int,
+        help="the matrix_filename column index for csv/tsv file"
+    )
 
     parser.add_argument(
         "--seq_id_col_idx_a",

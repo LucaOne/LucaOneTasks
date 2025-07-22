@@ -1164,3 +1164,37 @@ def download_trained_checkpoint_downstream_tasks(
             ))
             raise Exception(e)
     print("%d Downstream Task Trained Model Download Succeed." % download_succeed_task_num)
+
+
+def save_prediction_results_during_training(dataset_type, truths, preds, output_mode,  save_output_dir):
+    truths_list = truths.tolist()
+    preds_list = preds.tolist()
+    with open(os.path.join(save_output_dir, "%s_results.csv" % dataset_type), "w") as writer:
+        writer.write("pred,truth\n")
+        for idx in range(len(truths_list)):
+            cur_truth = truths_list[idx]
+            cur_pred = preds_list[idx]
+            if output_mode in ["multi_class", "multi-class", "binary_class", "binary-class"]:
+                if isinstance(cur_truth, list):
+                    cur_truth = int(cur_truth[0])
+                else:
+                    cur_truth = int(cur_truth)
+                if isinstance(cur_pred, list):
+                    cur_pred = int(cur_pred[0])
+                else:
+                    cur_pred = int(cur_pred)
+                writer.write("%d,%d\n" % (cur_pred, cur_truth))
+            elif output_mode in ["regression"]:
+                if isinstance(cur_truth, list):
+                    cur_truth = float(cur_truth[0])
+                else:
+                    cur_truth = float(cur_truth)
+                if isinstance(cur_pred, list):
+                    cur_pred = float(cur_pred[0])
+                else:
+                    cur_pred = float(cur_pred)
+                writer.write("%f,%f\n" % (cur_pred, cur_truth))
+            else:
+                cur_truth = str(cur_truth)
+                cur_pred = str(cur_pred)
+                writer.write("%s,%s\n" % (cur_pred, cur_truth))

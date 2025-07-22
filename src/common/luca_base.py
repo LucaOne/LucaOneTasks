@@ -243,50 +243,13 @@ class LucaBase(BertPreTrainedModel):
             matrices=None,
             matrix_attention_masks=None,
             express_input_ids=None,
-            labels=None
+            labels=None,
+            sample_ids=None,
+            attention_scores_savepath=None,
+            attention_pooling_scores_savepath=None,
+            **kwargs
     ):
-        '''
-        print("----------------------------")
-        print("input_ids:")
-        print(input_ids)
-        print(input_ids.shape)
-        print(torch.sum(input_ids != 0, dim=-1))
-        print("seq_attention_masks:")
-        print(seq_attention_masks)
-        print(seq_attention_masks.shape)
-        print(torch.sum(seq_attention_masks, dim=-1))
-        print(torch.sum(seq_attention_masks) - 2 * seq_attention_masks.shape[0])
-        print("matrices:")
-        print(matrices)
-        print(matrices.shape)
-        print(torch.sum(matrices, dim=-1))
-        print(torch.sum(torch.all(matrices != 0.0, dim=-1).to(torch.int16), dim=-1, keepdim=True))
-        print("matrix_attention_masks:")
-        print(matrix_attention_masks)
-        print(torch.sum(matrix_attention_masks, dim=-1))
-        print("labels:")
-        print(labels)
-        print(torch.sum((labels != -100).to(torch.int16), dim=-1, keepdim=True))
-        print(torch.sum((labels != -100).to(torch.int16)))
-
-        print(torch.sum((labels == 1).to(torch.int16), dim=-1, keepdim=True))
-        print(torch.sum((labels == 1).to(torch.int16)))
-        '''
-
         if input_ids is not None and self.seq_encoder is not None:
-            '''
-            seq_outputs = self.seq_encoder(
-                input_ids,
-                attention_mask=seq_attention_masks,
-                token_type_ids=token_type_ids,
-                position_ids=position_ids,
-                head_mask=None,
-                inputs_embeds=None,
-                output_attentions=None,
-                output_hidden_states=None,
-                return_dict=False
-            )
-            '''
             seq_outputs = self.seq_encoder(
                 input_ids,
                 attention_mask=seq_attention_masks,
@@ -298,10 +261,8 @@ class LucaBase(BertPreTrainedModel):
             if self.append_eos:
                 seq_index = torch.sum(seq_attention_masks, dim=1, keepdim=True) - 1
                 seq_attention_masks = seq_attention_masks.scatter(1, seq_index, 0)
-
             if self.prepend_bos:
                 seq_attention_masks[:, 0] = 0
-
             if self.seq_pooler is not None:
                 seq_vector = self.seq_pooler(seq_outputs[0], mask=seq_attention_masks)
             elif self.task_level_type in ["seq_level"]:
@@ -329,19 +290,6 @@ class LucaBase(BertPreTrainedModel):
             if self.matrix_encoder is not None:
                 for module in self.matrix_encoder[:-1]:
                     matrices = module(matrices)
-                '''
-                matrices_output = self.matrix_encoder[-1](
-                    input_ids=None,
-                    attention_mask=matrix_attention_masks,
-                    token_type_ids=None,
-                    position_ids=None,
-                    head_mask=None,
-                    inputs_embeds=matrices,
-                    output_attentions=None,
-                    output_hidden_states=None,
-                    return_dict=False
-                )
-                '''
                 matrices_output = self.matrix_encoder[-1](
                     input_ids=None,
                     attention_mask=matrix_attention_masks,
@@ -350,7 +298,6 @@ class LucaBase(BertPreTrainedModel):
                     inputs_embeds=matrices
                 )
                 matrices = matrices_output[0]
-                # matrix_vector = matrices_output[1]
             # matrix_attention_masks的特殊位置为0
             if self.matrix_pooler is not None:
                 matrix_vector = self.matrix_pooler(matrices, mask=matrix_attention_masks)
@@ -365,6 +312,36 @@ class LucaBase(BertPreTrainedModel):
             if matrix_linear_idx != -1:
                 for i, layer_module in enumerate(self.linear[matrix_linear_idx]):
                     matrix_vector = layer_module(matrix_vector)
+        if "output_classification_vector_dirpath" in kwargs \
+                and kwargs["output_classification_vector_dirpath"] is not None and sample_ids:
+            output_classification_vector_dirpath = kwargs["output_classification_vector_dirpath"]
+            for sample_idx, sample_id in enumerate(sample_ids):
+                if self.input_type == "seq":
+                    output_classification_vector = {
+                        "representation_vector": seq_vector[sample_idx].detach().cpu(),
+                    }
+                elif self.input_type in ["matrix", "matrix_express"]:
+                    output_classification_vector = {
+                        "representation_vector": matrix_vector[sample_idx].detach().cpu(),
+                    }
+                elif self.input_type == "vector":
+                    output_classification_vector = {
+                        "representation_vector": vector_vector[sample_idx].detach().cpu(),
+                    }
+                elif self.input_type == "seq_matrix":
+                    output_classification_vector = {
+                        "seq_representation_vector": seq_vector[sample_idx].detach().cpu(),
+                        "matrix_representation_vector": matrix_vector[sample_idx].detach().cpu(),
+                    }
+                elif self.input_type == "seq_vector":
+                    output_classification_vector = {
+                        "seq_representation_vector": seq_vector[sample_idx].detach().cpu(),
+                        "vector_representation_vector": vector_vector[sample_idx].detach().cpu(),
+                    }
+                else:
+                    raise Exception("Not support input_type=%s" % self.input_type)
+                filepath = os.path.join(output_classification_vector_dirpath, "%s_classification_vector.pt" % sample_id)
+                torch.save(output_classification_vector, filepath)
         if self.input_type == "seq":
             concat_vector = seq_vector
         elif self.input_type in ["matrix", "matrix_express"]:

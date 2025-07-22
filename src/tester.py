@@ -11,16 +11,20 @@
 @desc: tester for LucaOneTasks
 '''
 import sys
+
+import numpy as np
 import torch
 import logging
 sys.path.append(".")
 sys.path.append("..")
 sys.path.append("../src")
 try:
-    from utils import to_device, print_shape, process_outputs, print_batch, eval_metrics, sample_size
+    from utils import to_device, print_shape, process_outputs, print_batch, eval_metrics, sample_size, \
+        save_prediction_results_during_training
     from multi_files_stream_dataloader import *
 except ImportError:
-    from src.utils import to_device, print_shape, process_outputs, print_batch, eval_metrics, sample_size
+    from src.utils import to_device, print_shape, process_outputs, print_batch, eval_metrics, sample_size, \
+        save_prediction_results_during_training
     from src.multi_files_stream_dataloader import *
 logger = logging.getLogger(__name__)
 
@@ -51,23 +55,24 @@ def test(args, model, parse_row_func, batch_data_func, prefix="", log_fp=None):
     test_dataloader_list = []
     for test_dirpath in test_data_dir_list:
         test_sample_num = sample_size(test_dirpath)
-        test_dataloader = MultiFilesStreamLoader(test_dirpath,
-                                                 args.per_gpu_eval_batch_size,
-                                                 args.buffer_size,
-                                                 parse_row_func=parse_row_func,
-                                                 batch_data_func=batch_data_func,
-                                                 task_level_type=args.task_level_type,
-                                                 input_mode=args.input_mode,
-                                                 input_type=args.input_type,
-                                                 output_mode=args.output_mode,
-                                                 label_size=args.label_size,
-                                                 dataset_type="test",
-                                                 vector_dirpath=args.vector_dirpath,
-                                                 matrix_dirpath=args.matrix_dirpath,
-                                                 inference=False,
-                                                 header=True,
-                                                 shuffle=False
-                                                 )
+        test_dataloader = MultiFilesStreamLoader(
+            test_dirpath,
+            args.per_gpu_eval_batch_size,
+            args.buffer_size,
+            parse_row_func=parse_row_func,
+            batch_data_func=batch_data_func,
+            task_level_type=args.task_level_type,
+            input_mode=args.input_mode,
+            input_type=args.input_type,
+            output_mode=args.output_mode,
+            label_size=args.label_size,
+            dataset_type="test",
+            vector_dirpath=args.vector_dirpath,
+            matrix_dirpath=args.matrix_dirpath,
+            inference=False,
+            header=True,
+            shuffle=False
+        )
         test_sample_num_list.append(test_sample_num)
         test_dataloader_list.append(test_dataloader)
     # Testing
@@ -125,23 +130,33 @@ def test(args, model, parse_row_func, batch_data_func, prefix="", log_fp=None):
                     step + 1, done_sample_num, cur_loss, test_loss / nb_steps), end="", flush=True)
 
                 if args.do_metrics and "labels" in batch and batch["labels"] is not None:
-                    truths, preds = process_outputs(args.output_mode,
-                                                    batch["labels"],
-                                                    cur_output,
-                                                    truths,
-                                                    preds,
-                                                    ignore_index=args.ignore_index,
-                                                    keep_seq=False)
+                    truths, preds = process_outputs(
+                        args.output_mode,
+                        batch["labels"],
+                        cur_output,
+                        truths,
+                        preds,
+                        ignore_index=args.ignore_index,
+                        keep_seq=False
+                    )
+
         cur_avg_loss = test_loss / nb_steps
         cur_all_result = {
             "avg_loss": round(float(cur_avg_loss), 6),
             "total_loss": round(float(test_loss), 6)
         }
+        save_prediction_results_during_training("test", truths, preds, args.output_mode,  save_output_dir)
         if args.do_metrics and truths is not None and len(truths) > 0:
-            cur_test_metrics = eval_metrics(args.output_mode, truths, preds, threshold=0.5)
+            cur_test_metrics = eval_metrics(
+                args.output_mode,
+                truths,
+                preds,
+                threshold=0.5
+            )
             cur_all_result.update(
                 cur_test_metrics
             )
+
         if testset_idx > 0:
             for item in cur_all_result.items():
                 all_result[item[0] + "_%d" % (testset_idx + 1)] = item[1]

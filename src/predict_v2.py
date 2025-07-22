@@ -29,7 +29,7 @@ sys.path.append("..")
 sys.path.append("../src")
 try:
     from utils import to_device, device_memory, available_gpu_id, load_labels, seq_type_is_match_seq, \
-        download_trained_checkpoint_lucaone, download_trained_checkpoint_downstream_tasks
+        download_trained_checkpoint_lucaone_v1, download_trained_checkpoint_downstream_tasks
     from common.multi_label_metrics import relevant_indexes
     from encoder import Encoder
     from batch_converter import BatchConverter
@@ -40,7 +40,7 @@ try:
     from ppi.models.LucaPPI2 import LucaPPI2
 except ImportError:
     from src.utils import to_device, device_memory, available_gpu_id, load_labels, seq_type_is_match_seq, \
-        download_trained_checkpoint_lucaone, download_trained_checkpoint_downstream_tasks
+        download_trained_checkpoint_lucaone_v1, download_trained_checkpoint_downstream_tasks
     from src.common.multi_label_metrics import relevant_indexes
     from src.encoder import Encoder
     from src.batch_converter import BatchConverter
@@ -487,22 +487,24 @@ def run(
     print("-" * 50)
 
     # download LLM(LucaOne)
-    if not hasattr(model_args, "llm_type"):
-        model_args.llm_type = "lucaone"
-    if not hasattr(model_args, "llm_version"):
-        model_args.llm_version = "lucaone"
     if not hasattr(model_args, "llm_step"):
         model_args.llm_step = "5600000"
-    download_trained_checkpoint_lucaone(
+    if not hasattr(model_args, "llm_time_str"):
+        model_args.llm_time_str = "20231125113045"
+    if not hasattr(model_args, "llm_version"):
+        model_args.llm_version = "v2.0"
+    download_trained_checkpoint_lucaone_v1(
         llm_dir=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "llm/"),
         llm_type=model_args.llm_type,
         llm_version=model_args.llm_version,
+        llm_time_str=model_args.llm_time_str,
         llm_step=model_args.llm_step
     )
     # download trained downstream task models
     download_trained_checkpoint_downstream_tasks(
         save_dir=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     )
+
     '''
     model_args.llm_truncation_seq_length = llm_truncation_seq_length
     model_args.seq_max_length = llm_truncation_seq_length

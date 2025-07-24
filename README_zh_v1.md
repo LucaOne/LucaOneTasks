@@ -301,7 +301,7 @@ python get_embedding.py \
 
 ## 6. Usage of Downstream Models Inference
 The <a href='http://47.93.21.181/lucaone/DownstreamTasksTrainedModels/'> FTP</a> includes the trained models of 10 downstream tasks(presented in the paper, all metrics in `TableS5`), all these trained models are based on LucaOne's embedding.        
-Use the script `src/predict_v1.py` or `src/predict.sh` to load the trained model and predict.
+Use the script `src/predict_v1.py` or `src/prediction.sh` to load the trained model and predict.
 
 **Notice**    
 The project will download automatically Trained-CheckPoint of all downstream tasks from **FTP**.
@@ -311,7 +311,7 @@ When downloading automatically failed, you can manually download:
 Copy the **DownstreamTasksTrainedModels Files(`models/` + `logs/`)** from <href> http://47.93.21.181/lucaone/DownstreamTasksTrainedModels/ </href> into the project `LucaOneTasks/`
 
 
-The shell script of all downstream task models for inference in `LucaOneTasks/src/predict.sh`
+The shell script of all downstream task models for inference in `LucaOneTasks/src/prediction.sh`
 
 ```shell 
 cd LucaOneTasks/src/

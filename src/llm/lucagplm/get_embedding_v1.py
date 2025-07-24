@@ -996,6 +996,7 @@ def main(model_args):
                         break
                     print("%s embedding error, max_len from %d truncate to %d" % (seq_id, truncation_seq_length, int(truncation_seq_length * 0.95)))
                     truncation_seq_length = int(truncation_seq_length * 0.95)
+                torch.cuda.empty_cache()
             else:
                 print("%s exists." % embedding_filepath)
             done += 1

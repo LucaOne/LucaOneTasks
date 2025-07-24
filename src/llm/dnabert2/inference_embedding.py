@@ -250,6 +250,7 @@ def main(model_args):
                 # print("seq_len: %d" % len(seq))
                 # print("emb shape:", embedding_info.shape)
                 torch.save(emb, embedding_filepath)
+                torch.cuda.empty_cache()
             else:
                 print("%s exists." % embedding_filepath)
             done += 1

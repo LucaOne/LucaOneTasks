@@ -41,6 +41,7 @@ try:
     from ppi.models.LucaPPI2 import LucaPPI2
     from ppi.models.LucaPairHomo import LucaPairHomo
     from ppi.models.LucaPairHeter import LucaPairHeter
+    from ppi.models.LucaPairIntraInter import LucaPairIntraInter
 except ImportError:
     from src.utils import to_device, device_memory, available_gpu_id, load_labels, seq_type_is_match_seq, \
         download_trained_checkpoint_lucaone, download_trained_checkpoint_downstream_tasks
@@ -55,6 +56,7 @@ except ImportError:
     from src.ppi.models.LucaPPI2 import LucaPPI2
     from src.ppi.models.LucaPairHomo import LucaPairHomo
     from src.ppi.models.LucaPairHeter import LucaPairHeter
+    from src.ppi.models.LucaPairIntraInter import LucaPairIntraInter
 
 
 def transform_one_sample_2_feature(
@@ -193,7 +195,7 @@ def transform_one_sample_2_feature(
                 row[2],
                 vector_filename=row[3] if len(row) > 3 else None,
                 matrix_filename=row[4] if len(row) > 4 else None,
-                express_list=row[54] if len(row) > 5 else None,
+                express_list=row[5] if len(row) > 5 else None,
                 label=None
             )
             en_list = en
@@ -449,6 +451,8 @@ def load_model(args, model_name, model_dir):
         config_class, seq_tokenizer_class, model_class = LucaConfig, Alphabet, LucaPairHomo
     elif args.model_type in ["lucapair_heter"]:
         config_class, seq_tokenizer_class, model_class = LucaConfig, Alphabet, LucaPairHeter
+    elif args.model_type in ["lucapair_intrainter"]:
+        config_class, seq_tokenizer_class, model_class = LucaConfig, Alphabet, LucaPairIntraInter
     else:
         raise Exception("Not support the model_type=%s" % args.model_type)
     seq_subword, seq_tokenizer = load_tokenizer(args, model_dir, seq_tokenizer_class)
@@ -735,6 +739,7 @@ def run(
                     seq=seq,
                     embedding_type="matrix" if "matrix" in input_type else "vector"
                 )
+            torch.cuda.empty_cache()
         encoder.matrix_embedding_exists = True
         # embedding 完之后to device
         trained_model.to(model_args.device)
@@ -839,7 +844,10 @@ def run(
             seq_id = item[0]
             seq_type = item[1]
             seq = item[2]
-            row = [seq_id, seq_type, seq]
+            if len(item) > 3:
+                row = [seq_id, seq_type, seq, *item[3:]]
+            else:
+                row = [seq_id, seq_type, seq]
             if task_level_type in ["seq_level", "seq-level"] and task_type in ["multi_class", "multi-class"]:
                 # print("task_level_type: %s, task_type: %s" % (task_level_type, task_type))
                 cur_res = predict_func(
@@ -1073,7 +1081,7 @@ def run_args():
         default=None,
         type=str,
         required=True,
-        choices=["luca_base", "lucappi", "lucappi2", "lucapair_homo", "lucapair_heter"],
+        choices=["luca_base", "lucappi", "lucappi2", "lucapair_homo", "lucapair_heter", "lucapair_intrainter"],
         help="the model type."
     )
     parser.add_argument(
@@ -1276,12 +1284,35 @@ if __name__ == "__main__":
                         raise Exception("Not support input_mode=%s, input_type=%s" % (args.input_mode, args.input_type))
                 else:
                     if args.task_type == "multi_class" and args.topk is not None and args.topk > 1 and args.task_level_type == "seq_level":
-                        header = ["seq_id_a", "seq_id_b", "seq_a", "seq_b", "top1_prob", "top1_label", "top%d_probs" % args.topk, "top%d_labels" % args.topk]
+                        header = [
+                            "seq_id_a",
+                            "seq_id_b",
+                            "seq_a",
+                            "seq_b",
+                            "top1_prob",
+                            "top1_label",
+                            "top%d_probs" % args.topk,
+                            "top%d_labels" % args.topk
+                        ]
                     else:
-                        header = ["seq_id_a", "seq_id_b", "seq_a", "seq_b", "prob", "label"]
+                        header = [
+                            "seq_id_a",
+                            "seq_id_b",
+                            "seq_a",
+                            "seq_b",
+                            "prob",
+                            "label"
+                        ]
             else:
                 if args.task_type == "multi_class" and args.topk is not None and args.topk > 1 and args.task_level_type == "seq_level":
-                    header = ["seq_id", "seq", "top1_prob", "top1_label", "top%d_probs" % args.topk, "top%d_labels" % args.topk]
+                    header = [
+                        "seq_id",
+                        "seq",
+                        "top1_prob",
+                        "top1_label",
+                        "top%d_probs" % args.topk,
+                        "top%d_labels" % args.topk
+                    ]
                 else:
                     header = ["seq_id", "seq", "prob", "label"]
             if args.ground_truth_idx is not None and args.ground_truth_idx >= 0:
@@ -1421,14 +1452,21 @@ if __name__ == "__main__":
                         if args.ground_truth_idx is not None and args.ground_truth_idx >= 0:
                             batch_ground_truth.append(row[args.ground_truth_idx])
                         # seq_id, seq_type, seq, vector, matrix, express
-                        batch_data.append([
-                            row[args.seq_id_col_idx],
-                            row[args.seq_type_col_idx],
-                            row[args.seq_col_idx],
-                            row[args.vector_col_idx],
-                            row[args.matrix_col_idx],
-                            row[args.express_col_idx],
-                        ])
+                        if len(row) == 3:
+                            batch_data.append([
+                                row[args.seq_id_col_idx],
+                                row[args.seq_type_col_idx],
+                                row[args.seq_col_idx]
+                            ])
+                        else:
+                            batch_data.append([
+                                row[args.seq_id_col_idx],
+                                row[args.seq_type_col_idx],
+                                row[args.seq_col_idx],
+                                row[args.vector_col_idx],
+                                row[args.matrix_col_idx],
+                                row[args.express_col_idx],
+                            ])
                     else:
                         continue
                 if len(batch_data) % args.print_per_num == 0:

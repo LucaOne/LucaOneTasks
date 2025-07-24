@@ -1166,21 +1166,29 @@ def download_trained_checkpoint_downstream_tasks(
     print("%d Downstream Task Trained Model Download Succeed." % download_succeed_task_num)
 
 
-def save_prediction_results_during_training(dataset_type, truths, preds, output_mode,  save_output_dir):
-    truths_list = truths.tolist()
-    preds_list = preds.tolist()
+def save_prediction_results_during_training(dataset_type, truths, preds, output_mode, save_output_dir, threshold=0.5):
     with open(os.path.join(save_output_dir, "%s_results.csv" % dataset_type), "w") as writer:
         writer.write("pred,truth\n")
-        for idx in range(len(truths_list)):
-            cur_truth = truths_list[idx]
-            cur_pred = preds_list[idx]
-            if output_mode in ["multi_class", "multi-class", "binary_class", "binary-class"]:
-                if isinstance(cur_truth, list):
+        for idx in range(preds.shape[0]):
+            cur_truth = truths[idx]
+            cur_pred = preds[idx]
+            if output_mode in ["binary_class", "binary-class"]:
+                if isinstance(cur_truth, np.ndarray):
                     cur_truth = int(cur_truth[0])
                 else:
                     cur_truth = int(cur_truth)
-                if isinstance(cur_pred, list):
+                if isinstance(cur_pred, np.ndarray):
                     cur_pred = int(cur_pred[0])
+                else:
+                    cur_pred = int(cur_pred)
+                writer.write("%d,%d\n" % (cur_pred, cur_truth))
+            if output_mode in ["multi_class", "multi-class"]:
+                if isinstance(cur_truth, np.ndarray):
+                    cur_truth = int(cur_truth[0])
+                else:
+                    cur_truth = int(cur_truth)
+                if isinstance(cur_pred, np.ndarray):
+                    cur_pred = np.argmax(cur_pred)
                 else:
                     cur_pred = int(cur_pred)
                 writer.write("%d,%d\n" % (cur_pred, cur_truth))
@@ -1195,6 +1203,6 @@ def save_prediction_results_during_training(dataset_type, truths, preds, output_
                     cur_pred = float(cur_pred)
                 writer.write("%f,%f\n" % (cur_pred, cur_truth))
             else:
-                cur_truth = str(cur_truth)
-                cur_pred = str(cur_pred)
-                writer.write("%s,%s\n" % (cur_pred, cur_truth))
+                cur_truth_index_list = np.where(cur_truth >= threshold)[0].tolist()
+                cur_pred_index_list = np.where(cur_pred >= threshold)[0].tolist()
+                writer.write("%s,%s\n" % (str(cur_pred_index_list), str(cur_truth_index_list)))

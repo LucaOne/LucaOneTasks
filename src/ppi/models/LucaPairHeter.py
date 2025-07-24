@@ -766,13 +766,14 @@ class LucaPairHeter(BertPreTrainedModel):
             vectors_a=None, vectors_b=None,
             matrices_a=None, matrices_b=None,
             matrix_attention_masks_a=None, matrix_attention_masks_b=None,
-            labels=None,
-            sample_ids=None,
-            attention_scores_savepath=None,
-            attention_pooling_scores_savepath=None,
             express_input_ids_a=None, express_input_ids_b=None,
+            labels=None,
             **kwargs
     ):
+        sample_ids = kwargs["sample_ids"] if "sample_ids" in kwargs else None
+        attention_scores_savepath = kwargs["attention_scores_savepath"] if "attention_scores_savepath" in kwargs else None
+        attention_pooling_scores_savepath = kwargs["attention_pooling_scores_savepath"] if "attention_pooling_scores_savepath" in kwargs else None
+        output_classification_vector_dirpath = kwargs["output_classification_vector_dirpath"] if "output_classification_vector_dirpath" in kwargs else None
         representation_vector_a, seq_attentions_a, matrix_attentions_a = self.__forworrd_a__(
             input_ids_a,
             seq_attention_masks_a,
@@ -829,8 +830,7 @@ class LucaPairHeter(BertPreTrainedModel):
                     torch.save(new_matrix_attentions_b, filepath)
 
         concat_vector = torch.cat([representation_vector_a, representation_vector_b], dim=-1)
-        if "output_classification_vector_dirpath" in kwargs and kwargs["output_classification_vector_dirpath"] is not None and sample_ids:
-            output_classification_vector_dirpath = kwargs["output_classification_vector_dirpath"]
+        if output_classification_vector_dirpath and sample_ids:
             for sample_idx, sample_id in enumerate(sample_ids):
                 output_classification_vector = {
                     "representation_vector_a": representation_vector_a[sample_idx].detach().cpu(),

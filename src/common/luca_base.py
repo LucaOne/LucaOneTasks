@@ -221,16 +221,18 @@ class LucaBase(BertPreTrainedModel):
             last_hidden_size = sum(self.output_size)
 
         self.dropout, self.hidden_layer, self.hidden_act, self.classifier, self.output, self.loss_fct = \
-            create_loss_function(config,
-                                 args,
-                                 hidden_size=last_hidden_size,
-                                 classifier_size=config.classifier_size,
-                                 sigmoid=args.sigmoid,
-                                 output_mode=args.output_mode,
-                                 num_labels=self.num_labels,
-                                 loss_type=args.loss_type,
-                                 ignore_index=args.ignore_index,
-                                 return_types=["dropout", "hidden_layer", "hidden_act", "classifier", "output", "loss"])
+            create_loss_function(
+                config,
+                args,
+                hidden_size=last_hidden_size,
+                classifier_size=config.classifier_size,
+                sigmoid=args.sigmoid,
+                output_mode=args.output_mode,
+                num_labels=self.num_labels,
+                loss_type=args.loss_type,
+                ignore_index=args.ignore_index,
+                return_types=["dropout", "hidden_layer", "hidden_act", "classifier", "output", "loss"]
+            )
         self.post_init()
 
     def forward(
@@ -245,18 +247,31 @@ class LucaBase(BertPreTrainedModel):
             express_input_ids=None,
             labels=None,
             sample_ids=None,
-            attention_scores_savepath=None,
-            attention_pooling_scores_savepath=None,
             **kwargs
     ):
+        sample_ids = kwargs["sample_ids"] if "sample_ids" in kwargs else None
+        attention_scores_savepath = kwargs["attention_scores_savepath"] if "attention_scores_savepath" in kwargs else None
+        attention_pooling_scores_savepath = kwargs["attention_pooling_scores_savepath"] if "attention_pooling_scores_savepath" in kwargs else None
+        output_classification_vector_dirpath = kwargs["output_classification_vector_dirpath"] if "output_classification_vector_dirpath" in kwargs else None
+        return_attentions = sample_ids is not None and attention_scores_savepath is not None
         if input_ids is not None and self.seq_encoder is not None:
             seq_outputs = self.seq_encoder(
                 input_ids,
                 attention_mask=seq_attention_masks,
                 token_type_ids=token_type_ids,
                 position_ids=position_ids,
-                inputs_embeds=None
+                inputs_embeds=None,
+                return_attentions=return_attentions
             )
+            if return_attentions:
+                output_seq_attentions = seq_outputs[2]
+                for sample_idx, sample_id in enumerate(sample_ids):
+                    cur_sample_output_seq_attentions = {}
+                    for layer_idx, attn in output_seq_attentions.items():
+                        cur_sample_output_seq_attentions[layer_idx] = attn[sample_idx].detach().cpu()
+                filepath = os.path.join(attention_scores_savepath, "%s_seq_attention_scores.pt" % sample_id)
+                torch.save(cur_sample_output_seq_attentions, filepath)
+
             # seq_attention_masks特殊位置不为0
             if self.append_eos:
                 seq_index = torch.sum(seq_attention_masks, dim=1, keepdim=True) - 1
@@ -264,7 +279,13 @@ class LucaBase(BertPreTrainedModel):
             if self.prepend_bos:
                 seq_attention_masks[:, 0] = 0
             if self.seq_pooler is not None:
-                seq_vector = self.seq_pooler(seq_outputs[0], mask=seq_attention_masks)
+                seq_vector = self.seq_pooler(
+                    seq_outputs[0],
+                    mask=seq_attention_masks,
+                    sample_ids=sample_ids,
+                    prefix="seq",
+                    attention_pooling_scores_savepath=attention_pooling_scores_savepath
+                )
             elif self.task_level_type in ["seq_level"]:
                 seq_vector = seq_outputs[1]
             else:
@@ -298,9 +319,24 @@ class LucaBase(BertPreTrainedModel):
                     inputs_embeds=matrices
                 )
                 matrices = matrices_output[0]
+                if return_attentions:
+                    output_matrix_attentions = matrices_output[2]
+                    for sample_idx, sample_id in enumerate(sample_ids):
+                        cur_sample_output_matrix_attentions = {}
+                        for layer_idx, attn in output_matrix_attentions.items():
+                            cur_sample_output_matrix_attentions[layer_idx] = attn[sample_idx].detach().cpu()
+                        filepath = os.path.join(attention_scores_savepath, "%s_matrix_attention_scores.pt" % sample_id)
+                        torch.save(cur_sample_output_matrix_attentions, filepath)
+
             # matrix_attention_masks的特殊位置为0
             if self.matrix_pooler is not None:
-                matrix_vector = self.matrix_pooler(matrices, mask=matrix_attention_masks)
+                matrix_vector = self.matrix_pooler(
+                    matrices,
+                    mask=matrix_attention_masks,
+                    sample_ids=sample_ids,
+                    prefix="matrix",
+                    attention_pooling_scores_savepath=attention_pooling_scores_savepath
+                )
             elif self.task_level_type in ["seq_level"]:
                 tmp_mask = torch.unsqueeze(matrix_attention_masks, dim=-1)
                 matrices = matrices.masked_fill(tmp_mask == 0, 0.0)
@@ -312,9 +348,7 @@ class LucaBase(BertPreTrainedModel):
             if matrix_linear_idx != -1:
                 for i, layer_module in enumerate(self.linear[matrix_linear_idx]):
                     matrix_vector = layer_module(matrix_vector)
-        if "output_classification_vector_dirpath" in kwargs \
-                and kwargs["output_classification_vector_dirpath"] is not None and sample_ids:
-            output_classification_vector_dirpath = kwargs["output_classification_vector_dirpath"]
+        if output_classification_vector_dirpath and sample_ids:
             for sample_idx, sample_id in enumerate(sample_ids):
                 if self.input_type == "seq":
                     output_classification_vector = {

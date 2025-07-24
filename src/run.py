@@ -35,6 +35,7 @@ try:
     from trainer import train
     from evaluator import evaluate
     from tester import test
+    from ppi.models.LucaPairIntraInter import LucaPairIntraInter
     from ppi.models.LucaPairHeter import LucaPairHeter
     from ppi.models.LucaPairHomo import LucaPairHomo
     from common.luca_base import LucaBase
@@ -52,6 +53,7 @@ except ImportError:
     from src.trainer import train
     from src.evaluator import evaluate
     from src.tester import test
+    from src.ppi.models.LucaPairIntraInter import LucaPairIntraInter
     from src.ppi.models.LucaPairHeter import LucaPairHeter
     from src.ppi.models.LucaPairHomo import LucaPairHomo
     from src.common.luca_base import LucaBase
@@ -158,7 +160,8 @@ def get_args():
             "lucappi",
             "lucappi2",
             "lucapair_homo",
-            "lucapair_heter"
+            "lucapair_heter",
+            "lucapair_intrainter"
         ],
         help="the model type of selected"
     )
@@ -1113,6 +1116,7 @@ def get_model(args):
     model_config = LucaConfig.from_json_file(args.config_path)
     if args.intermediate_size is not None:
         model_config.intermediate_size = args.intermediate_size
+        model_config.encoder_ffn_dim = args.intermediate_size
     else:
         args.intermediate_size = model_config.intermediate_size
     model_config.alphabet = args.alphabet
@@ -1163,12 +1167,51 @@ def get_model(args):
         model_config.hidden_size = args.hidden_size
     if args.num_attention_heads is not None:
         model_config.num_attention_heads = args.num_attention_heads
+        if args.model_type == "lucapair_intrainter":
+            if not hasattr(args, "self_attention_heads") or args.self_attention_heads is None:
+                model_config.self_attention_heads = args.num_attention_heads
+            else:
+                model_config.self_attention_heads = args.self_attention_heads
+            if not hasattr(args, "cross_attention_heads") or args.cross_attention_heads is None:
+                model_config.cross_attention_heads  = args.num_attention_heads
+            else:
+                model_config.cross_attention_heads = args.cross_attention_heads
+            if not hasattr(args, "self_kv_attention_heads") or args.self_kv_attention_heads is None:
+                model_config.self_kv_attention_heads = args.num_attention_heads
+            else:
+                model_config.self_kv_attention_heads = args.self_kv_attention_heads
+            if not hasattr(args, "cross_kv_attention_heads") or args.cross_kv_attention_heads is None:
+                model_config.cross_kv_attention_heads = args.num_attention_heads
+            else:
+                model_config.cross_kv_attention_heads = args.cross_kv_attention_heads
     if args.num_hidden_layers is not None:
         model_config.num_hidden_layers = args.num_hidden_layers
+        if args.model_type == "lucapair_intrainter":
+            if not hasattr(args, "self_encoder_layers") or args.self_encoder_layers is None:
+                model_config.self_encoder_layers = args.num_hidden_layers
+            else:
+                model_config.self_encoder_layers = args.self_encoder_layers
+            if not hasattr(args, "cross_encoder_layers") or args.cross_encoder_layers is None:
+                model_config.cross_encoder_layers = args.num_hidden_layers
+            else:
+                model_config.cross_encoder_layers = args.cross_encoder_layers
     if args.dropout_prob is not None and args.dropout_prob > -1:
         model_config.attention_probs_dropout_prob = args.dropout_prob
         model_config.classifier_dropout_prob = args.dropout_prob
         model_config.hidden_dropout_prob = args.dropout_prob
+        if args.model_type == "lucapair_intrainter":
+            model_config.dropout = args.dropout_prob
+    if args.model_type == "lucapair_intrainter" \
+            and hasattr(args, "encoder_layer_dropout") \
+            and args.encoder_layer_dropout > -1:
+        model_config.encoder_layer_dropout = args.encoder_layer_dropout
+
+    if hasattr(args, "layer_norm_type") and args.layer_norm_type:
+        model_config.layer_norm_type = args.layer_norm_type
+    if hasattr(args, "layer_norm_name") and args.layer_norm_name:
+        model_config.layer_norm_name = args.layer_norm_name
+    if hasattr(args, "layer_norm_eps") and args.layer_norm_eps:
+        model_config.layer_norm_eps = args.layer_norm_eps
     if args.position_embedding_type is not None:
         model_config.position_embedding_type = args.position_embedding_type
     model_config.ignore_index = args.ignore_index
@@ -1244,6 +1287,8 @@ def get_model(args):
         model_class = LucaPairHomo
     elif args.model_type == "lucapair_heter":
         model_class = LucaPairHeter
+    elif args.model_type == "lucapair_intrainter":
+        model_class = LucaPairIntraInter
     else:
         raise Exception("Not support the model_type=%s" % args.model_type)
     if args.model_dirpath and os.path.exists(args.model_dirpath):

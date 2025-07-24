@@ -129,7 +129,7 @@ def evaluate(args, model, parse_row_func, batch_data_func, prefix="", log_fp=Non
         "avg_loss": round(float(avg_loss), 6),
         "total_loss": round(float(eval_loss), 6)
     }
-    save_prediction_results_during_training("dev", truths, preds, args.output_mode,  save_output_dir)
+    save_prediction_results_during_training("dev", truths, preds, args.output_mode,  save_output_dir, threshold=0.5)
     if args.do_metrics and truths is not None and len(truths) > 0:
         dev_metrics = eval_metrics(args.output_mode, truths, preds, threshold=0.5)
         all_result.update(

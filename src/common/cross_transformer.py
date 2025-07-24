@@ -812,6 +812,7 @@ class LucaTransformer(nn.Module):
             token_type_ids: Optional[torch.Tensor] = None,
             position_ids: Optional[torch.Tensor] = None,
             inputs_embeds: Optional[torch.Tensor] = None,
+            return_attentions=False
     ):
         if self.use_pretrained_embedding:
             x = self.embeddings(inputs_embeds)
@@ -836,6 +837,8 @@ class LucaTransformer(nn.Module):
         # (B, L, E) => (L, B, E)
         x = x.transpose(0, 1)
 
+        if return_attentions:
+            output_attentions = {}
         for layer_idx, layer in enumerate(self.encoder):
             x, attn = layer(
                 x,
@@ -843,11 +846,14 @@ class LucaTransformer(nn.Module):
                 self_attn_mask=None,
                 need_head_weights=True
             )
-
+            if return_attentions:
+                output_attentions[layer_idx + 1] = attn
         x = self.last_layer_norm(x)
         x = x.transpose(0, 1)  # (L, B, E) => (B, L, E)
         matrix_output = x
         pooled_output = self.pooler(matrix_output) if self.pooler is not None else None
+        if return_attentions:
+            return matrix_output, pooled_output, output_attentions
         return matrix_output, pooled_output
 
 

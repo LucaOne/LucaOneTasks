@@ -103,25 +103,6 @@ def test(args, model, parse_row_func, batch_data_func, prefix="", log_fp=None):
                 batch, cur_sample_num = to_device(args.device, batch)
                 done_sample_num += cur_sample_num
                 output = model(**batch)
-                '''
-                try:
-                    output = model(**batch)
-                except Exception as e:
-                    with open("test_exception_info_%d" % args.local_rank, "a+") as afp:
-                        afp.write(str(e) + "\n")
-                        afp.flush()
-                    with open("test_exception_input_%d" % args.local_rank, "a+") as afp:
-                        afp.write(str(batch) + "\n")
-                        afp.flush()
-                    debug_path = "./debug/test/local_rank%s/%d/" % (
-                        "_" + str(args.local_rank) if args.local_rank >= 0 else "", step)
-                    if not os.path.exists(debug_path):
-                        os.makedirs(debug_path)
-                    with open(os.path.join(debug_path, "test_exception_input_details.txt"), "a+") as afp:
-                        print_batch(batch, key=None, debug_path=debug_path, wfp=afp, local_rank=args.local_rank)
-                        afp.flush()
-                    continue
-                '''
                 cur_loss, cur_logits, cur_output = output[:3]
                 cur_loss = cur_loss.item()
                 test_loss += cur_loss
@@ -145,7 +126,7 @@ def test(args, model, parse_row_func, batch_data_func, prefix="", log_fp=None):
             "avg_loss": round(float(cur_avg_loss), 6),
             "total_loss": round(float(test_loss), 6)
         }
-        save_prediction_results_during_training("test", truths, preds, args.output_mode,  save_output_dir)
+        save_prediction_results_during_training("test", truths, preds, args.output_mode,  save_output_dir, threshold=0.5)
         if args.do_metrics and truths is not None and len(truths) > 0:
             cur_test_metrics = eval_metrics(
                 args.output_mode,

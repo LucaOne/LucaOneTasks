@@ -30,7 +30,7 @@ try:
         download_trained_checkpoint_lucaone_v1, download_trained_checkpoint_downstream_tasks
     from .common.multi_label_metrics import relevant_indexes
     from .common.model_config import LucaConfig
-    from .encoder import Encoder
+    from .encoder_v1 import Encoder
     from .batch_converter import BatchConverter
     from .common.alphabet import Alphabet
     from .file_operator import csv_reader, fasta_reader, csv_writer, file_reader
@@ -39,12 +39,13 @@ try:
     from .ppi.models.LucaPPI2 import LucaPPI2
     from .ppi.models.LucaPairHomo import LucaPairHomo
     from .ppi.models.LucaPairHeter import LucaPairHeter
+    from .ppi.models.LucaPairIntraInter import LucaPairIntraInter
 except ImportError:
     from src.utils import to_device, device_memory, available_gpu_id, load_labels, seq_type_is_match_seq, \
         download_trained_checkpoint_lucaone_v1, download_trained_checkpoint_downstream_tasks
     from src.common.multi_label_metrics import relevant_indexes
     from src.common.model_config import LucaConfig
-    from src.encoder import Encoder
+    from src.encoder_v1 import Encoder
     from src.batch_converter import BatchConverter
     from src.common.alphabet import Alphabet
     from src.file_operator import csv_reader, fasta_reader, csv_writer, file_reader
@@ -53,6 +54,7 @@ except ImportError:
     from src.ppi.models.LucaPPI2 import LucaPPI2
     from src.ppi.models.LucaPairHomo import LucaPairHomo
     from src.ppi.models.LucaPairHeter import LucaPairHeter
+    from src.ppi.models.LucaPairIntraInter import LucaPairIntraInter
 
 
 def transform_one_sample_2_feature(
@@ -345,6 +347,8 @@ def load_model(args, model_name, model_dir):
         config_class, seq_tokenizer_class, model_class = LucaConfig, Alphabet, LucaPairHomo
     elif args.model_type in ["lucapair_heter"]:
         config_class, seq_tokenizer_class, model_class = LucaConfig, Alphabet, LucaPairHeter
+    elif args.model_type in ["lucapair_intrainter"]:
+        config_class, seq_tokenizer_class, model_class = LucaConfig, Alphabet, LucaPairIntraInter
     else:
         raise Exception("Not support the model_type=%s" % args.model_type)
     seq_subword, seq_tokenizer = load_tokenizer(args, model_dir, seq_tokenizer_class)
@@ -708,7 +712,7 @@ def run_args():
         default=None,
         type=str,
         required=True,
-        choices=["luca_base", "lucappi", "lucappi2", "lucapair_homo", "lucapair_heter"],
+        choices=["luca_base", "lucappi", "lucappi2", "lucapair_homo", "lucapair_heter", "lucapair_intrainter"],
         help="the model type."
     )
     parser.add_argument(

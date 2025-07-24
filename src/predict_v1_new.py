@@ -644,7 +644,7 @@ def run(
                     row
                 )
                 predicted_results.append([seq_id, seq, cur_res[0][2], cur_res[0][3]])
-    # torch.cuda.empty_cache()
+    torch.cuda.empty_cache()
     return predicted_results
 
 

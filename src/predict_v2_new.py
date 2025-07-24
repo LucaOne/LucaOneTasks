@@ -622,6 +622,7 @@ def run(
                     seq=seq,
                     embedding_type="matrix" if "matrix" in input_type else "vector"
                 )
+            torch.cuda.empty_cache()
         encoder.matrix_embedding_exists = True
         # embedding 完之后to device
         trained_model.to(model_args.device)
@@ -708,7 +709,7 @@ def run(
                                        trained_model,
                                        row)
                 predicted_results.append([seq_id, seq, cur_res[0][2], cur_res[0][3]])
-    # torch.cuda.empty_cache()
+    torch.cuda.empty_cache()
     # 删除embedding
     if not matrix_embedding_exists and os.path.exists(model_args.emb_dir) and input_type != "seq":
         shutil.rmtree(model_args.emb_dir)

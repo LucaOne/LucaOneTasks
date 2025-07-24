@@ -31,7 +31,7 @@ try:
     from utils import to_device, device_memory, available_gpu_id, load_labels, seq_type_is_match_seq, \
         download_trained_checkpoint_lucaone_v1, download_trained_checkpoint_downstream_tasks
     from common.multi_label_metrics import relevant_indexes
-    from encoder import Encoder
+    from encoder_v1 import Encoder
     from batch_converter import BatchConverter
     from common.alphabet import Alphabet
     from file_operator import csv_reader, fasta_reader, csv_writer, file_reader
@@ -42,7 +42,7 @@ except ImportError:
     from src.utils import to_device, device_memory, available_gpu_id, load_labels, seq_type_is_match_seq, \
         download_trained_checkpoint_lucaone_v1, download_trained_checkpoint_downstream_tasks
     from src.common.multi_label_metrics import relevant_indexes
-    from src.encoder import Encoder
+    from src.encoder_v1 import Encoder
     from src.batch_converter import BatchConverter
     from src.common.alphabet import Alphabet
     from src.file_operator import csv_reader, fasta_reader, csv_writer, file_reader
@@ -624,6 +624,7 @@ def run(
                     seq=seq,
                     embedding_type="matrix" if "matrix" in input_type else "vector"
                 )
+            torch.cuda.empty_cache()
         encoder.matrix_embedding_exists = True
         # embedding 完之后to device
         trained_model.to(model_args.device)
@@ -710,7 +711,7 @@ def run(
                                        trained_model,
                                        row)
                 predicted_results.append([seq_id, seq, cur_res[0][2], cur_res[0][3]])
-    # torch.cuda.empty_cache()
+    torch.cuda.empty_cache()
     # 删除embedding
     if not matrix_embedding_exists and os.path.exists(model_args.emb_dir) and input_type != "seq":
         shutil.rmtree(model_args.emb_dir)

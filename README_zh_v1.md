@@ -396,20 +396,13 @@ We are actively seeking an open FTP platform with sufficient storage capacity to
 **<a href='https://doi.org/10.5281/zenodo.14977739'>LucaOne Zenodo</a>**
 
 ## 11. Citation
-**<a href='https://www.biorxiv.org/content/10.1101/2024.05.10.592927v1'>LucaOne Biorxiv</a>**
+**<a href='https://www.biorxiv.org/content/10.1101/2024.05.10.592927v2'>LucaOne Biorxiv</a>**   
+**<a href='https://www.nature.com/articles/s42256-025-01044-4'>LucaOne NMI 2025</a>**
 
 
-@article {LucaOne,                
-author = {Yong He and Pan Fang and Yongtao Shan and Yuanfei Pan and Yanhong Wei and Yichang Chen and Yihao Chen and Yi Liu and Zhenyu Zeng and Zhan Zhou and Feng Zhu and Edward C. Holmes and Jieping Ye and Jun Li and Yuelong Shu and Mang Shi and Zhaorong Li},     
-title = {LucaOne: Generalized Biological Foundation Model with Unified Nucleic Acid and Protein Language},      
-elocation-id = {2024.05.10.592927},        
-year = {2024},         
-doi = {10.1101/2024.05.10.592927},        
-publisher = {Cold Spring Harbor Laboratory},        
-URL = {https://www.biorxiv.org/content/early/2024/05/14/2024.05.10.592927 },        
-eprint = {https://www.biorxiv.org/content/early/2024/05/14/2024.05.10.592927.full.pdf },        
-journal = {bioRxiv}        
-}
+He, Y., Fang, P., Shan, Y. et al. Generalized biological foundation model with unified nucleic acid and protein language. Nat Mach Intell 7, 942–953 (2025). https://doi.org/10.1038/s42256-025-01044-4
+
+
 
 
 ## 12. LucaTeam

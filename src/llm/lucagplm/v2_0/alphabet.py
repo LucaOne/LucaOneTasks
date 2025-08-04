@@ -167,7 +167,7 @@ class Alphabet(object):
 
     def encode(self, text_type, text):
         if text_type in ["gene", "dna", "rna", "nucleic_acid", "nucleotide"]:
-            if len(ATCGU & set(list(text))) > 0:
+            if len(ATCGU & set(list(text.upper()))) > 0:
                 text = gene_seq_replace(text)
         return [self.tok_to_idx[tok] for tok in self.tokenize(text)]
 
@@ -176,7 +176,7 @@ class Alphabet(object):
 
     def encode_for_eval_mask(self, text_type, text):
         if text_type in ["gene", "dna", "rna", "nucleic_acid", "nucleotide"]:
-            if len(ATCGU & set(list(text))) > 0:
+            if len(ATCGU & set(list(text.upper()))) > 0:
                 text = gene_seq_replace(text)
         return [self.tok_to_idx[tok] if tok != '-' else self.tok_to_idx["[MASK]"] for tok in self.tokenize(text)]
 

@@ -18,14 +18,14 @@ sys.path.append(".")
 sys.path.append("../")
 sys.path.append("../src")
 try:
-    from utils import clean_seq, calc_emb_filename_by_seq_id
+    from utils import clean_seq_esm, calc_emb_filename_by_seq_id
     from common.alphabet import Alphabet
     from llm.lucagplm.get_embedding import predict_embedding as predict_embedding_luca
     from llm.esm.predict_embedding import predict_embedding as predict_embedding_esm
     from llm.dnabert2.inference_embedding import predict_embedding as predict_embedding_dnabert2
     from llm.dnaberts.inference_embedding import predict_embedding as predict_embedding_dnaberts
 except ImportError as e:
-    from src.utils import clean_seq, calc_emb_filename_by_seq_id
+    from src.utils import clean_seq_esm, calc_emb_filename_by_seq_id
     from src.common.alphabet import Alphabet
     from src.llm.lucagplm.get_embedding import predict_embedding as predict_embedding_luca
     from src.llm.esm.predict_embedding import predict_embedding as predict_embedding_esm
@@ -1120,9 +1120,9 @@ class Encoder(object):
         # 蛋白质且使用esm进行embedding，则需要去掉蛋白质J
         if self.input_type in ["matrix", "seq_matrix"] and "esm" in self.llm_type:
             if seq_type == "prot":
-                seq = clean_seq(seq_id, seq)
+                seq = clean_seq_esm(seq_id, seq)
             elif seq_type == "multi_prot":
-                seq = ",".join([clean_seq(seq_id, v) for v in seq.split(",")])
+                seq = ",".join([clean_seq_esm(seq_id, v) for v in seq.split(",")])
 
         if express_list is not None:
             if not isinstance(express_list, list):
@@ -1265,14 +1265,14 @@ class Encoder(object):
         if "matrix" in self.input_type and "esm" in self.llm_type:
             if self.input_type not in ["seq_vs_matrix", "vector_vs_matrix"]:
                 if seq_type_a == "prot":
-                    seq_a = clean_seq(seq_id_a, seq_a)
+                    seq_a = clean_seq_esm(seq_id_a, seq_a)
                 elif seq_type_a == "multi_prot":
-                    seq_a = ",".join([clean_seq(seq_id_a, v) for v in seq_a.split(",")])
+                    seq_a = ",".join([clean_seq_esm(seq_id_a, v) for v in seq_a.split(",")])
             if self.input_type not in ["matrix_vs_seq", "matrix_vs_vector"]:
                 if seq_type_b == "prot":
-                    seq_b = clean_seq(seq_id_b, seq_b)
+                    seq_b = clean_seq_esm(seq_id_b, seq_b)
                 elif seq_type_b == "multi_prot":
-                    seq_b = ",".join([clean_seq(seq_id_b, v) for v in seq_b.split(",")])
+                    seq_b = ",".join([clean_seq_esm(seq_id_b, v) for v in seq_b.split(",")])
         if express_list_a is not None:
             if not isinstance(express_list_a, list):
                 express_list_a = eval(express_list_a)

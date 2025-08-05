@@ -11,10 +11,8 @@
 @desc: utils for LucaOneTasks
 '''
 import math
-import os, csv, json
-import io, textwrap, itertools
+import os
 import subprocess
-from Bio import SeqIO
 import torch
 import numpy as np
 import sys, random
@@ -578,7 +576,7 @@ def load_trained_model(model_config, args, model_class, model_dirpath):
     return model
 
 
-def clean_seq(protein_id, seq, return_rm_index=False):
+def clean_seq_esm(seq_id, seq, return_rm_index=False):
     seq = seq.upper()
     new_seq = ""
     has_invalid_char = False
@@ -592,7 +590,7 @@ def clean_seq(protein_id, seq, return_rm_index=False):
             return_rm_index_set.add(idx)
             has_invalid_char = True
     if has_invalid_char:
-        print("id: %s. Seq: %s" % (protein_id, seq))
+        print("id: %s. Seq: %s" % (seq_id, seq))
         print("invalid char set:", invalid_char_set)
         print("return_rm_index:", return_rm_index_set)
     if return_rm_index:

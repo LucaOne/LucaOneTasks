@@ -28,10 +28,10 @@ sys.path.append("../../../")
 sys.path.append("../../../src")
 try:
     from file_operator import fasta_reader, csv_reader, tsv_reader
-    from utils import clean_seq, available_gpu_id, calc_emb_filename_by_seq_id
+    from utils import clean_seq_esm, available_gpu_id, calc_emb_filename_by_seq_id
 except ImportError:
     from src.file_operator import fasta_reader, csv_reader, tsv_reader
-    from src.utils import clean_seq, available_gpu_id, calc_emb_filename_by_seq_id
+    from src.utils import clean_seq_esm, available_gpu_id, calc_emb_filename_by_seq_id
 
 
 def enable_cpu_offloading(model):
@@ -374,7 +374,7 @@ def predict_embedding(
         protein_id, protein_seq = sample[0], sample[2]
     else:
         protein_id, protein_seq = sample[0], sample[1]
-    protein_seq = clean_seq(protein_id, protein_seq)
+    protein_seq = clean_seq_esm(protein_id, protein_seq)
     if len(protein_seq) > truncation_seq_length:
         if trunc_type == "left":
             protein_seq = protein_seq[-truncation_seq_length:]

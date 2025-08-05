@@ -26,7 +26,7 @@ common_nucleotide_set = {'A', 'T', 'C', 'G', 'U', 'N'}
 common_amino_acid_set = {'R', 'X', 'S', 'G', 'W', 'I', 'Q', 'A', 'T', 'V', 'K', 'Y', 'C', 'N', 'L', 'F', 'D', 'M', 'P', 'H', 'E'}
 
 
-def clean_seq(protein_id, seq):
+def clean_seq_esm(seq_id, seq):
     seq = seq.upper()
     new_seq = ""
     has_invalid_char = False
@@ -38,7 +38,7 @@ def clean_seq(protein_id, seq):
             invalid_char_set.add(ch)
             has_invalid_char = True
     if has_invalid_char:
-        print("id: %s. Seq: %s" % (protein_id, seq))
+        print("id: %s. Seq: %s" % (seq_id, seq))
         print("invalid char set:", invalid_char_set)
     return new_seq
 
@@ -229,9 +229,9 @@ def write_fasta(filepath, sequences):
         with open(filepath, "w") as output_handle:
             if len(sequences[0]) > 1 and isinstance(sequences[0][0], str):
                 for row in sequences:
-                    protein_id = row[0]
+                    seq_id = row[0]
                     seq = row[1]
-                    sequence = SeqRecord(Seq(seq, None), id=protein_id[1:] if protein_id and protein_id[0] == ">" else protein_id, description="")
+                    sequence = SeqRecord(Seq(seq, None), id=seq_id[1:] if seq_id and seq_id[0] == ">" else seq_id, description="")
                     SeqIO.write(sequence, output_handle, "fasta")
             else:
                 for sequence in sequences:

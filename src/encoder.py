@@ -18,14 +18,14 @@ sys.path.append(".")
 sys.path.append("../")
 sys.path.append("../src")
 try:
-    from utils import clean_seq, calc_emb_filename_by_seq_id
+    from utils import clean_seq_esm, calc_emb_filename_by_seq_id
     from common.alphabet import Alphabet
     from llm.lucagplm.get_embedding import predict_embedding as predict_embedding_luca
     from llm.esm.predict_embedding import predict_embedding as predict_embedding_esm
     from llm.dnabert2.inference_embedding import predict_embedding as predict_embedding_dnabert2
     from llm.dnaberts.inference_embedding import predict_embedding as predict_embedding_dnaberts
 except ImportError as e:
-    from src.utils import clean_seq, calc_emb_filename_by_seq_id
+    from src.utils import clean_seq_esm, calc_emb_filename_by_seq_id
     from src.common.alphabet import Alphabet
     from src.llm.lucagplm.get_embedding import predict_embedding as predict_embedding_luca
     from src.llm.esm.predict_embedding import predict_embedding as predict_embedding_esm
@@ -1119,9 +1119,9 @@ class Encoder(object):
         # 蛋白质且使用esm进行embedding，则需要去掉蛋白质J
         if self.input_type in ["matrix", "seq_matrix"] and "esm" in self.llm_type:
             if seq_type == "prot":
-                seq = clean_seq(seq_id, seq)
+                seq = clean_seq_esm(seq_id, seq)
             elif seq_type == "multi_prot":
-                seq = ",".join([clean_seq(seq_id, v) for v in seq.split(",")])
+                seq = ",".join([clean_seq_esm(seq_id, v) for v in seq.split(",")])
         return {
             "seq_id": seq_id,
             "seq": seq,
@@ -1235,14 +1235,14 @@ class Encoder(object):
         # 蛋白质且使用esm进行embedding，则需要去掉蛋白质J
         if self.input_type in ["matrix", "seq_matrix"] and "esm" in self.llm_type:
             if seq_type_a == "prot":
-                seq_a = clean_seq(seq_id_a, seq_a)
+                seq_a = clean_seq_esm(seq_id_a, seq_a)
             elif seq_type_a == "multi_prot":
-                seq_a = ",".join([clean_seq(seq_id_a, v) for v in seq_a.split(",")])
+                seq_a = ",".join([clean_seq_esm(seq_id_a, v) for v in seq_a.split(",")])
 
             if seq_type_b == "prot":
-                seq_b = clean_seq(seq_id_b, seq_b)
+                seq_b = clean_seq_esm(seq_id_b, seq_b)
             elif seq_type_b == "multi_prot":
-                seq_b = ",".join([clean_seq(seq_id_b, v) for v in seq_b.split(",")])
+                seq_b = ",".join([clean_seq_esm(seq_id_b, v) for v in seq_b.split(",")])
 
         return {
             "seq_id_a": seq_id_a,

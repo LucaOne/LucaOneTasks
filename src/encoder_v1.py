@@ -51,6 +51,7 @@ def complete_embedding_matrix(
         use_cpu=False
 ):
     if init_emb is not None and embedding_complete and ("representations" in embedding_type or "matrix" in embedding_type):
+        torch.cuda.empty_cache()
         ori_seq_len = min(len(seq), MAX_SEQ_LEN)
         # 每次能处理这么长度
         # print("init_emb:", init_emb.shape)

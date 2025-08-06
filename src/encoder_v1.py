@@ -478,7 +478,7 @@ class Encoder(object):
                         cur_seq_len = len(cur_seq)
                         truncation_seq_length = self.seq_max_length - int(self.prepend_bos) - int(self.append_eos)
                         while True:
-                            cur_embedding_info, cur_processed_seq = predict_embedding_esm(
+                            cur_embedding_info, cur_processed_seq_len = predict_embedding_esm(
                                 [seq_id, cur_seq],
                                 self.trunc_type,
                                 embedding_type,
@@ -498,7 +498,7 @@ class Encoder(object):
                     truncation_seq_length = self.seq_max_length - int(self.prepend_bos) - int(self.append_eos)
                     cur_seq_len = len(seq)
                     while True:
-                        embedding_info, processed_seq = predict_embedding_esm(
+                        embedding_info, processed_seq_len = predict_embedding_esm(
                             [seq_id, seq],
                             self.trunc_type,
                             embedding_type,
@@ -526,7 +526,7 @@ class Encoder(object):
                         cur_seq_len = len(cur_seq)
                         truncation_seq_length = self.seq_max_length - int(self.prepend_bos) - int(self.append_eos)
                         while True:
-                            cur_embedding_info, cur_processed_seq = predict_embedding_dnaberts(
+                            cur_embedding_info, cur_processed_seq_len = predict_embedding_dnaberts(
                                 [seq_id, cur_seq],
                                 self.trunc_type,
                                 embedding_type,

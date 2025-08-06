@@ -478,7 +478,7 @@ class Encoder(object):
                         cur_seq_len = len(cur_seq)
                         truncation_seq_length = self.seq_max_length - int(self.prepend_bos) - int(self.append_eos)
                         while True:
-                            cur_embedding_info, cur_processed_seq = predict_embedding_esm(
+                            cur_embedding_info, cur_processed_seq_len = predict_embedding_esm(
                                 [seq_id, cur_seq],
                                 self.trunc_type,
                                 embedding_type,
@@ -498,7 +498,7 @@ class Encoder(object):
                     truncation_seq_length = self.seq_max_length - int(self.prepend_bos) - int(self.append_eos)
                     cur_seq_len = len(seq)
                     while True:
-                        embedding_info, processed_seq = predict_embedding_esm(
+                        embedding_info, processed_seq_len = predict_embedding_esm(
                             [seq_id, seq],
                             self.trunc_type,
                             embedding_type,
@@ -526,7 +526,7 @@ class Encoder(object):
                         cur_seq_len = len(cur_seq)
                         truncation_seq_length = self.seq_max_length - int(self.prepend_bos) - int(self.append_eos)
                         while True:
-                            cur_embedding_info, cur_processed_seq = predict_embedding_dnaberts(
+                            cur_embedding_info, cur_processed_seq_len = predict_embedding_dnaberts(
                                 [seq_id, cur_seq],
                                 self.trunc_type,
                                 embedding_type,
@@ -546,7 +546,7 @@ class Encoder(object):
                     cur_seq_len = len(seq)
                     truncation_seq_length = self.seq_max_length - int(self.prepend_bos) - int(self.append_eos)
                     while True:
-                        embedding_info, processed_seq = predict_embedding_dnaberts(
+                        embedding_info, processed_seq_len = predict_embedding_dnaberts(
                             [seq_id, seq],
                             self.trunc_type,
                             embedding_type,
@@ -574,7 +574,7 @@ class Encoder(object):
                         cur_seq_len = len(cur_seq)
                         truncation_seq_length = self.seq_max_length - int(self.prepend_bos) - int(self.append_eos)
                         while True:
-                            cur_embedding_info, cur_processed_seq = predict_embedding_dnabert2(
+                            cur_embedding_info, cur_processed_seq_len = predict_embedding_dnabert2(
                                 [seq_id, cur_seq],
                                 self.trunc_type,
                                 embedding_type,
@@ -595,7 +595,7 @@ class Encoder(object):
                     cur_seq_len = len(seq)
                     truncation_seq_length = self.seq_max_length - int(self.prepend_bos) - int(self.append_eos)
                     while True:
-                        embedding_info, processed_seq = predict_embedding_dnabert2(
+                        embedding_info, processed_seq_len = predict_embedding_dnabert2(
                             [seq_id, seq],
                             self.trunc_type,
                             embedding_type,
@@ -635,7 +635,7 @@ class Encoder(object):
                         while True:
                             # 设置了一次性推理长度
                             if self.embedding_fixed_len_a_time and self.embedding_fixed_len_a_time > 0:
-                                cur_embedding_info, cur_processed_seq = predict_embedding_luca(
+                                cur_embedding_info, cur_processed_seq_len = predict_embedding_luca(
                                     self.llm_dirpath,
                                     [seq_id, cur_seq_type, cur_seq],
                                     self.trunc_type,
@@ -647,7 +647,7 @@ class Encoder(object):
                                 )
                                 use_cpu = False
                                 if cur_embedding_info is None:
-                                    cur_embedding_info, cur_processed_seq = predict_embedding_luca(
+                                    cur_embedding_info, cur_processed_seq_len = predict_embedding_luca(
                                         self.llm_dirpath,
                                         [seq_id, cur_seq_type, cur_seq],
                                         self.trunc_type,
@@ -677,7 +677,7 @@ class Encoder(object):
                                         use_cpu=use_cpu
                                     )
                             else:
-                                cur_embedding_info, cur_processed_seq = predict_embedding_luca(
+                                cur_embedding_info, cur_processed_seq_len = predict_embedding_luca(
                                     self.llm_dirpath,
                                     [seq_id, cur_seq_type, cur_seq],
                                     self.trunc_type,
@@ -689,7 +689,7 @@ class Encoder(object):
                                 )
                                 use_cpu = False
                                 if cur_embedding_info is None:
-                                    cur_embedding_info, cur_processed_seq = predict_embedding_luca(
+                                    cur_embedding_info, cur_processed_seq_len = predict_embedding_luca(
                                         self.llm_dirpath,
                                         [seq_id, cur_seq_type, cur_seq],
                                         self.trunc_type,

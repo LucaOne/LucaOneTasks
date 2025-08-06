@@ -102,6 +102,7 @@ def predict_embedding(
             out = dnaberts_global_model(inputs)
             # inputs contain [CLS] in head and [SEP] in tail
             truncate_len = min(truncation_seq_length, inputs.shape[1] - 2)
+            processed_seq_len = truncate_len + 2
             if "representations" in embedding_type or "matrix" in embedding_type:
                 # embedding matrix contain [CLS] and [SEP] vector
                 if matrix_add_special_token:
@@ -116,9 +117,9 @@ def predict_embedding(
                 # to do
                 embeddings["contacts"] = None
             if len(embeddings) > 1:
-                return embeddings, processed_seq
+                return embeddings, processed_seq_len
             elif len(embeddings) == 1:
-                return list(embeddings.items())[0][1], processed_seq
+                return list(embeddings.items())[0][1], processed_seq_len
             else:
                 return None, None
         except RuntimeError as e:

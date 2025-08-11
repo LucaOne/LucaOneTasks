@@ -18,10 +18,10 @@ sys.path.append("../../../")
 sys.path.append("../../../../")
 sys.path.append("../../../../src")
 try:
-    from ..common.loss import *
-    from .model_utils import AllOutput, create_output_loss_lucagplm
-    from .alphabet import Alphabet
-    from .modeling_gplm import *
+    from llm.lucagplm.common.loss import *
+    from llm.lucagplm.v0_2.model_utils import AllOutput, create_output_loss_lucagplm
+    from llm.lucagplm.v0_2.alphabet import Alphabet
+    from llm.lucagplm.v0_2.modeling_gplm import *
 except ImportError:
     from src.llm.lucagplm.common.loss import *
     from src.llm.lucagplm.v0_2.model_utils import AllOutput, create_output_loss_lucagplm
@@ -347,21 +347,21 @@ class LucaGPLM(nn.Module):
         # 最后一层作为表征矩阵
         # (B, L, E)
         representation_matrix = hidden_representations[self.layer_size]
-        # mask 任务
-        # B * Seq_len * vocab_size
-        if not self.embedding_inference:
-            lm_mask_logits = self.lm_head(x)
-        # lm head的输出向量作为表征向量
         # (B, E)
         representation_vector = representation_matrix[:, 0, :]
-
-        logits = {}
-        losses = {}
-        outputs = {}
         representations = {
             "representation_matrix": representation_matrix,
             "representation_vector": representation_vector
         }
+        # mask 任务
+        # B * Seq_len * vocab_size
+        if not self.embedding_inference:
+            lm_mask_logits = self.lm_head(x)
+
+        logits = {}
+        losses = {}
+        outputs = {}
+
         # 每一层的attention值
         if need_head_weights:
             # attentions: (B, Layers, H, L, L)

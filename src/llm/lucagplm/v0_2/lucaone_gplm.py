@@ -61,7 +61,7 @@ class LucaGPLM(nn.Module):
         self.use_last_layer_norm = config.use_last_layer_norm
         self.embed_scale = config.embed_scale
         # 如果只用于embedding 推理则有些层不加载与构建
-        if hasattr(args, "embedding_inference"):
+        if args and hasattr(args, "embedding_inference"):
             self.embedding_inference = args.embedding_inference
         else:
             self.embedding_inference = False
@@ -347,21 +347,21 @@ class LucaGPLM(nn.Module):
         # 最后一层作为表征矩阵
         # (B, L, E)
         representation_matrix = hidden_representations[self.layer_size]
-        # mask 任务
-        # B * Seq_len * vocab_size
-        if not self.embedding_inference:
-            lm_mask_logits = self.lm_head(x)
-        # lm head的输出向量作为表征向量
         # (B, E)
         representation_vector = representation_matrix[:, 0, :]
-
-        logits = {}
-        losses = {}
-        outputs = {}
         representations = {
             "representation_matrix": representation_matrix,
             "representation_vector": representation_vector
         }
+
+        # mask 任务
+        # B * Seq_len * vocab_size
+        if not self.embedding_inference:
+            lm_mask_logits = self.lm_head(x)
+        logits = {}
+        losses = {}
+        outputs = {}
+
         # 每一层的attention值
         if need_head_weights:
             # attentions: (B, Layers, H, L, L)
@@ -377,10 +377,6 @@ class LucaGPLM(nn.Module):
                     and not self.embedding_inference:
                 contacts = self.contact_head(input_ids, attentions)
                 representations["contacts"] = contacts
-        '''
-        print("output_keys:")
-        print(output_keys)
-        '''
         if not self.embedding_inference and output_keys:
             for item in output_keys.items():
                 cur_task_level_type = item[0]

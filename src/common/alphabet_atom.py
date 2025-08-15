@@ -130,6 +130,7 @@ class AlphabetAtom(object):
         return seq
 
     def encode(self, seq_type, atom_list, prepend_bos, append_eos):
+        assert seq_type == "molecule"
         idx_list = [self.get_idx(tok) for tok in atom_list]
         if prepend_bos:
             idx_list = [self.cls_idx] + idx_list
@@ -138,6 +139,7 @@ class AlphabetAtom(object):
         return idx_list
 
     def encode_smi(self, seq_type, smi, prepend_bos, append_eos):
+        assert  seq_type == "molecule"
         atom_list = self.smiles_2_atom_seq(smi)
         return self.encode(seq_type, atom_list, prepend_bos, append_eos)
 

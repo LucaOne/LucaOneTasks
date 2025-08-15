@@ -10,8 +10,19 @@
 @file: alphabet_atom.py
 @desc: alphabet atom
 '''
+import sys
 import itertools
 from typing import Sequence, List
+sys.path.append(".")
+sys.path.append("..")
+sys.path.append("../..")
+sys.path.append("../../src")
+try:
+    from utils import gene_seq_replace
+except ImportError:
+    from src.utils import gene_seq_replace
+
+ATCGU = {"A", "T", "C", "G", "U"}
 
 # gene
 gene_standard_toks = ['1', '2', '3', '4', '5', '.', '-', '*']
@@ -99,45 +110,45 @@ class Alphabet(object):
         with open(os.path.join(save_dir, "alphabet.pkl"), 'wb') as outp:
             pickle.dump(self, outp, pickle.HIGHEST_PROTOCOL)
 
-    def _tokenize(self, text) -> str:
-        return text.split()
+    def _tokenize(self, seq) -> str:
+        return seq.split()
 
-    def tokenize(self, text, **kwargs) -> List[str]:
-        def split_on_token(tok, text):
+    def tokenize(self, seq, **kwargs) -> List[str]:
+        def split_on_token(tok, seq):
             result = []
-            split_text = text.split(tok)
-            for i, sub_text in enumerate(split_text):
-                if i < len(split_text) - 1:
-                    sub_text = sub_text.rstrip()
+            split_seq = seq.split(tok)
+            for i, sub_seq in enumerate(split_seq):
+                if i < len(split_seq) - 1:
+                    sub_seq = sub_seq.rstrip()
                 if i > 0:
-                    sub_text = sub_text.lstrip()
+                    sub_seq = sub_seq.lstrip()
 
-                if i == 0 and not sub_text:
+                if i == 0 and not sub_seq:
                     result.append(tok)
-                elif i == len(split_text) - 1:
-                    if sub_text:
-                        result.append(sub_text)
+                elif i == len(split_seq) - 1:
+                    if sub_seq:
+                        result.append(sub_seq)
                     else:
                         pass
                 else:
-                    if sub_text:
-                        result.append(sub_text)
+                    if sub_seq:
+                        result.append(sub_seq)
                     result.append(tok)
             return result
 
-        def split_on_tokens(tok_list, text):
-            if not text.strip():
+        def split_on_tokens(tok_list, seq):
+            if not seq.strip():
                 return []
-            tokenized_text = []
-            text_list = [text]
+            tokenized_seq = []
+            seq_list = [seq]
             for tok in tok_list:
-                tokenized_text = []
-                for sub_text in text_list:
-                    if sub_text not in self.unique_no_split_tokens:
-                        tokenized_text.extend(split_on_token(tok, sub_text))
+                tokenized_seq = []
+                for sub_seq in seq_list:
+                    if sub_seq not in self.unique_no_split_tokens:
+                        tokenized_seq.extend(split_on_token(tok, sub_seq))
                     else:
-                        tokenized_text.append(sub_text)
-                text_list = tokenized_text
+                        tokenized_seq.append(sub_seq)
+                seq_list = tokenized_seq
 
             return list(
                 itertools.chain.from_iterable(
@@ -145,14 +156,22 @@ class Alphabet(object):
                         self._tokenize(token)
                         if token not in self.unique_no_split_tokens
                         else [token]
-                        for token in tokenized_text
+                        for token in tokenized_seq
                     )
                 )
             )
 
         no_split_token = self.unique_no_split_tokens
-        tokenized_text = split_on_tokens(no_split_token, text)
-        return tokenized_text
+        tokenized_seq = split_on_tokens(no_split_token, seq)
+        return tokenized_seq
+    
+    '''
+    def encode(self, seq):
+        return [self.tok_to_idx[tok] for tok in self.tokenize(seq)]
+    '''
 
-    def encode(self, text):
-        return [self.tok_to_idx[tok] for tok in self.tokenize(text)]
+    def encode(self, seq_type, seq):
+        if seq_type in ["gene", "dna", "rna", "nucleic_acid", "nucleotide"]:
+            if len(ATCGU & set(list(seq.upper()))) > 0:
+                seq = gene_seq_replace(seq)
+        return [self.tok_to_idx[tok] for tok in self.tokenize(seq)]

@@ -473,10 +473,11 @@ class BatchConverter(object):
             input_ids[rand_idx] = self.atom_mask_idx
             return input_ids, labels
 
-    def __seq_encode__(self, batch_size, seqs):
+    def __seq_encode__(self, batch_size, seq_types, seqs):
         '''
         该函数不加特殊字符[CLS]与[SEP]
         :param batch_size:
+        :param seq_types:
         :param seqs:
         :return:
         '''
@@ -494,7 +495,7 @@ class BatchConverter(object):
                 )
                 seq_encoded_list.append(inputs["input_ids"])
         else:
-            seq_encoded_list = [self.seq_tokenizer.encode(seq_str.upper()) for seq_str in seqs]
+            seq_encoded_list = [self.seq_tokenizer.encode(seq_type=seq_type, seq=seq_str.upper()) for seq_type, seq_str in zip(seq_types, seqs)]
             # 该长度已经减去了需要增加的特殊字符的个数
             if self.truncation_seq_length:
                 seq_encoded_list = [encoded[:self.truncation_seq_length] for encoded in seq_encoded_list]
@@ -586,10 +587,11 @@ class BatchConverter(object):
 
         return express_input_ids
 
-    def __multi_seq_encode__(self, batch_size, seqs):
+    def __multi_seq_encode__(self, batch_size, seq_types, seqs):
         '''
         该函数是多sentence的表征器，每个sentence都加[CLS]与[SEP]
         :param batch_size:
+        :param seq_types:
         :param seqs:
         :return:
         '''
@@ -628,7 +630,7 @@ class BatchConverter(object):
                 seq_encoded_list.append(cur_seq_encoded_list)
         else:
             seq_encoded_list = []
-            for cur_sample_seqs in seqs:
+            for cur_sample_idx, cur_sample_seqs in enumerate(seqs):
                 cur_seq_encoded_list = []
                 if len(cur_sample_seqs) > self.max_sentences:
                     # 每个样本最多cur_sample_seqs个
@@ -645,7 +647,7 @@ class BatchConverter(object):
                         else:
                             seq_str = seq_str[:self.max_sentence_length]
 
-                    inputs = self.seq_tokenizer.encode(seq_str.upper())
+                    inputs = self.seq_tokenizer.encode(seq_type=seq_types[cur_sample_idx], seq=seq_str.upper())
                     # print("len:%d, %s" % (len(seq_str), seq_str.upper()))
                     if self.prepend_bos:
                         inputs = [self.cls_idx] + inputs
@@ -702,23 +704,30 @@ class BatchConverter(object):
 
         return seq_encoded_list, input_ids, position_ids, token_type_ids, attention_masks, max_sentence_num, max_sentence_len
 
-    def __atom_seq_encode__(self, batch_size, seqs):
+    def __atom_seq_encode__(self, batch_size, seq_types, seqs):
         '''
         该函数不加特殊字符[CLS]与[SEP]
         :param batch_size:
+        :param seq_types:
         :param seqs:
         :return:
         '''
         seq_encoded_list = []
         for seq_idx, cur_seq in enumerate(seqs):
             if isinstance(cur_seq, str): # smiles
-                cur_seq_encoded = self.atom_tokenizer.encode_smi(cur_seq,
-                                                                 prepend_bos=False,
-                                                                 append_eos=False)
+                cur_seq_encoded = self.atom_tokenizer.encode_smi(
+                    seq_types[seq_idx],
+                    cur_seq,
+                    prepend_bos=False,
+                    append_eos=False
+                )
             elif isinstance(cur_seq, list): # atom list
-                cur_seq_encoded = self.atom_tokenizer.encode(cur_seq,
-                                                             prepend_bos=False,
-                                                             append_eos=False)
+                cur_seq_encoded = self.atom_tokenizer.encode(
+                    seq_types[seq_idx],
+                    cur_seq,
+                    prepend_bos=False,
+                    append_eos=False
+                )
             else:
                 raise Exception("not support molecule input type:", type(cur_seq))
             # 该长度已经减去了需要增加的特殊字符的个数
@@ -947,12 +956,18 @@ class BatchConverter(object):
             if molecule_flag:
                 # seq_encoded_list没有加特殊字符，input_ids标志位来占位， seq_max_length 根据标志位来加特殊字符长度
                 seq_encoded_list, input_ids, position_ids, token_type_ids, seq_attention_masks, seq_max_length = self.__atom_seq_encode__(
-                    batch_size=batch_size, seqs=new_seqs)
+                    batch_size=batch_size,
+                    seq_types=seq_types,
+                    seqs=new_seqs
+                )
 
             elif multi_seq_flag:
                 # seq_encoded_list根据标志位来加特殊字符，input_ids根据标志位来加特殊字符， seq_max_len 根据标志位来加特殊字符长度
                 seq_encoded_list, input_ids, position_ids, token_type_ids, seq_attention_masks, seq_max_num, seq_max_len = self.__multi_seq_encode__(
-                    batch_size=batch_size, seqs=new_seqs)
+                    batch_size=batch_size,
+                    seq_types=seq_types,
+                    seqs=new_seqs
+                )
                 '''
                 print("seq_max_num: %d" % seq_max_num)
                 print("seq_max_len: %d" % seq_max_len)
@@ -967,7 +982,10 @@ class BatchConverter(object):
             else:
                 # seq_encoded_list没有加特殊字符，input_ids标志位来占位， seq_max_length 根据标志位来加特殊字符长度
                 seq_encoded_list, input_ids, position_ids, token_type_ids, seq_attention_masks, seq_max_length = self.__seq_encode__(
-                    batch_size=batch_size, seqs=new_seqs)
+                    batch_size=batch_size,
+                    seq_types=seq_types,
+                    seqs=new_seqs
+                )
             if multi_seq_flag:
                 max_length = min(max_length, seq_max_num * seq_max_len)
             else:

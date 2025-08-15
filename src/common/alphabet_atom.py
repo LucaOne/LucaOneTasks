@@ -129,7 +129,8 @@ class AlphabetAtom(object):
             seq = seq + [self.get_tok(self.eos_idx)]
         return seq
 
-    def encode(self, atom_list, prepend_bos, append_eos):
+    def encode(self, seq_type, atom_list, prepend_bos, append_eos):
+        assert seq_type == "molecule"
         idx_list = [self.get_idx(tok) for tok in atom_list]
         if prepend_bos:
             idx_list = [self.cls_idx] + idx_list
@@ -137,9 +138,10 @@ class AlphabetAtom(object):
             idx_list = idx_list + [self.eos_idx]
         return idx_list
 
-    def encode_smi(self, smi, prepend_bos, append_eos):
+    def encode_smi(self, seq_type, smi, prepend_bos, append_eos):
+        assert  seq_type == "molecule"
         atom_list = self.smiles_2_atom_seq(smi)
-        return self.encode(atom_list, prepend_bos, append_eos)
+        return self.encode(seq_type, atom_list, prepend_bos, append_eos)
 
 
 if __name__ == "__main__":
@@ -149,10 +151,10 @@ if __name__ == "__main__":
     toks = obj.tokenize("Cc1nc(CN2CCN(c3c(Cl)cnc4[nH]c(-c5cn(C)nc5C)nc34)CC2)no1", True, True)
     print(len(toks))
     print(toks)
-    ids = obj.encode(obj.tokenize("Cc1nc(CN2CCN(c3c(Cl)cnc4[nH]c(-c5cn(C)nc5C)nc34)CC2)no1", False, False), True, True)
+    ids = obj.encode("molecule", obj.tokenize("Cc1nc(CN2CCN(c3c(Cl)cnc4[nH]c(-c5cn(C)nc5C)nc34)CC2)no1", False, False), True, True)
     print(len(ids))
     print(ids)
-    ids = obj.encode_smi("Cc1nc(CN2CCN(c3c(Cl)cnc4[nH]c(-c5cn(C)nc5C)nc34)CC2)no1", True, True)
+    ids = obj.encode_smi("molecule", "Cc1nc(CN2CCN(c3c(Cl)cnc4[nH]c(-c5cn(C)nc5C)nc34)CC2)no1", True, True)
     print(len(ids))
     print(ids)
 

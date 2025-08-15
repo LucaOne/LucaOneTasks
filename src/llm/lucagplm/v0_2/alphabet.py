@@ -16,7 +16,9 @@ from typing import Sequence, List
 sys.path.append(".")
 sys.path.append("..")
 sys.path.append("../..")
-sys.path.append("../../src")
+sys.path.append("../../..")
+sys.path.append("../../../../")
+sys.path.append("../../../../src")
 try:
     from utils import gene_seq_replace
 except ImportError:

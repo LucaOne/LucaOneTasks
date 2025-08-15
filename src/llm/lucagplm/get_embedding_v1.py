@@ -229,7 +229,7 @@ def encoder(args_info, model_config, seq, seq_type, tokenizer):
     elif args_info["model_type"] in ["lucaone_gplm", "lucaone", "lucagplm"]:
         seqs = [seq]
         seq_types = [seq_type]
-        seq_encoded_list = [tokenizer.encode(seq)]
+        seq_encoded_list = [tokenizer.encode(seq_type=seq_type, seq=seq)]
         if "max_length" in args_info and args_info["max_length"] and args_info["max_length"] > 0:
             seq_encoded_list = [encoded[:args_info["max_length"]] for encoded in seq_encoded_list]
         max_len = max(len(seq_encoded) for seq_encoded in seq_encoded_list)

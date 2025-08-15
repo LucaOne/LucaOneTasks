@@ -1,6 +1,10 @@
 # Downstream Tasks of LucaOne   
 
-## TimeLine
+## TimeLine    
+* 2025/08/15:     
+  **Huggingface**     
+  <a href='https://huggingface.co/LucaGroup'>https://huggingface.co/LucaGroup </a>
+
 * 2025/04/08:
     * **LucaOne**          
       add `checkpoint=36000000` for `LucaOne`     

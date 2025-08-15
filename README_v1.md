@@ -1,6 +1,6 @@
 # Downstream Tasks of LucaOne   
 
-## TimeLine
+## TimeLine     
 * 2024/10/01: optimized embedding inference code: `src/llm/lucagplm/get_embedding.py`
 * 2024/08/01: add `checkpoint=17600000`, location: <a href='http://47.93.21.181/lucaone/TrainedCheckPoint/models/lucagplm/v2.0/token_level,span_level,seq_level,structure_level/lucaone_gplm/20231125113045/checkpoint-step17600000/'>checkpoint-step17600000</a>
 

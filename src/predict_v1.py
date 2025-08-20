@@ -762,12 +762,25 @@ def run_args():
         help="the training global checkpoint step of model finalization."
     )
 
-    parser.add_argument("--topk", default=None, type=int, help="the topk labels for multi-class")
-    parser.add_argument("--threshold",  default=0.5, type=float, 
-                        help="sigmoid threshold for binary-class or multi-label classification, "
-                             "None for multi-class classification or regression, default: 0.5.")
-    parser.add_argument("--ground_truth_idx", default=None, type=int, 
-                        help="the ground truth idx, when the input file contains")
+    parser.add_argument(
+        "--topk",
+        default=None,
+        type=int,
+        help="the topk labels for multi-class"
+    )
+    parser.add_argument(
+        "--threshold",
+        default=0.5,
+        type=float,
+        help="sigmoid threshold for binary-class or multi-label classification, "
+             "None for multi-class classification or regression, default: 0.5."
+    )
+    parser.add_argument(
+        "--ground_truth_idx",
+        default=None,
+        type=int,
+        help="the ground truth idx, when the input file contains"
+    )
     # for results(csv format, contain header)
     parser.add_argument("--save_path", default=None, type=str, help="the result save path")
     # for print info

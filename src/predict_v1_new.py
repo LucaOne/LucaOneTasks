@@ -10,7 +10,6 @@
 @file: predict
 @desc: predict or inference for trained downstream models
 '''
-
 import csv
 import json
 import os, sys
@@ -49,25 +48,28 @@ except ImportError:
     from src.ppi.models.LucaPPI2 import LucaPPI2
 
 
-def transform_one_sample_2_feature(device,
-                                   input_mode,
-                                   encoder,
-                                   batch_convecter,
-                                   row):
+def transform_one_sample_2_feature(
+        device,
+        input_mode,
+        encoder,
+        batch_convecter,
+        row
+):
     batch_info = []
     if input_mode in ["pair"]:
-        en = encoder.encode_pair(row[0],
-                                 row[1],
-                                 row[2],
-                                 row[3],
-                                 row[4],
-                                 row[5],
-                                 vector_filename_a=None,
-                                 vector_filename_b=None,
-                                 matrix_filename_a=None,
-                                 matrix_filename_b=None,
-                                 label=None
-                                 )
+        en = encoder.encode_pair(
+            row[0],
+            row[1],
+            row[2],
+            row[3],
+            row[4],
+            row[5],
+            vector_filename_a=None,
+            vector_filename_b=None,
+            matrix_filename_a=None,
+            matrix_filename_b=None,
+            label=None
+        )
         en_list = en
         batch_info.append([row[0], row[1], row[4], row[5]])
         seq_lens = [len(row[4]), len(row[5])]
@@ -87,22 +89,25 @@ def transform_one_sample_2_feature(device,
                 split_seqs.append(cur_seq)
                 seq_lens.append(len(cur_seq))
             for split_seq in split_seqs:
-                en = encoder.encode_single(row[0],
-                                           row[1],
-                                           split_seq,
-                                           vector_filename=None,
-                                           matrix_filename=None,
-                                           label=None
-                                           )
+                en = encoder.encode_single(
+                    row[0],
+                    row[1],
+                    split_seq,
+                    vector_filename=None,
+                    matrix_filename=None,
+                    label=None
+
+                )
                 en_list.append(en)
         else:
-            en = encoder.encode_single(row[0],
-                                       row[1],
-                                       row[2],
-                                       vector_filename=None,
-                                       matrix_filename=None,
-                                       label=None
-                                       )
+            en = encoder.encode_single(
+                row[0],
+                row[1],
+                row[2],
+                vector_filename=None,
+                matrix_filename=None,
+                label=None
+            )
             en_list = en
             seq_lens = len(row[2])
             if "matrix" in en and en["matrix"] is not None:

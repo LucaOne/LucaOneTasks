@@ -1080,7 +1080,7 @@ class Encoder(object):
                     if os.path.exists(vector_filepath):
                         vector = torch.load(vector_filepath)
                         break
-            elif isinstance(vector_filename, np.ndarray):
+            elif isinstance(vector_filename, np.ndarray) or isinstance(vector_filename, torch.Tensor):
                 vector = vector_filename
             else:
                 raise Exception("vector is not filepath-str and np.ndarray")
@@ -1101,7 +1101,7 @@ class Encoder(object):
                     if os.path.exists(matrix_filepath):
                         matrix = torch.load(matrix_filepath)
                         break
-            elif isinstance(matrix_filename, np.ndarray):
+            elif isinstance(matrix_filename, np.ndarray) or isinstance(matrix_filename, torch.Tensor):
                 matrix = matrix_filename
             else:
                 raise Exception("matrix is not filepath-str and np.ndarray")
@@ -1167,7 +1167,7 @@ class Encoder(object):
                     if os.path.exists(vector_filepath_a):
                         vector_a = torch.load(vector_filepath_a)
                         break
-            elif isinstance(vector_filename_a, np.ndarray):
+            elif isinstance(vector_filename_a, np.ndarray) or isinstance(vector_filename_a, torch.Tensor):
                 vector_a = vector_filename_a
             else:
                 raise Exception("vector_a is not filepath-str and np.ndarray")
@@ -1185,7 +1185,7 @@ class Encoder(object):
                     if os.path.exists(vector_filepath_b):
                         vector_b = torch.load(vector_filepath_b)
                         break
-            elif isinstance(vector_filename_b, np.ndarray):
+            elif isinstance(vector_filename_b, np.ndarray) or isinstance(vector_filename_b, torch.Tensor):
                 vector_b = vector_filename_b
             else:
                 raise Exception("vector_b is not filepath-str and np.ndarray")
@@ -1204,7 +1204,7 @@ class Encoder(object):
                     if os.path.exists(matrix_filepath_a):
                         matrix_a = torch.load(matrix_filepath_a)
                         break
-            elif isinstance(matrix_filename_a, np.ndarray):
+            elif isinstance(matrix_filename_a, np.ndarray) or isinstance(matrix_filename_a, torch.Tensor):
                 matrix_a = matrix_filename_a
             else:
                 raise Exception("matrix_a is not filepath-str and np.ndarray")
@@ -1219,7 +1219,7 @@ class Encoder(object):
                     if os.path.exists(matrix_filepath_b):
                         matrix_b = torch.load(matrix_filepath_b)
                         break
-            elif isinstance(matrix_filename_b, np.ndarray):
+            elif isinstance(matrix_filename_b, np.ndarray) or isinstance(matrix_filename_b, torch.Tensor):
                 matrix_b = matrix_filename_b
             else:
                 raise Exception("matrix_b is not filepath-str and np.ndarray")

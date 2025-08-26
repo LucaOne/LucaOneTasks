@@ -15,14 +15,15 @@ from rdkit.Chem import AllChem
 from typing import Sequence, List
 
 
-atom_standard_toks = ['C', 'N', 'O', 'S', 'H', 'Cl', 'F', 'Br', 'I',
-                      'Si', 'P', 'B', 'Na', 'K', 'Al', 'Ca', 'Sn', 'As',
-                      'Hg', 'Fe', 'Zn', 'Cr', 'Se', 'Gd', 'Au', 'Li'
-                      ]
+atom_standard_toks = [
+    'C', 'N', 'O', 'S', 'H', 'Cl', 'F', 'Br', 'I',
+    'Si', 'P', 'B', 'Na', 'K', 'Al', 'Ca', 'Sn', 'As',
+    'Hg', 'Fe', 'Zn', 'Cr', 'Se', 'Gd', 'Au', 'Li'
+]
 
-atom_prepend_toks = ['[PAD]', '[UNK]', '[CLS]']
+atom_prepend_toks = ['[M_PAD]', '[M_UNK]', '[M_CLS]']
 
-atom_append_toks = ['[SEP]', '[MASK]']
+atom_append_toks = ['[M_SEP]', '[M_MASK]']
 
 
 class AlphabetAtom(object):
@@ -69,26 +70,6 @@ class AlphabetAtom(object):
 
     def to_dict(self):
         return self.tok_to_idx.copy()
-
-    def get_batch_converter(self, task_level_type, label_size, output_mode, no_position_embeddings,
-                            no_token_type_embeddings, truncation_seq_length: int = None, ignore_index: int = -100, mlm_probability=0.15):
-        '''
-        return BatchConverter(
-            task_level_type,
-            label_size,
-            output_mode,
-            seq_subword=False,
-            seq_tokenizer=self,
-            no_position_embeddings=no_position_embeddings,
-            no_token_type_embeddings=no_token_type_embeddings,
-            truncation_seq_length=truncation_seq_length,
-            truncation_matrix_length=truncation_seq_length,
-            ignore_index=ignore_index,
-            mlm_probability=mlm_probability,
-            prepend_bos=self.prepend_bos,
-            append_eos=self.append_eos)
-        '''
-        pass
 
     @classmethod
     def smiles_2_atom_seq(cls, smi):

@@ -475,7 +475,7 @@ class BatchConverter(object):
 
     def __seq_encode__(self, batch_size, seq_types, seqs):
         '''
-        该函数不加特殊字符[CLS]与[SEP]
+        seq_encoded_list不加特殊token，input_ids根据设置是否加上特殊token占位
         :param batch_size:
         :param seq_types:
         :param seqs:
@@ -545,7 +545,7 @@ class BatchConverter(object):
 
     def __express_encode__(self, batch_size, express_list):
         '''
-        该函数不加特殊字符[CLS]与[SEP]
+        express_encoded_list不加特殊token，input_ids根据设置是否加上特殊token占位
         :param batch_size:
         :param express_list:
         :return:
@@ -589,7 +589,7 @@ class BatchConverter(object):
 
     def __multi_seq_encode__(self, batch_size, seq_types, seqs):
         '''
-        该函数是多sentence的表征器，每个sentence都加[CLS]与[SEP]
+        该函数是multi seqs for one sample的表征器，每个seq都加[CLS]与[SEP]
         :param batch_size:
         :param seq_types:
         :param seqs:
@@ -706,7 +706,7 @@ class BatchConverter(object):
 
     def __atom_seq_encode__(self, batch_size, seq_types, seqs):
         '''
-        该函数不加特殊字符[CLS]与[SEP]
+        seq_encoded_list不加特殊token，input_ids根据设置是否加上特殊token占位
         :param batch_size:
         :param seq_types:
         :param seqs:
@@ -808,7 +808,8 @@ class BatchConverter(object):
 
     def __matrix_encode__(self, batch_size, matrices):
         '''
-        该函数不加特殊字符[CLS]与[SEP]的向量
+        embedding matrix
+        filled_matrices根据设置是否加上两个特殊符号token的占位行
         :param batch_size:
         :param matrices:
         :return:
@@ -845,7 +846,8 @@ class BatchConverter(object):
 
     def __atom_matrix_encode__(self, batch_size, matrices):
         '''
-        该函数不加特殊字符[CLS]与[SEP]的向量
+        embedding matrix
+        filled_matrices根据设置是否加上两个特殊符号token的占位行
         :param batch_size:
         :param matrices:
         :return:
@@ -882,7 +884,8 @@ class BatchConverter(object):
 
     def __multi_matrix_encode__(self, batch_size, matrices):
         '''
-        该函数不加特殊字符[CLS]与[SEP]的向量
+        multi embedding matrix for one sample
+        filled_matrices根据设置每个分matrix是否加上两个特殊符号token的占位行
         :param batch_size:
         :param matrices:
         :return:

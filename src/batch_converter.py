@@ -212,12 +212,10 @@ class BatchConverter(object):
         print("-" * 50)
 
     def __parse_label__(self, max_length, task_level_type, label_size, output_mode, label):
-        if isinstance(label, str):
+        if task_level_type in ["token_level"] and isinstance(label, str) and "[" not in label:
+            label = [int(v) for v in label]
+        elif isinstance(label, str):
             label = eval(label)
-        '''
-        print("label:")
-        print(label)
-        '''
         # 需要是padding长度
         cur_len = max_length
         if task_level_type in ["token_level", "structure_level"]:
@@ -306,12 +304,10 @@ class BatchConverter(object):
         return new_label
 
     def __atom_parse_label__(self, max_length, task_level_type, label_size, output_mode, label):
-        if isinstance(label, str):
+        if task_level_type in ["token_level"] and isinstance(label, str) and "[" not in label:
+            label = [int(v) for v in label]
+        elif isinstance(label, str):
             label = eval(label)
-        '''
-        print("label:")
-        print(label)
-        '''
         # 需要是padding长度
         cur_len = max_length
         if task_level_type in ["token_level", "structure_level"]:
@@ -466,14 +462,14 @@ class BatchConverter(object):
             return input_ids, labels
         else:
             # non [MASK]， random one position, convect to [MASK]
-            rand_idx = random.randint(int(self.atom_prepend_bos), seq_len + int(self.atom_pprepend_bos) - 1)
+            rand_idx = random.randint(int(self.atom_prepend_bos), seq_len + int(self.atom_prepend_bos) - 1)
             labels[rand_idx] = input_ids[rand_idx]
             input_ids[rand_idx] = self.atom_mask_idx
             return input_ids, labels
 
     def __seq_encode__(self, batch_size, seq_types, seqs):
         '''
-        该函数不加特殊字符[CLS]与[SEP]
+        seq_encoded_list不加特殊token，input_ids根据设置是否加上特殊token占位
         :param batch_size:
         :param seq_types:
         :param seqs:
@@ -543,7 +539,7 @@ class BatchConverter(object):
 
     def __multi_seq_encode__(self, batch_size, seq_types, seqs):
         '''
-        该函数是多sentence的表征器，每个sentence都加[CLS]与[SEP]
+        该函数是multi seqs for one sample的表征器，每个seq都加[CLS]与[SEP]
         :param batch_size:
         :param seqs:
         :param seq_types:
@@ -660,7 +656,7 @@ class BatchConverter(object):
 
     def __atom_seq_encode__(self, batch_size, seq_types, seqs):
         '''
-        该函数不加特殊字符[CLS]与[SEP]
+        seq_encoded_list不加特殊token，input_ids根据设置是否加上特殊token占位
         :param batch_size:
         :param seq_types:
         :param seqs:
@@ -762,7 +758,8 @@ class BatchConverter(object):
 
     def __matrix_encode__(self, batch_size, matrices):
         '''
-        该函数不加特殊字符[CLS]与[SEP]的向量
+        embedding matrix
+         filled_matrices根据设置是否加上两个特殊符号token的占位行
         :param batch_size:
         :param matrices:
         :return:
@@ -799,7 +796,8 @@ class BatchConverter(object):
 
     def __atom_matrix_encode__(self, batch_size, matrices):
         '''
-        该函数不加特殊字符[CLS]与[SEP]的向量
+        embedding matrix
+        filled_matrices根据设置是否加上两个特殊符号token的占位行
         :param batch_size:
         :param matrices:
         :return:
@@ -836,7 +834,8 @@ class BatchConverter(object):
 
     def __multi_matrix_encode__(self, batch_size, matrices):
         '''
-        该函数不加特殊字符[CLS]与[SEP]的向量
+        multi embedding matrix for one sample
+        filled_matrices根据设置每个分matrix是否加上两个特殊符号token的占位行
         :param batch_size:
         :param matrices:
         :return:
@@ -967,7 +966,8 @@ class BatchConverter(object):
                 # 根据标记位填充，根据标记位填充，句子数量，根据标记位是否加上特殊字符长度
                 encoded_matrices, matrix_attention_masks, matrix_max_num, matrix_max_len = self.__multi_matrix_encode__(
                     batch_size=batch_size,
-                    matrices=matrices)
+                    matrices=matrices
+                )
                 '''
                 print("matrix_max_num: %d" % matrix_max_num)
                 print("matrix_max_len: %d" % matrix_max_len)
@@ -981,13 +981,16 @@ class BatchConverter(object):
                 '''
             elif molecule_flag:
                 # 根据标记位填充，根据标记位填充，句子数量，根据标记位是否加上特殊字符长度
-                encoded_matrices, matrix_attention_masks, matrix_max_length = self.__atom_matrix_encode__(batch_size=batch_size,
-                                                                                                          matrices=matrices
-                                                                                                          )
+                encoded_matrices, matrix_attention_masks, matrix_max_length = self.__atom_matrix_encode__(
+                    batch_size=batch_size,
+                    matrices=matrices
+                )
             else:
                 # 根据标记位填充，根据标记位填充，句子数量，根据标记位是否加上特殊字符长度
-                encoded_matrices, matrix_attention_masks, matrix_max_length = self.__matrix_encode__(batch_size=batch_size,
-                                                                                                     matrices=matrices)
+                encoded_matrices, matrix_attention_masks, matrix_max_length = self.__matrix_encode__(
+                    batch_size=batch_size,
+                    matrices=matrices
+                )
             if multi_seq_flag:
                 max_length = min(max_length, matrix_max_num * matrix_max_len)
             else:
@@ -1193,16 +1196,34 @@ class BatchConverter(object):
                 if multi_seq_flag:
                     # to do
                     new_labels.append(
-                        self.__parse_label__(max_length, self.task_level_type,
-                                             self.label_size, self.output_mode, labels[sample_idx]))
+                        self.__parse_label__(
+                            max_length,
+                            self.task_level_type,
+                            self.label_size,
+                            self.output_mode,
+                            labels[sample_idx]
+                        )
+                    )
                 elif molecule_flag:
                     new_labels.append(
-                        self.__atom_parse_label__(max_length, self.task_level_type,
-                                                  self.label_size, self.output_mode, labels[sample_idx]))
+                        self.__atom_parse_label__(
+                            max_length,
+                            self.task_level_type,
+                            self.label_size,
+                            self.output_mode,
+                            labels[sample_idx]
+                        )
+                    )
                 else:
                     new_labels.append(
-                        self.__parse_label__(max_length, self.task_level_type,
-                                             self.label_size, self.output_mode, labels[sample_idx]))
+                        self.__parse_label__(
+                            max_length,
+                            self.task_level_type,
+                            self.label_size,
+                            self.output_mode,
+                            labels[sample_idx]
+                        )
+                    )
         if new_labels is not None and new_labels:
             if self.output_mode in ["regression"]:
                 labels = torch.tensor(new_labels, dtype=torch.float32)

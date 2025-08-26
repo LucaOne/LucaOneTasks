@@ -15,14 +15,15 @@ from rdkit.Chem import AllChem
 from typing import Sequence, List
 
 
-atom_standard_toks = ['C', 'N', 'O', 'S', 'H', 'Cl', 'F', 'Br', 'I',
-                      'Si', 'P', 'B', 'Na', 'K', 'Al', 'Ca', 'Sn', 'As',
-                      'Hg', 'Fe', 'Zn', 'Cr', 'Se', 'Gd', 'Au', 'Li'
-                      ]
+atom_standard_toks = [
+    'C', 'N', 'O', 'S', 'H', 'Cl', 'F', 'Br', 'I',
+    'Si', 'P', 'B', 'Na', 'K', 'Al', 'Ca', 'Sn', 'As',
+    'Hg', 'Fe', 'Zn', 'Cr', 'Se', 'Gd', 'Au', 'Li'
+]
 
-atom_prepend_toks = ['[PAD]', '[UNK]', '[CLS]']
+atom_prepend_toks = ['[M_PAD]', '[M_UNK]', '[M_CLS]']
 
-atom_append_toks = ['[SEP]', '[MASK]']
+atom_append_toks = ['[M_SEP]', '[M_MASK]']
 
 
 class AlphabetAtom(object):

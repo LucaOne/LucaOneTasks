@@ -1030,13 +1030,13 @@ def run_args():
     parser.add_argument(
         "--matrix_embedding_exists",
         action="store_true",
-        help="the structural embedding is or not in advance. default: False"
+        help="the seq embedding is or not in advance. default: False"
     )
     parser.add_argument(
         "--emb_dir",
         default=None,
         type=str,
-        help="the structural embedding save dir. default: None"
+        help="the seq embedding save dir. default: None"
     )
 
     # for trained model

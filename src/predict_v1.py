@@ -670,9 +670,9 @@ def run_args():
     parser.add_argument("--llm_truncation_seq_length", default=4096, type=int, required=True, 
                         help="the max seq-length for llm embedding")
     parser.add_argument("--matrix_embedding_exists", action="store_true",
-                        help="the structural embedding is or not in advance. default: False")
+                        help="the seq embedding is or not in advance. default: False")
     parser.add_argument("--emb_dir", default=None, type=str,
-                        help="the llm embedding save dir. default: None, not to save")
+                        help="the seq embedding save dir. default: None, not to save")
 
     # for trained model
     parser.add_argument("--model_path", default=None, type=str, 

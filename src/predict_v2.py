@@ -1612,8 +1612,9 @@ if __name__ == "__main__":
             output_classification_vector_dirpath=args.output_classification_vector_dirpath
         )
         print("Predicted Result:")
-        print("seq_id=%s" % args.seq_id)
-        print("seq=%s" % args.seq)
+        print("seq_id_a=%s, seq_id_b=%s" % (args.seq_id_a, args.seq_id_b))
+        print("seq_a=%s" % args.seq_a)
+        print("seq_b=%s" % args.seq_b)
         print("prob=%f" % results[0][4])
         print("label=%s" % results[0][5])
     else:

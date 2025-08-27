@@ -17,20 +17,20 @@ sys.path.append("..")
 sys.path.append("../..")
 sys.path.append("../../src")
 try:
-    from .pooling import *
-    from .loss import *
-    from ..utils import *
-    from .multi_label_metrics import *
-    from .modeling_bert import BertModel, BertPreTrainedModel
-    from .metrics import *
-    from .cross_transformer import LucaTransformer
+    from common.pooling import *
+    from common.loss import *
+    from utils import *
+    from common.multi_label_metrics import *
+    from common.modeling_bert import BertPreTrainedModel
+    from common.metrics import *
+    from common.cross_transformer import LucaTransformer
 except ImportError:
     from src.common.pooling import *
     from src.common.loss import *
     from src.utils import *
     from src.common.multi_label_metrics import *
     from src.common.metrics import *
-    from src.common.modeling_bert import BertModel, BertPreTrainedModel
+    from src.common.modeling_bert import BertPreTrainedModel
     from src.common.cross_transformer import LucaTransformer
 
 

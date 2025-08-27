@@ -670,9 +670,9 @@ def run_args():
     parser.add_argument("--llm_truncation_seq_length", default=4096, type=int, required=True, 
                         help="the max seq-length for llm embedding")
     parser.add_argument("--matrix_embedding_exists", action="store_true",
-                        help="the structural embedding is or not in advance. default: False")
+                        help="the seq embedding is or not in advance. default: False")
     parser.add_argument("--emb_dir", default=None, type=str,
-                        help="the llm embedding save dir. default: None, not to save")
+                        help="the seq embedding save dir. default: None, not to save")
 
     # for trained model
     parser.add_argument("--model_path", default=None, type=str, 
@@ -937,8 +937,9 @@ if __name__ == "__main__":
             matrix_embedding_exists=args.matrix_embedding_exists
         )
         print("Predicted Result:")
-        print("seq_id=%s" % args.seq_id)
-        print("seq=%s" % args.seq)
+        print("seq_id_a=%s, seq_id_b=%s" % (args.seq_id_a, args.seq_id_b))
+        print("seq_a=%s" % args.seq_a)
+        print("seq_b=%s" % args.seq_b)
         print("prob=%f" % results[0][4])
         print("label=%s" % results[0][5])
     else:

@@ -7,8 +7,8 @@
 @tel: 137****6540
 @datetime: 2023/6/21 17:32
 @project: LucaOneTasks
-@file: LucaPPI
-@desc: LucaPPI for homogeneous double for each input
+@file: LucaPair1
+@desc: LucaPair1 for homogeneous double for each input
 '''
 
 import sys
@@ -22,21 +22,23 @@ try:
     from common.loss import *
     from utils import *
     from common.multi_label_metrics import *
-    from common.modeling_bert import BertModel, BertPreTrainedModel
+    from common.modeling_bert import BertPreTrainedModel
     from common.metrics import *
+    from common.cross_transformer import LucaTransformer
 except ImportError:
     from src.common.pooling import *
     from src.common.loss import *
     from src.utils import *
     from src.common.multi_label_metrics import *
     from src.common.metrics import *
-    from src.common.modeling_bert import BertModel, BertPreTrainedModel
+    from src.common.modeling_bert import BertPreTrainedModel
+    from src.common.cross_transformer import LucaTransformer
 logger = logging.getLogger(__name__)
 
 
-class LucaPPI(BertPreTrainedModel):
+class LucaPair1(BertPreTrainedModel):
     def __init__(self, config, args):
-        super(LucaPPI, self).__init__(config)
+        super(LucaPair1, self).__init__(config)
         # seq, matrix, vector, seq+matrix, seq+vector
         if config.seq_max_length is None and config.seq_max_length_a == config.seq_max_length_b:
             config.seq_max_length = config.seq_max_length_a
@@ -63,7 +65,11 @@ class LucaPPI(BertPreTrainedModel):
         if self.input_type == "seq": # seq -> bert -> (pooler) -> fc * -> classifier
             self.input_size_list[0] = config.hidden_size
             config.max_position_embeddings = config.seq_max_length
-            self.seq_encoder = BertModel(config, use_pretrained_embedding=False, add_pooling_layer=(args.seq_pooling_type is None or args.seq_pooling_type == "none") and self.task_level_type in ["seq_level"])
+            self.seq_encoder = LucaTransformer(
+                config,
+                use_pretrained_embedding=False,
+                add_pooling_layer=(args.seq_pooling_type is None or args.seq_pooling_type == "none") and self.task_level_type in ["seq_level"]
+            )
             if self.task_level_type in ["seq_level"]:
                 self.seq_pooler = create_pooler(pooler_type="seq", config=config, args=args)
             self.encoder_type_list[0] = True
@@ -79,14 +85,14 @@ class LucaPPI(BertPreTrainedModel):
                         nn.Linear(config.embedding_input_size, config.hidden_size),
                         create_activate(config.emb_activate_func),
                         # nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps),
-                        BertModel(matrix_encoder_config, use_pretrained_embedding=True, add_pooling_layer=(args.matrix_pooling_type is None or args.matrix_pooling_type == "none") and self.task_level_type in ["seq_level"])
+                        LucaTransformer(matrix_encoder_config, use_pretrained_embedding=True, add_pooling_layer=(args.matrix_pooling_type is None or args.matrix_pooling_type == "none") and self.task_level_type in ["seq_level"])
                     ])
 
                 else:
                     self.matrix_encoder = nn.ModuleList([
                         # nn.Linear(config.embedding_input_size, config.hidden_size),
                         # nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps),
-                        BertModel(matrix_encoder_config, use_pretrained_embedding=True, add_pooling_layer=(args.matrix_pooling_type is None or args.matrix_pooling_type == "none") and self.task_level_type in ["seq_level"])
+                        LucaTransformer(matrix_encoder_config, use_pretrained_embedding=True, add_pooling_layer=(args.matrix_pooling_type is None or args.matrix_pooling_type == "none") and self.task_level_type in ["seq_level"])
                     ])
                 ori_embedding_input_size = config.embedding_input_size
                 config.embedding_input_size = config.hidden_size
@@ -107,7 +113,7 @@ class LucaPPI(BertPreTrainedModel):
         elif self.input_type == "seq_matrix": # seq + matrix
             self.input_size_list[0] = config.hidden_size
             config.max_position_embeddings = config.seq_max_length
-            self.seq_encoder = BertModel(config, use_pretrained_embedding=False, add_pooling_layer=(args.seq_pooling_type is None or args.seq_pooling_type == "none") and self.task_level_type in ["seq_level"])
+            self.seq_encoder = LucaTransformer(config, use_pretrained_embedding=False, add_pooling_layer=(args.seq_pooling_type is None or args.seq_pooling_type == "none") and self.task_level_type in ["seq_level"])
             if self.task_level_type in ["seq_level"]:
                 self.seq_pooler = create_pooler(pooler_type="seq", config=config, args=args)
             self.encoder_type_list[0] = True
@@ -121,14 +127,14 @@ class LucaPPI(BertPreTrainedModel):
                         nn.Linear(config.embedding_input_size, config.hidden_size),
                         create_activate(config.emb_activate_func),
                         # nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps),
-                        BertModel(matrix_encoder_config, use_pretrained_embedding=True, add_pooling_layer=(args.matrix_pooling_type is None or args.matrix_pooling_type == "none") and self.task_level_type in ["seq_level"])
+                        LucaTransformer(matrix_encoder_config, use_pretrained_embedding=True, add_pooling_layer=(args.matrix_pooling_type is None or args.matrix_pooling_type == "none") and self.task_level_type in ["seq_level"])
                     ])
 
                 else:
                     self.matrix_encoder = nn.ModuleList([
                         # nn.Linear(config.embedding_input_size, config.hidden_size),
                         # nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps),
-                        BertModel(matrix_encoder_config, use_pretrained_embedding=True, add_pooling_layer=(args.matrix_pooling_type is None or args.matrix_pooling_type == "none") and self.task_level_type in ["seq_level"])
+                        LucaTransformer(matrix_encoder_config, use_pretrained_embedding=True, add_pooling_layer=(args.matrix_pooling_type is None or args.matrix_pooling_type == "none") and self.task_level_type in ["seq_level"])
                     ])
                 ori_embedding_input_size = config.embedding_input_size
                 config.embedding_input_size = config.hidden_size
@@ -146,7 +152,7 @@ class LucaPPI(BertPreTrainedModel):
         elif self.input_type == "seq_vector": # seq + vector
             self.input_size_list[0] = config.hidden_size
             config.max_position_embeddings = config.seq_max_length
-            self.seq_encoder = BertModel(config, use_pretrained_embedding=False, add_pooling_layer=(args.seq_pooling_type is None or args.seq_pooling_type == "none") and self.task_level_type in ["seq_level"])
+            self.seq_encoder = LucaTransformer(config, use_pretrained_embedding=False, add_pooling_layer=(args.seq_pooling_type is None or args.seq_pooling_type == "none") and self.task_level_type in ["seq_level"])
             self.seq_pooler = create_pooler(pooler_type="seq", config=config, args=args)
             self.encoder_type_list[0] = True
             self.input_size_list[2] = config.embedding_input_size

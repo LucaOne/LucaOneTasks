@@ -108,7 +108,7 @@ def predict_pdb(
             return pdb, mean_plddt, ptm, processed_seq
         except RuntimeError as e:
             if e.args[0].startswith("CUDA out of memory"):
-                print(f"Failed (CUDA out of memory) on sequence {sample[0]} of length {len(sample[1])}.")
+                print(f"Failed (CUDA out of memory) on sequence {protein_id} of length {len(protein_seq)}.")
             else:
                 print(e)
     return None, None, None, None
@@ -457,9 +457,9 @@ def predict_embedding(
                 return None, None
         except RuntimeError as e:
             if e.args[0].startswith("CUDA out of memory"):
-                print(f"Failed (CUDA out of memory) on sequence {sample[0]} of length {len(sample[1])}.")
+                print(f"Failed (CUDA out of memory) on sequence {protein_id} of length {len(protein_seq)}.")
                 print("Please reduce the 'truncation_seq_length'")
-            raise Exception(e)
+            # raise Exception(e)
     return None, None
 
 

@@ -12,7 +12,7 @@ python predict_v1.py \
     --dataset_type gene_protein \
     --task_type binary_class \
     --task_level_type seq_level \
-    --model_type lucappi2 \
+    --model_type lucapair2 \
     --input_type matrix \
     --input_mode pair \
     --time_str 20240406173806 \
@@ -36,7 +36,7 @@ python predict_v1.py \
     --dataset_type gene \
     --task_type multi_class \
     --task_level_type seq_level \
-    --model_type luca_base \
+    --model_type lucabase \
     --input_type matrix \
     --input_mode single \
     --time_str 20240412100337 \
@@ -59,7 +59,7 @@ python predict_v1.py \
     --dataset_type gene_gene \
     --task_type binary_class \
     --task_level_type seq_level \
-    --model_type lucappi \
+    --model_type lucapair1 \
     --input_type matrix \
     --input_mode pair \
     --time_str 20240214105653 \
@@ -84,7 +84,7 @@ python predict_v1.py \
     --dataset_type gene \
     --task_type multi_class \
     --task_level_type seq_level \
-    --model_type luca_base \
+    --model_type lucabase \
     --input_type matrix \
     --input_mode single \
     --time_str 20240414155526 \
@@ -107,7 +107,7 @@ python predict_v1.py \
     --dataset_type gene_protein \
     --task_type binary_class \
     --task_level_type seq_level \
-    --model_type lucappi2 \
+    --model_type lucapair2 \
     --input_type matrix \
     --input_mode pair \
     --time_str 20240404105148 \
@@ -131,7 +131,7 @@ python predict_v1.py \
     --dataset_type protein \
     --task_type binary_class \
     --task_level_type seq_level \
-    --model_type lucappi \
+    --model_type lucapair1 \
     --input_type matrix \
     --input_mode pair \
     --time_str 20240216205421 \
@@ -155,7 +155,7 @@ python predict_v1.py \
     --dataset_type protein \
     --task_type multi_class \
     --task_level_type seq_level \
-    --model_type luca_base \
+    --model_type lucabase \
     --input_type matrix \
     --input_mode single \
     --time_str 20240412140824 \
@@ -179,7 +179,7 @@ python predict_v1.py \
     --dataset_type protein \
     --task_type regression \
     --task_level_type seq_level \
-    --model_type luca_base \
+    --model_type lucabase \
     --input_type matrix \
     --input_mode single \
     --time_str 20240404104215 \
@@ -202,7 +202,7 @@ python predict_v1.py \
     --dataset_type gene \
     --task_type multi_class \
     --task_level_type seq_level \
-    --model_type luca_base \
+    --model_type lucabase \
     --input_type matrix \
     --input_mode single \
     --time_str 20240411144916 \
@@ -226,7 +226,7 @@ python predict_v1.py \
     --dataset_type gene \
     --task_type multi_class \
     --task_level_type seq_level \
-    --model_type luca_base \
+    --model_type lucabase \
     --input_type matrix \
     --input_mode single \
     --time_str 20240212202328 \

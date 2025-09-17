@@ -22,8 +22,8 @@ INPUT_MODE="pair"
 TRUNC_TYPE="right"
 
 # for model
-MODEL_TYPE="lucappi2"
-CONFIG_NAME="ppi_config.json"
+MODEL_TYPE="lucapair2"
+CONFIG_NAME="lucapair2_config.json"
 FUSION_TYPE="concat"
 dropout_prob=0.1
 fc_size=128

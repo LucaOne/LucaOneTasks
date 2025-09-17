@@ -24,7 +24,7 @@ try:
     from common.multi_label_metrics import *
     from common.metrics import *
     from common.luca_pair import LucaPair
-    from common.modeling_bert import BertModel, BertPreTrainedModel
+    from common.modeling_bert import BertPreTrainedModel
 except ImportError:
     from src.common.pooling import *
     from src.common.loss import *
@@ -32,7 +32,7 @@ except ImportError:
     from src.common.multi_label_metrics import *
     from src.common.metrics import *
     from src.common.luca_pair import LucaPair
-    from src.common.modeling_bert import BertModel, BertPreTrainedModel
+    from src.common.modeling_bert import BertPreTrainedModel
 logger = logging.getLogger(__name__)
 
 

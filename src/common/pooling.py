@@ -457,14 +457,16 @@ class TransformerPool1d(nn.Module):
         cls_emb_batch = self.embeddings.expand(b, 1, embed)
         merged_output = torch.cat((cls_emb_batch, x), dim=1)
         # [b, seq_len + 1, embed]
-        sequence_output = self.encoder(merged_output,
-                                       attention_mask=None,
-                                       head_mask=None,
-                                       encoder_hidden_states=None,
-                                       encoder_attention_mask=None,
-                                       output_attentions=False,
-                                       output_hidden_states=False,
-                                       return_dict=False)[0]
+        sequence_output = self.encoder(
+            merged_output,
+            attention_mask=None,
+            head_mask=None,
+            encoder_hidden_states=None,
+            encoder_attention_mask=None,
+            output_attentions=False,
+            output_hidden_states=False,
+            return_dict=False
+        )[0]
         pooled_output = self.pooler(sequence_output)
         return pooled_output
 

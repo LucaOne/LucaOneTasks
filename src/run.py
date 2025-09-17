@@ -16,7 +16,6 @@ import copy
 import logging
 import codecs
 import argparse
-from collections import OrderedDict
 from datetime import timedelta
 from datasets import load_dataset
 import torch.distributed as dist
@@ -35,12 +34,13 @@ try:
     from trainer import train
     from evaluator import evaluate
     from tester import test
-    from ppi.models.LucaPairIntraInter import LucaPairIntraInter
-    from ppi.models.LucaPairHeter import LucaPairHeter
-    from ppi.models.LucaPairHomo import LucaPairHomo
+    from lucapair.models.LucaPairIntraInter import LucaPairIntraInter
+    from lucapair.models.LucaPairHeter import LucaPairHeter
+    from lucapair.models.LucaPairHomo import LucaPairHomo
     from common.luca_base import LucaBase
-    from ppi.models.LucaPPI import LucaPPI
-    from ppi.models.LucaPPI2 import LucaPPI2
+    from lucasingle.models.LucaSingle import LucaSingle
+    from lucapair.models.LucaPair1 import LucaPair1
+    from lucapair.models.LucaPair2 import LucaPair2
     from common.alphabet import Alphabet
     from common.model_config import LucaConfig
     from encoder import Encoder
@@ -53,12 +53,13 @@ except ImportError:
     from src.trainer import train
     from src.evaluator import evaluate
     from src.tester import test
-    from src.ppi.models.LucaPairIntraInter import LucaPairIntraInter
-    from src.ppi.models.LucaPairHeter import LucaPairHeter
-    from src.ppi.models.LucaPairHomo import LucaPairHomo
+    from src.lucapair.models.LucaPairIntraInter import LucaPairIntraInter
+    from src.lucapair.models.LucaPairHeter import LucaPairHeter
+    from src.lucapair.models.LucaPairHomo import LucaPairHomo
     from src.common.luca_base import LucaBase
-    from src.ppi.models.LucaPPI import LucaPPI
-    from src.ppi.models.LucaPPI2 import LucaPPI2
+    from src.lucasingle.models.LucaSingle import LucaSingle
+    from src.lucapair.models.LucaPair1 import LucaPair1
+    from src.lucapair.models.LucaPair2 import LucaPair2
     from src.common.alphabet import Alphabet
     from src.common.model_config import LucaConfig
     from src.encoder import Encoder
@@ -157,8 +158,10 @@ def get_args():
         required=True,
         choices=[
             "luca_base",
-            "lucappi",
-            "lucappi2",
+            "lucabase",
+            "lucasingle",
+            "lucapair1",
+            "lucapair2",
             "lucapair_homo",
             "lucapair_heter",
             "lucapair_intrainter"
@@ -1277,12 +1280,14 @@ def get_model(args):
     model_config.pad_token_id = seq_tokenizer.pad_token_id
 
     # model class
-    if args.model_type in ["lucappi"]:
-        model_class = LucaPPI
-    elif args.model_type in ["lucappi2"]:
-        model_class = LucaPPI2
-    elif args.model_type == "luca_base":
+    if args.model_type in ["lucapair1"]:
+        model_class = LucaPair1
+    elif args.model_type in ["lucapair2"]:
+        model_class = LucaPair2
+    elif args.model_type in ["luca_base", "lucabase"]:
         model_class = LucaBase
+    elif args.model_type in ["lucasingle"]:
+        model_class = LucaSingle
     elif args.model_type == "lucapair_homo":
         model_class = LucaPairHomo
     elif args.model_type == "lucapair_heter":
@@ -1445,7 +1450,7 @@ def main():
     # 文件记录解析函数
     encoder = Encoder(**encoder_config)
     # pair对数据集
-    if args.model_type in ["lucappi", "lucappi2"] or args.input_mode in ["pair"] or "lucapair" in args.model_type:
+    if args.model_type in ["lucapair1", "lucapair2"] or args.input_mode in ["pair"] or "lucapair" in args.model_type:
         parse_row_func = encoder.encode_pair
     else:
         # 基因或者蛋白单记录数据集

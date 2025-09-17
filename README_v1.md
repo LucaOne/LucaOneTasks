@@ -12,8 +12,8 @@ This project will download the checkpoint automatically from our `FTP` according
 ## 1. Networks    
 Three distinct networks correspond to three different types of inputs: 
 * LucaBase(Single)   
-* LucaPPI(Homogeneous Pair)       
-* LucaPPI2(Heterogeneous Pair)   
+* LucaPair1(Homogeneous Pair)       
+* LucaPair2(Heterogeneous Pair)   
 
 
 <center>
@@ -27,7 +27,7 @@ ification tasks.
 
 * Central Dogma(Central Dogma of Molecular Biology)    
   Input: DNA + Protein(heterogeneous double sequence)          
-  Network: LucaPPI2(`src/ppi/models/LucaPPI2`)    
+  Network: LucaPair2(`src/lucapair/models/LucaPair2`)    
 
 
 * SupKTax(Genus Taxonomy Annotation)     
@@ -62,17 +62,17 @@ ification tasks.
 
 * InfA(Influenza A Antigenic Relationship Prediction)   
   Input: RNA + RNA(homogeneous double sequence)         
-  Network: LucaPPI(`src/ppi/models/LucaPPI`)    
+  Network: LucaPair1(`src/lucapair/models/LucaPair1`)    
 
 
 * PPI(Protein-Protein Interaction)     
   Input: Protein + Protein(homogeneous double sequence)           
-  Network: LucaPPI(`src/ppi/models/LucaPPI`)   
+  Network: LucaPair1(`src/lucapair/models/LucaPair2`)   
 
 
 * ncRPI(ncRNA-Protein Interactions)          
   Input: DNA + Protein(heterogeneous double sequence)          
-  Network: LucaPPI2(`src/ppi/models/LucaPPI2`)
+  Network: LucaPair2(`src/lucapair/models/LucaPair2`)
 
 ## 2. Environment Installation
 ### step1: update git
@@ -316,7 +316,7 @@ python predict_v1.py \
     --dataset_type gene_protein \
     --task_type binary_class \
     --task_level_type seq_level \
-    --model_type lucappi2 \
+    --model_type lucapair2 \
     --input_type matrix \
     --input_mode pair \
     --time_str 20240406173806 \

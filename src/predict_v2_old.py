@@ -20,7 +20,6 @@ import codecs
 import time, shutil
 import numpy as np
 import argparse
-from datetime import datetime
 from collections import OrderedDict
 from subword_nmt.apply_bpe import BPE
 from transformers import BertConfig
@@ -37,11 +36,12 @@ try:
     from common.alphabet import Alphabet
     from file_operator import csv_reader, fasta_reader, csv_writer, file_reader
     from common.luca_base import LucaBase
-    from ppi.models.LucaPPI import LucaPPI
-    from ppi.models.LucaPPI2 import LucaPPI2
-    from ppi.models.LucaPairHomo import LucaPairHomo
-    from ppi.models.LucaPairHeter import LucaPairHeter
-    from ppi.models.LucaPairIntraInter import LucaPairIntraInter
+    from lucasingle.models.LucaSingle import LucaSingle
+    from lucapair.models.LucaPair1 import LucaPair1
+    from lucapair.models.LucaPair2 import LucaPair2
+    from lucapair.models.LucaPairHomo import LucaPairHomo
+    from lucapair.models.LucaPairHeter import LucaPairHeter
+    from lucapair.models.LucaPairIntraInter import LucaPairIntraInter
 except ImportError:
     from src.utils import to_device, device_memory, available_gpu_id, load_labels, seq_type_is_match_seq, \
         download_trained_checkpoint_lucaone_v1, download_trained_checkpoint_downstream_tasks
@@ -52,11 +52,12 @@ except ImportError:
     from src.common.alphabet import Alphabet
     from src.file_operator import csv_reader, fasta_reader, csv_writer, file_reader
     from src.common.luca_base import LucaBase
-    from src.ppi.models.LucaPPI import LucaPPI
-    from src.ppi.models.LucaPPI2 import LucaPPI2
-    from src.ppi.models.LucaPairHomo import LucaPairHomo
-    from src.ppi.models.LucaPairHeter import LucaPairHeter
-    from src.ppi.models.LucaPairIntraInter import LucaPairIntraInter
+    from src.lucasingle.models.LucaSingle import LucaSingle
+    from src.lucapair.models.LucaPair1 import LucaPair1
+    from src.lucapair.models.LucaPair2 import LucaPair2
+    from src.lucapair.models.LucaPairHomo import LucaPairHomo
+    from src.lucapair.models.LucaPairHeter import LucaPairHeter
+    from src.lucapair.models.LucaPairIntraInter import LucaPairIntraInter
 
 
 def transform_one_sample_2_feature(
@@ -347,12 +348,14 @@ def load_model(args, model_name, model_dir):
     device = torch.device(args.device)
     print("load model on cuda:", device)
   
-    if args.model_type in ["ppi", "lucappi"]:
-        config_class, seq_tokenizer_class, model_class = BertConfig, Alphabet, LucaPPI
-    elif args.model_type in ["lucappi2"]:
-        config_class, seq_tokenizer_class, model_class = BertConfig, Alphabet, LucaPPI2
-    elif args.model_type in ["luca_base"]:
+    if args.model_type in ["lucapair1"]:
+        config_class, seq_tokenizer_class, model_class = BertConfig, Alphabet, LucaPair1
+    elif args.model_type in ["lucapair2"]:
+        config_class, seq_tokenizer_class, model_class = BertConfig, Alphabet, LucaPair2
+    elif args.model_type in ["luca_base", "lucabase"]:
         config_class, seq_tokenizer_class, model_class = BertConfig, Alphabet, LucaBase
+    elif args.model_type in ["lucasingle"]:
+        config_class, seq_tokenizer_class, model_class = BertConfig, Alphabet, LucaSingle
     elif args.model_type in ["lucapair_homo"]:
         config_class, seq_tokenizer_class, model_class = LucaConfig, Alphabet, LucaPairHomo
     elif args.model_type in ["lucapair_heter"]:
@@ -780,7 +783,7 @@ def run_args():
         default=None,
         type=str,
         required=True,
-        choices=["luca_base", "lucappi", "lucappi2", "lucapair_homo", "lucapair_heter", "lucapair_intrainter"],
+        choices=["luca_base", "lucapair1", "lucapair2", "lucapair_homo", "lucapair_heter", "lucapair_intrainter"],
         help="the model type."
     )
     parser.add_argument(

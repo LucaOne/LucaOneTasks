@@ -22,15 +22,17 @@ try:
     from common.loss import *
     from utils import *
     from common.multi_label_metrics import *
-    from common.modeling_bert import BertModel, BertPreTrainedModel
     from common.metrics import *
+    from common.modeling_bert import BertPreTrainedModel
+    from common.cross_transformer import LucaTransformer
 except ImportError:
     from src.common.pooling import *
     from src.common.loss import *
     from src.utils import *
     from src.common.multi_label_metrics import *
     from src.common.metrics import *
-    from src.common.modeling_bert import BertModel, BertPreTrainedModel
+    from src.common.modeling_bert import BertPreTrainedModel
+    from src.common.cross_transformer import LucaTransformer
 logger = logging.getLogger(__name__)
 
 
@@ -65,7 +67,7 @@ class LucaPairHomo(BertPreTrainedModel):
             # seq -> bert -> (pooler) -> fc * -> classifier
             self.input_size_list[0] = config.hidden_size
             config.max_position_embeddings = config.seq_max_length
-            self.seq_encoder = BertModel(config, use_pretrained_embedding=False, add_pooling_layer=(args.seq_pooling_type is None or args.seq_pooling_type == "none") and self.task_level_type in ["seq_level"])
+            self.seq_encoder = LucaTransformer(config, use_pretrained_embedding=False, add_pooling_layer=(args.seq_pooling_type is None or args.seq_pooling_type == "none") and self.task_level_type in ["seq_level"])
             if self.task_level_type in ["seq_level"]:
                 self.seq_pooler = create_pooler(pooler_type="seq", config=config, args=args)
             self.encoder_type_list[0] = True
@@ -88,7 +90,7 @@ class LucaPairHomo(BertPreTrainedModel):
                     self.matrix_encoder = nn.ModuleList([
                         nn.Linear(config.embedding_input_size, config.hidden_size),
                         create_activate(config.emb_activate_func),
-                        BertModel(
+                        LucaTransformer(
                             matrix_encoder_config,
                             use_pretrained_embedding=True,
                             add_pooling_layer=(args.matrix_pooling_type is None or args.matrix_pooling_type == "none") and self.task_level_type in ["seq_level"]
@@ -97,7 +99,7 @@ class LucaPairHomo(BertPreTrainedModel):
 
                 else:
                     self.matrix_encoder = nn.ModuleList([
-                        BertModel(
+                        LucaTransformer(
                             matrix_encoder_config,
                             use_pretrained_embedding=True,
                             add_pooling_layer=(args.matrix_pooling_type is None or args.matrix_pooling_type == "none") and self.task_level_type in ["seq_level"]

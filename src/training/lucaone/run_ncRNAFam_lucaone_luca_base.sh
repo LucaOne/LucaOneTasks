@@ -19,8 +19,8 @@ INPUT_MODE="single"
 TRUNC_TYPE="right"
 
 # for model
-MODEL_TYPE="luca_base"
-CONFIG_NAME="luca_base_config.json"
+MODEL_TYPE="lucabase"
+CONFIG_NAME="lucabase_config.json"
 FUSION_TYPE="concat"
 dropout_prob=0.1
 fc_size=128

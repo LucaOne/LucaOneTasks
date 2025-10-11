@@ -133,13 +133,25 @@ def predict_embedding(
 def get_args():
     parser = argparse.ArgumentParser(description='DNABert2 Embedding')
     # for one seq
-    parser.add_argument("--seq_id", type=str, default=None,
-                        help="the seq id")
-    parser.add_argument("--seq", type=str, default=None,
-                        help="when to input a seq")
-    parser.add_argument("--seq_type", type=str, default="gene",
-                        choices=["gene"],
-                        help="the input seq type")
+    parser.add_argument(
+        "--seq_id",
+        type=str,
+        default=None,
+        help="the seq id"
+    )
+    parser.add_argument(
+        "--seq",
+        type=str,
+        default=None,
+        help="when to input a seq"
+    )
+    parser.add_argument(
+        "--seq_type",
+        type=str,
+        default="gene",
+        choices=["gene"],
+        help="the input seq type"
+    )
 
     # for many
     parser.add_argument("--input_file", type=str, default=None,

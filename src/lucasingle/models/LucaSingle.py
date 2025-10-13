@@ -79,7 +79,9 @@ class LucaSingle(BertPreTrainedModel):
                 config,
                 use_pretrained_embedding=False,
                 add_pooling_layer=(args.seq_pooling_type is None or args.seq_pooling_type == "none") and self.task_level_type in ["seq_level"],
-                extra_emb_layer=variant_embeddings
+                extra_emb_layer=variant_embeddings,
+                use_dropout=False,
+                use_layernorm=False
             )
             if self.task_level_type in ["seq_level"]:
                 self.seq_pooler = create_pooler(pooler_type="seq", config=config, args=args)
@@ -239,7 +241,11 @@ class LucaSingle(BertPreTrainedModel):
             # seq + vector
             self.input_size_list[0] = config.hidden_size
             config.max_position_embeddings = config.seq_max_length
-            self.seq_encoder = LucaTransformer(config, use_pretrained_embedding=False, add_pooling_layer=(args.seq_pooling_type is None or args.seq_pooling_type == "none") and self.task_level_type in ["seq_level"])
+            self.seq_encoder = LucaTransformer(
+                config,
+                use_pretrained_embedding=False,
+                add_pooling_layer=(args.seq_pooling_type is None or args.seq_pooling_type == "none") and self.task_level_type in ["seq_level"]
+            )
             self.seq_pooler = create_pooler(pooler_type="seq", config=config, args=args)
             self.encoder_type_list[0] = True
             self.input_size_list[2] = config.embedding_input_size
@@ -319,6 +325,17 @@ class LucaSingle(BertPreTrainedModel):
         print("express_input_ids:")
         print(express_input_ids)
         input("continue:")
+
+        print("input_ids:")
+        print(input_ids)
+        input("continue:")
+        print("variant_input_ids:")
+        print(variant_input_ids)
+        input("continue:")
+        # 要排除的值
+        exclude_vals = torch.tensor([2, 3, 5], device=variant_input_ids.device)
+        positions = [torch.where(~torch.isin(row, exclude_vals))[0] for row in variant_input_ids]
+        print(positions)
         '''
         sample_ids = kwargs["sample_ids"] if "sample_ids" in kwargs else None
         attention_scores_savepath = kwargs["attention_scores_savepath"] if "attention_scores_savepath" in kwargs else None
@@ -344,7 +361,7 @@ class LucaSingle(BertPreTrainedModel):
                 filepath = os.path.join(attention_scores_savepath, "%s_seq_attention_scores.pt" % sample_id)
                 torch.save(cur_sample_output_seq_attentions, filepath)
 
-            # seq_attention_masks特殊位置不为0
+            # 将CLS与SEP位置设置为0（mask掉）
             if self.append_eos:
                 seq_index = torch.sum(seq_attention_masks, dim=1, keepdim=True) - 1
                 seq_attention_masks = seq_attention_masks.scatter(1, seq_index, 0)
@@ -453,7 +470,7 @@ class LucaSingle(BertPreTrainedModel):
                     raise Exception("Not support input_type=%s" % self.input_type)
                 filepath = os.path.join(output_classification_vector_dirpath, "%s_classification_vector.pt" % sample_id)
                 torch.save(output_classification_vector, filepath)
-        if self.input_type == "seq":
+        if self.input_type in ["seq", "seq_variant"]:
             concat_vector = seq_vector
         elif self.input_type in ["matrix", "matrix_express", "matrix_variant"]:
             concat_vector = matrix_vector

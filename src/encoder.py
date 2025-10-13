@@ -1138,13 +1138,9 @@ class Encoder(object):
         if express_list is not None and not isinstance(express_list, list):
             express_list = eval(express_list)
         elif variant_list is not None:
-            if isinstance(variant_list, str):
-                # five special tokens
-                variant_list = [int(v) + 5 for v in variant_list]
-            elif not isinstance(variant_list, list):
+            if not isinstance(variant_list, list) and not isinstance(variant_list, str) :
                 variant_list = eval(variant_list)
-                variant_list = [v + 5 for v in variant_list]
-            assert isinstance(variant_list, list)
+            variant_list = [int(v) + 5 for v in variant_list]
         return {
             "seq_id": seq_id,
             "seq": seq,

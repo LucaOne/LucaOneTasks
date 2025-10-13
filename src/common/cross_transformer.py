@@ -760,7 +760,7 @@ class LucaMultiHeadAttention(nn.Module):
 
 
 class LucaTransformer(nn.Module):
-    def __init__(self, config, emb_layer=None, use_pretrained_embedding=False, add_pooling_layer=True, extra_emb_layer=None):
+    def __init__(self, config, emb_layer=None, use_pretrained_embedding=False, add_pooling_layer=True, extra_emb_layer=None, use_dropout=True, use_layernorm=False):
         super().__init__()
         self.config = config
         self.use_pretrained_embedding = use_pretrained_embedding
@@ -779,7 +779,12 @@ class LucaTransformer(nn.Module):
         elif use_pretrained_embedding:
             self.embeddings = nn.Linear(config.embedding_input_size, config.hidden_size)
         else:
-            self.embeddings = LucaEmbeddings(config, extra_emb_layer=extra_emb_layer)
+            self.embeddings = LucaEmbeddings(
+                config,
+                extra_emb_layer=extra_emb_layer,
+                use_dropout=use_dropout,
+                use_layernorm=use_layernorm
+            )
 
         self.encoder = nn.ModuleList(
             [
@@ -811,7 +816,7 @@ class LucaTransformer(nn.Module):
             token_type_ids: Optional[torch.Tensor] = None,
             position_ids: Optional[torch.Tensor] = None,
             inputs_embeds: Optional[torch.Tensor] = None,
-            extra_input_ids = None,
+            extra_input_ids: Optional[torch.Tensor] = None,
             return_attentions=False
     ):
         if self.use_pretrained_embedding:
@@ -1066,8 +1071,10 @@ class LucaEmbeddings(nn.Module):
     Construct the embeddings from word, position and token_type embeddings.
     """
 
-    def __init__(self, config, extra_emb_layer=None):
+    def __init__(self, config, extra_emb_layer=None, use_dropout=True, use_layernorm=False):
         super().__init__()
+        self.use_dropout = use_dropout
+        self.use_layernorm = use_layernorm
         if hasattr(config, "no_token_embeddings"):
             self.no_token_embeddings = config.no_token_embeddings
         else:
@@ -1089,8 +1096,11 @@ class LucaEmbeddings(nn.Module):
         self.extra_emb_layer = extra_emb_layer
         # self.LayerNorm is not snake-cased to stick with TensorFlow model variable name and be able to load
         # any TensorFlow checkpoint file
-        # self.LayerNorm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
+        if use_layernorm:
+            self.LayerNorm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
+        if use_dropout:
+            self.dropout = nn.Dropout(config.hidden_dropout_prob)
+
         # position_ids (1, len position emb) is contiguous in memory and exported when serialized
         if not self.no_position_embeddings:
             self.position_embedding_type = getattr(config, "position_embedding_type", "absolute")
@@ -1143,11 +1153,12 @@ class LucaEmbeddings(nn.Module):
             position_embeddings = self.position_embeddings(position_ids)
             embeddings += position_embeddings
 
-        if self.extra_emb_layer is not None and extra_input_ids:
+        if self.extra_emb_layer is not None and extra_input_ids is not None:
             embeddings += self.extra_emb_layer(extra_input_ids)
-
-        # embeddings = self.LayerNorm(embeddings)
-        embeddings = self.dropout(embeddings)
+        if self.use_layernorm:
+            embeddings = self.LayerNorm(embeddings)
+        if self.use_dropout:
+            embeddings = self.dropout(embeddings)
         return embeddings
 
 

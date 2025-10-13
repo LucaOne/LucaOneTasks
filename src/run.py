@@ -991,7 +991,7 @@ def get_args():
 
 
 def check_args(args):
-    if args.input_type in ["seq", "seq_vector", "seq_matrix"]:
+    if "seq" in args.input_type:
         args.no_token_embeddings = False
     else:
         args.no_token_embeddings = True

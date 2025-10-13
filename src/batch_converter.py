@@ -11,6 +11,8 @@
 @desc: batch converter for LucaOneTasks
 '''
 import sys
+
+import numpy as np
 import torch
 from typing import Sequence
 import random
@@ -1097,7 +1099,11 @@ class BatchConverter(object):
                     for matrix_idx in range(cur_matrix_num):
                         # print("matrix_idx: %d" % matrix_idx)
                         cur_matrix = matrix_encoded_list[matrix_idx]
-                        cur_matrix = torch.tensor(cur_matrix, dtype=torch.float32)
+                        if isinstance(cur_matrix, np.ndarray):
+                            cur_matrix = torch.from_numpy(cur_matrix)
+                        else:
+                            # cur_matrix = torch.tensor(cur_matrix, dtype=torch.float32)
+                            cur_matrix = cur_matrix.clone()
                         cur_matrix_len = min(cur_matrix.shape[0], matrix_max_len)
                         if self.matrix_add_special_token:
                             encoded_matrices[sample_idx, matrix_idx, 0: cur_matrix_len - 1] = cur_matrix[0:cur_matrix_len - 1]
@@ -1117,7 +1123,11 @@ class BatchConverter(object):
                         real_seq_len = matrix_encoded.shape[0]
                     if molecule_flag:
                         real_seq_len = min(real_seq_len, self.atom_truncation_matrix_length)
-                        matrix = torch.tensor(matrix_encoded, dtype=torch.float32)
+                        if isinstance(matrix_encoded, np.ndarray):
+                            matrix = torch.from_numpy(matrix_encoded)
+                        else:
+                            # matrix = torch.tensor(matrix_encoded, dtype=torch.float32)
+                            matrix = matrix_encoded.clone()
                         if self.matrix_add_special_token:
                             encoded_matrices[sample_idx, 0: real_seq_len + 2] \
                                 = matrix[0: real_seq_len + 2]
@@ -1133,7 +1143,11 @@ class BatchConverter(object):
                             sentence_length = cur_sentence_length
                     else:
                         real_seq_len = min(real_seq_len, self.truncation_matrix_length)
-                        matrix = torch.tensor(matrix_encoded, dtype=torch.float32)
+                        if isinstance(matrix_encoded, np.ndarray):
+                            matrix = torch.from_numpy(matrix_encoded)
+                        else:
+                            # matrix = torch.tensor(matrix_encoded, dtype=torch.float32)
+                            matrix = matrix_encoded.clone()
                         if self.matrix_add_special_token:
                             encoded_matrices[sample_idx, 0: real_seq_len + 2] = matrix[0: real_seq_len + 2]
                             matrix_attention_masks[sample_idx, 0: real_seq_len + 2] = 1

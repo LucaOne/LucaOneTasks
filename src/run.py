@@ -1575,7 +1575,7 @@ def main():
         )
         if args.input_mode == "pair":
             print("Has Pair: True")
-            if "express" in args.input_type:
+            if "express" in args.input_type or "variant" in args.input_type:
                 train_dataset = train_dataset.map(
                     lambda x: parse_row_func(
                         x["seq_id_a"],
@@ -1590,6 +1590,8 @@ def main():
                         x["matrix_filename_b"] if "matrix_filename_b" in x else None,
                         x["express_list_a"] if "express_list_a" in x else None,
                         x["express_list_b"] if "express_list_b" in x else None,
+                        x["variant_list_a"] if "variant_list_a" in x else None,
+                        x["variant_list_b"] if "variant_list_b" in x else None,
                         x["label"] if "label" in x else None,
                     ),
                     batched=False
@@ -1613,7 +1615,7 @@ def main():
                 )
         else:
             print("Has Pair: False")
-            if "express" in args.input_type:
+            if "express" in args.input_type or "variant" in args.input_type:
                 train_dataset = train_dataset.map(
                     lambda x: parse_row_func(
                         x["seq_id"],
@@ -1622,18 +1624,6 @@ def main():
                         x["vector_filename"] if "vector_filename" in x else None,
                         x["matrix_filename"] if "matrix_filename" in x else None,
                         x["express_list"] if "express_list" in x else None,
-                        x["label"] if "label" in x else None,
-                    ),
-                    batched=False
-                )
-            elif "variant" in args.input_type:
-                train_dataset = train_dataset.map(
-                    lambda x: parse_row_func(
-                        x["seq_id"],
-                        x["seq_type"] if "seq_type" in x else "prot",
-                        x["seq"],
-                        x["vector_filename"] if "vector_filename" in x else None,
-                        x["matrix_filename"] if "matrix_filename" in x else None,
                         x["variant_list"] if "variant_list" in x else None,
                         x["label"] if "label" in x else None,
                     ),

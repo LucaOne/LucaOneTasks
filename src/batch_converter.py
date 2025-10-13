@@ -583,9 +583,8 @@ class BatchConverter(object):
             if self.prepend_bos:
                 express_input_ids[sample_idx, 0] = self.cls_idx
             express_input_ids[sample_idx, int(self.prepend_bos):real_len + int(self.prepend_bos)] = cur_express_encoded
-            cur_len = real_len + int(self.prepend_bos) + int(self.append_eos)
             if self.append_eos:
-                express_input_ids[sample_idx, cur_len] = self.eos_idx
+                express_input_ids[sample_idx, real_len + int(self.prepend_bos)] = self.eos_idx
 
         return express_input_ids
 
@@ -627,9 +626,8 @@ class BatchConverter(object):
             if self.prepend_bos:
                 variant_input_ids[sample_idx, 0] = self.cls_idx
             variant_input_ids[sample_idx, int(self.prepend_bos):real_len + int(self.prepend_bos)] = cur_variant_encoded
-            cur_len = real_len + int(self.prepend_bos) + int(self.append_eos)
             if self.append_eos:
-                variant_input_ids[sample_idx, cur_len] = self.eos_idx
+                variant_input_ids[sample_idx, real_len + int(self.prepend_bos)] = self.eos_idx
 
         return variant_input_ids
 

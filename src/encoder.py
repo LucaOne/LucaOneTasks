@@ -1135,9 +1135,8 @@ class Encoder(object):
             elif seq_type == "multi_prot":
                 seq = ",".join([clean_seq_esm(seq_id, v) for v in seq.split(",")])
 
-        if express_list is not None:
-            if not isinstance(express_list, list):
-                express_list = eval(express_list)
+        if express_list is not None and not isinstance(express_list, list):
+            express_list = eval(express_list)
         elif variant_list is not None:
             if isinstance(variant_list, str):
                 # five special tokens

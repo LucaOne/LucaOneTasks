@@ -3,7 +3,7 @@ export CUDA_VISIBLE_DEVICES=0,1,2,3
 seed=1221
 
 # for dataset
-DATASET_NAME="QuinoaAltitude"
+DATASET_NAME="QuinoaAltitude_SNP"
 DATASET_TYPE="gene"
 
 # for task
@@ -68,7 +68,7 @@ batch_size=16
 ## 最大学习速率(peak learning rate)
 learning_rate=2e-4
 ## data loading buffer size
-buffer_size=10240
+buffer_size=4096
 weight=4,1,2,2
 variant_bin_size=4
 
@@ -133,8 +133,8 @@ python -W ignore -m torch.distributed.launch --nnodes 1 --node_rank 0 --master_p
   --num_hidden_layers $num_hidden_layers \
   --dropout_prob $dropout_prob \
   --classifier_size $classifier_size \
-  --vector_dirpath ../../vectors/$DATASET_NAME/$llm_type/$llm_version/$llm_step  \
-  --matrix_dirpath ../../matrices/$DATASET_NAME/$llm_type/$llm_version/$llm_step \
+  --vector_dirpath ../../vectors/Quinoa/$llm_type/$llm_version/$llm_step  \
+  --matrix_dirpath ../../matrices/Quinoa/$llm_type/$llm_version/$llm_step \
   --seq_fc_size null \
   --matrix_fc_size null \
   --vector_fc_size null \

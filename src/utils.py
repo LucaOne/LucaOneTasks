@@ -1204,3 +1204,4 @@ def save_prediction_results_during_training(dataset_type, truths, preds, output_
                 cur_truth_index_list = np.where(cur_truth >= threshold)[0].tolist()
                 cur_pred_index_list = np.where(cur_pred >= threshold)[0].tolist()
                 writer.write("%s,%s\n" % (str(cur_pred_index_list), str(cur_truth_index_list)))
+

@@ -179,6 +179,7 @@ def get_args():
             "vector",
             "seq_matrix",
             "seq_vector",
+            "seq_variant",
             "matrix_express",
             "matrix_variant",
             "seq_vs_seq",
@@ -1029,6 +1030,8 @@ def get_input_cols(args):
         input_col_names = [args.dataset_type, "embedding_vector", "express_list"]
     elif args.input_mode == "single" and args.input_type == "matrix_variant":
         input_col_names = [args.dataset_type, "embedding_vector", "variant_list"]
+    elif args.input_mode == "single" and args.input_type == "seq_variant":
+        input_col_names = [args.dataset_type, "seq", "variant_list"]
     elif args.input_mode == "pair" and args.input_type == "seq":
         input_col_names = [args.dataset_type, "seq_a", "seq_b"]
     elif args.input_mode == "pair" and args.input_type == "vector":

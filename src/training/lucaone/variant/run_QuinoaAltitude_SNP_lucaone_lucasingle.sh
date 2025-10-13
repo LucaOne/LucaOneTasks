@@ -68,7 +68,7 @@ batch_size=16
 ## 最大学习速率(peak learning rate)
 learning_rate=1e-4
 ## data loading buffer size
-buffer_size=4096
+buffer_size=10240
 weight=4,1,2,2
 variant_bin_size=4
 

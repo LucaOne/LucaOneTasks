@@ -13,8 +13,8 @@ LABEL_TYPE="QuinoaAltitude"
 
 # for input
 ## here only embedding matrix-channel
-## channels: seq,vector,matrix,seq_matrix,seq_vector,matrix_variant
-INPUT_TYPE="matrix_variant"
+## channels: seq,vector,matrix,seq_matrix,seq_vector,matrix_variant,seq_variant
+INPUT_TYPE="seq_variant"
 INPUT_MODE="single"
 TRUNC_TYPE="right"
 
@@ -23,7 +23,7 @@ MODEL_TYPE="lucasingle"
 CONFIG_NAME="lucasingle_config.json"
 FUSION_TYPE="concat"
 dropout_prob=0.1
-fc_size=1024
+fc_size=256
 classifier_size=$fc_size
 BEST_METRIC_TYPE="f1"
 # binary-class, multi-label: bce, multi-class: cce, regression: l1 or l2
@@ -31,16 +31,16 @@ loss_type="cce"
 
 # for sequence channel
 SEQ_MAX_LENGTH=3074
-hidden_size=2560
-num_attention_heads=0
-num_hidden_layers=0
+hidden_size=1024
+num_attention_heads=8
+num_hidden_layers=2
 VOCAB_NAME="gene"
-# none, avg, max, value_attention
-SEQ_POOLING_TYPE="value_attention"
+# none, avg, max, value_attention, weighted_attention
+SEQ_POOLING_TYPE="weighted_attention"
 
 # for embedding channel
 matrix_max_length=3074
-embedding_input_size=2560
+embedding_input_size=1024
 # none, avg, max, value_attention, weighted_attention
 MATRIX_POOLING_TYPE="weighted_attention"
 
@@ -64,11 +64,11 @@ warmup_steps=1000
 ## -1自动计算
 max_steps=-1
 ## batch size for one GPU
-batch_size=64
+batch_size=16
 ## 最大学习速率(peak learning rate)
-learning_rate=4e-4
+learning_rate=2e-4
 ## data loading buffer size
-buffer_size=2048
+buffer_size=102400
 weight=4,1,2,2
 variant_bin_size=4
 
@@ -118,7 +118,6 @@ python -W ignore -m torch.distributed.launch --nnodes 1 --node_rank 0 --master_p
   --embedding_input_size $embedding_input_size \
   --matrix_max_length=$matrix_max_length \
   --trunc_type=$TRUNC_TYPE \
-  --no_token_embeddings \
   --no_token_type_embeddings \
   --no_position_embeddings \
   --buffer_size $buffer_size \

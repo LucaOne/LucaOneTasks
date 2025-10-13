@@ -29,9 +29,9 @@ sys.path.append("..")
 sys.path.append("../src")
 import torch.distributed as dist
 try:
-    from .evaluator import evaluate
-    from .tester import test
-    from .utils import sample_size, to_device, get_lr, writer_info_tb, print_batch, lcm
+    from evaluator import evaluate
+    from tester import test
+    from utils import sample_size, to_device, get_lr, writer_info_tb, print_batch, lcm
 except ImportError:
     from src.evaluator import evaluate
     from src.tester import test
@@ -119,11 +119,13 @@ def train(args, train_dataloader, model_config, model, seq_tokenizer, parse_row_
     # Distributed training (should be after apex fp16 initialization)
     if args.n_gpu > 1:
         # find_unused_parameters=True
-        find_unused_parameters = True
-        model = torch.nn.parallel.DistributedDataParallel(model,
-                                                          device_ids=[args.local_rank],
-                                                          output_device=args.local_rank,
-                                                          find_unused_parameters=find_unused_parameters)
+        find_unused_parameters = False
+        model = torch.nn.parallel.DistributedDataParallel(
+            model,
+            device_ids=[args.local_rank],
+            output_device=args.local_rank,
+            find_unused_parameters=find_unused_parameters
+        )
     if args.local_rank in [0, -1]:
         # Train
         log_fp.write("***** Running training *****\n")

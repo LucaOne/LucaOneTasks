@@ -69,6 +69,22 @@ class LucaSingle(BertPreTrainedModel):
                 self.seq_pooler = create_pooler(pooler_type="seq", config=config, args=args)
             self.encoder_type_list[0] = True
             self.linear_idx[0] = 0
+        elif self.input_type == "seq_variant":
+            # seq -> bert -> (pooler) -> fc * -> classifier
+            self.input_size_list[0] = config.hidden_size
+            variant_bin_size = args.variant_bin_size
+            variant_embeddings = nn.Embedding(variant_bin_size + 5, config.embedding_input_size, padding_idx=config.pad_token_id)
+            config.max_position_embeddings = config.seq_max_length
+            self.seq_encoder = LucaTransformer(
+                config,
+                use_pretrained_embedding=False,
+                add_pooling_layer=(args.seq_pooling_type is None or args.seq_pooling_type == "none") and self.task_level_type in ["seq_level"],
+                extra_emb_layer=variant_embeddings
+            )
+            if self.task_level_type in ["seq_level"]:
+                self.seq_pooler = create_pooler(pooler_type="seq", config=config, args=args)
+            self.encoder_type_list[0] = True
+            self.linear_idx[0] = 0
         elif self.input_type == "matrix":
             # emb matrix -> (encoder) - > (pooler) -> fc * -> classifier
             if args.matrix_encoder:
@@ -316,7 +332,8 @@ class LucaSingle(BertPreTrainedModel):
                 token_type_ids=token_type_ids,
                 position_ids=position_ids,
                 inputs_embeds=None,
-                return_attentions=return_attentions
+                return_attentions=return_attentions,
+                extra_input_ids=express_input_ids if express_input_ids is not None else variant_input_ids
             )
             if return_attentions:
                 output_seq_attentions = seq_outputs[2]

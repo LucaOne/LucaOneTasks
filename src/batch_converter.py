@@ -167,7 +167,8 @@ class BatchConverter(object):
             self.atom_append_len = int(self.atom_prepend_bos) + int(self.atom_append_eos)
 
         print("BatchConverter: prepend_bos=%r, append_eos=%r" % (self.prepend_bos, self.append_eos))
-        print("BatchConverter: atom_prepend_bos=%r, atom_append_eos=%r" % (self.atom_prepend_bos, self.atom_append_eos))
+        if self.atom_tokenizer is not None:
+            print("BatchConverter: atom_prepend_bos=%r, atom_append_eos=%r" % (self.atom_prepend_bos, self.atom_append_eos))
         self.matrix_add_special_token = False
         if "matrix_add_special_token" in kwargs and kwargs["matrix_add_special_token"]:
             self.matrix_add_special_token = kwargs["matrix_add_special_token"]
@@ -212,7 +213,8 @@ class BatchConverter(object):
         self.no_position_embeddings = no_position_embeddings
         self.no_token_type_embeddings = no_token_type_embeddings
         print("BatchConverter: prepend_bos=%r, append_eos=%r" % (self.prepend_bos, self.append_eos))
-        print("BatchConverter: atom_prepend_bos=%r, atom_append_eos=%r" % (self.atom_prepend_bos, self.atom_append_eos))
+        if self.atom_tokenizer is not None:
+            print("BatchConverter: atom_prepend_bos=%r, atom_append_eos=%r" % (self.atom_prepend_bos, self.atom_append_eos))
         print("-" * 50)
 
     def __parse_label__(self, max_length, task_level_type, label_size, output_mode, label):

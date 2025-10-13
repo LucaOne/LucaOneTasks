@@ -1100,6 +1100,7 @@ def run_args():
             "seq_matrix",
             "seq_vector",
             "matrix_express",
+            "matrix_variant",
             "seq_vs_seq",
             "seq_vs_vector",
             "seq_vs_matrix",

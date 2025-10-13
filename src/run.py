@@ -180,6 +180,7 @@ def get_args():
             "seq_matrix",
             "seq_vector",
             "matrix_express",
+            "matrix_variant",
             "seq_vs_seq",
             "seq_vs_vector",
             "seq_vs_matrix",
@@ -978,6 +979,12 @@ def get_args():
         default=None,
         help="express bin size for input b"
     )
+    parser.add_argument(
+        "--variant_bin_size",
+        type=int,
+        default=None,
+        help="varint bin size"
+    )
     args = parser.parse_args()
     return args
 
@@ -1020,6 +1027,8 @@ def get_input_cols(args):
         input_col_names = [args.dataset_type, "seq", "embedding_vector"]
     elif args.input_mode == "single" and args.input_type == "matrix_express":
         input_col_names = [args.dataset_type, "embedding_vector", "express_list"]
+    elif args.input_mode == "single" and args.input_type == "matrix_variant":
+        input_col_names = [args.dataset_type, "embedding_vector", "variant_list"]
     elif args.input_mode == "pair" and args.input_type == "seq":
         input_col_names = [args.dataset_type, "seq_a", "seq_b"]
     elif args.input_mode == "pair" and args.input_type == "vector":
@@ -1450,7 +1459,9 @@ def main():
     # 文件记录解析函数
     encoder = Encoder(**encoder_config)
     # pair对数据集
-    if args.model_type in ["lucapair1", "lucapair2"] or args.input_mode in ["pair"] or "lucapair" in args.model_type:
+    if args.model_type in ["lucapair1", "lucapair2"] \
+            or args.input_mode in ["pair"] \
+            or "lucapair" in args.model_type:
         parse_row_func = encoder.encode_pair
     else:
         # 基因或者蛋白单记录数据集
@@ -1564,35 +1575,82 @@ def main():
         )
         if args.input_mode == "pair":
             print("Has Pair: True")
-            train_dataset = train_dataset.map(
-                lambda x: parse_row_func(
-                    x["seq_id_a"],
-                    x["seq_id_b"],
-                    x["seq_type_a"] if "seq_type_a" in x else "prot",
-                    x["seq_type_b"] if "seq_type_b" in x else "prot",
-                    x["seq_a"],
-                    x["seq_b"],
-                    x["vector_filename_a"] if "vector_filename_a" in x else None,
-                    x["vector_filename_b"] if "vector_filename_b" in x else None,
-                    x["matrix_filename_a"] if "matrix_filename_a" in x else None,
-                    x["matrix_filename_b"] if "matrix_filename_b" in x else None,
-                    x["label"] if "label" in x else None,
-                ),
-                batched=False
-            )
+            if "express" in args.input_type:
+                train_dataset = train_dataset.map(
+                    lambda x: parse_row_func(
+                        x["seq_id_a"],
+                        x["seq_id_b"],
+                        x["seq_type_a"] if "seq_type_a" in x else "prot",
+                        x["seq_type_b"] if "seq_type_b" in x else "prot",
+                        x["seq_a"],
+                        x["seq_b"],
+                        x["vector_filename_a"] if "vector_filename_a" in x else None,
+                        x["vector_filename_b"] if "vector_filename_b" in x else None,
+                        x["matrix_filename_a"] if "matrix_filename_a" in x else None,
+                        x["matrix_filename_b"] if "matrix_filename_b" in x else None,
+                        x["express_list_a"] if "express_list_a" in x else None,
+                        x["express_list_b"] if "express_list_b" in x else None,
+                        x["label"] if "label" in x else None,
+                    ),
+                    batched=False
+                )
+            else:
+                train_dataset = train_dataset.map(
+                    lambda x: parse_row_func(
+                        x["seq_id_a"],
+                        x["seq_id_b"],
+                        x["seq_type_a"] if "seq_type_a" in x else "prot",
+                        x["seq_type_b"] if "seq_type_b" in x else "prot",
+                        x["seq_a"],
+                        x["seq_b"],
+                        x["vector_filename_a"] if "vector_filename_a" in x else None,
+                        x["vector_filename_b"] if "vector_filename_b" in x else None,
+                        x["matrix_filename_a"] if "matrix_filename_a" in x else None,
+                        x["matrix_filename_b"] if "matrix_filename_b" in x else None,
+                        x["label"] if "label" in x else None,
+                    ),
+                    batched=False
+                )
         else:
             print("Has Pair: False")
-            train_dataset = train_dataset.map(
-                lambda x: parse_row_func(
-                    x["seq_id"],
-                    x["seq_type"] if "seq_type" in x else "prot",
-                    x["seq"],
-                    x["vector_filename"] if "vector_filename" in x else None,
-                    x["matrix_filename"] if "matrix_filename" in x else None,
-                    x["label"] if "label" in x else None,
-                ),
-                batched=False
-            )
+            if "express" in args.input_type:
+                train_dataset = train_dataset.map(
+                    lambda x: parse_row_func(
+                        x["seq_id"],
+                        x["seq_type"] if "seq_type" in x else "prot",
+                        x["seq"],
+                        x["vector_filename"] if "vector_filename" in x else None,
+                        x["matrix_filename"] if "matrix_filename" in x else None,
+                        x["express_list"] if "express_list" in x else None,
+                        x["label"] if "label" in x else None,
+                    ),
+                    batched=False
+                )
+            elif "variant" in args.input_type:
+                train_dataset = train_dataset.map(
+                    lambda x: parse_row_func(
+                        x["seq_id"],
+                        x["seq_type"] if "seq_type" in x else "prot",
+                        x["seq"],
+                        x["vector_filename"] if "vector_filename" in x else None,
+                        x["matrix_filename"] if "matrix_filename" in x else None,
+                        x["variant_list"] if "variant_list" in x else None,
+                        x["label"] if "label" in x else None,
+                    ),
+                    batched=False
+                )
+            else:
+                train_dataset = train_dataset.map(
+                    lambda x: parse_row_func(
+                        x["seq_id"],
+                        x["seq_type"] if "seq_type" in x else "prot",
+                        x["seq"],
+                        x["vector_filename"] if "vector_filename" in x else None,
+                        x["matrix_filename"] if "matrix_filename" in x else None,
+                        x["label"] if "label" in x else None,
+                    ),
+                    batched=False
+                )
         train_dataset = split_dataset_by_node(train_dataset, rank=args.local_rank, world_size=dist.get_world_size()) \
             .shuffle(buffer_size=args.buffer_size, seed=args.seed)
         train_dataset = train_dataset.with_format("torch")

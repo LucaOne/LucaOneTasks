@@ -587,6 +587,50 @@ class BatchConverter(object):
 
         return express_input_ids
 
+    def __variant_encode__(self, batch_size, variant_list):
+        '''
+        variant_encoded_list不加特殊token，input_ids根据设置是否加上特殊token占位
+        :param batch_size:
+        :param variant_list:
+        :return:
+        '''
+        max_len = max(len(variant) for variant in variant_list)
+        if self.matrix_add_special_token:
+            max_len -= 2
+        if self.truncation_matrix_length:
+            max_len = min(max_len, self.truncation_matrix_length)
+        if self.matrix_add_special_token:
+            max_len += 2
+        else:
+            max_len = max_len + int(self.prepend_bos) + int(self.append_eos)
+
+        variant_encoded_list = variant_list
+        # 该长度已经减去了需要增加的特殊字符的个数
+        if self.truncation_matrix_length:
+            variant_encoded_list = [encoded[:self.truncation_matrix_length] for encoded in variant_encoded_list]
+
+        max_len = max_len + int(self.prepend_bos) + int(self.append_eos)
+        # for input
+        variant_input_ids = torch.empty(
+            (
+                batch_size,
+                max_len,
+            ),
+            dtype=torch.int64,
+        )
+        variant_input_ids.fill_(self.padding_idx)
+        for sample_idx in range(batch_size):
+            real_len = len(variant_encoded_list[sample_idx])
+            cur_variant_encoded = torch.tensor(variant_encoded_list[sample_idx], dtype=torch.long)
+            if self.prepend_bos:
+                variant_input_ids[sample_idx, 0] = self.cls_idx
+            variant_input_ids[sample_idx, int(self.prepend_bos):real_len + int(self.prepend_bos)] = cur_variant_encoded
+            cur_len = real_len + int(self.prepend_bos) + int(self.append_eos)
+            if self.append_eos:
+                variant_input_ids[sample_idx, cur_len] = self.eos_idx
+
+        return variant_input_ids
+
     def __multi_seq_encode__(self, batch_size, seq_types, seqs):
         '''
         该函数是multi seqs for one sample的表征器，每个seq都加[CLS]与[SEP]
@@ -1482,6 +1526,13 @@ class BatchConverter(object):
                     express_list.append(item["express_list"])
                 res.update({
                     "express_input_ids": self.__express_encode__(batch_size=batch_size, express_list=express_list)
+                })
+            elif "variant_list" in raw_batch[0] and raw_batch[0]["variant_list"] is not None:
+                variant_list = []
+                for item in raw_batch:
+                    variant_list.append(item["variant_list"])
+                res.update({
+                    "variant_input_ids": self.__variant_encode__(batch_size=batch_size, variant_list=variant_list)
                 })
             '''
             for item in res.items():

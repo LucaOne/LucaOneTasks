@@ -20,7 +20,7 @@ sys.path.append("../../../")
 sys.path.append("../../../../")
 sys.path.append("../../../../src")
 try:
-    from ....common.modeling_bert import BertEncoder, BertPooler
+    from common.modeling_bert import BertEncoder, BertPooler
 except ImportError:
     from src.common.modeling_bert import BertEncoder, BertPooler
 
@@ -221,14 +221,16 @@ class GlobalMaskTransformerPooling1D(nn.Module):
             mask = torch.cat([cls_mask, mask], dim=1)
             mask = mask[:, None, None, :]
 
-        sequence_output = self.encoder(merged_output,
-                                       attention_mask=mask,
-                                       head_mask=None,
-                                       encoder_hidden_states=None,
-                                       encoder_attention_mask=None,
-                                       output_attentions=False,
-                                       output_hidden_states=False,
-                                       return_dict=False)[0]
+        sequence_output = self.encoder(
+            merged_output,
+            attention_mask=mask,
+            head_mask=None,
+            encoder_hidden_states=None,
+            encoder_attention_mask=None,
+            output_attentions=False,
+            output_hidden_states=False,
+            return_dict=False
+        )[0]
         pooled_output = self.pooler(sequence_output)
         return pooled_output
 
@@ -306,14 +308,16 @@ class TransformerPool1d(nn.Module):
         #cls_emb_batch = self.embeddings(torch.tensor([[self.CLS_ID]] * x.size()[0], dtype=torch.long).to(self.device)) # B, 1
         cls_emb_batch = self.embeddings.expand(B, 1, Enbed)
         merged_output = torch.cat((cls_emb_batch, x), dim=1) # [B, Seq_len + 1, Enbed]
-        sequence_output = self.encoder(merged_output,
-                                       attention_mask=None,
-                                       head_mask=None,
-                                       encoder_hidden_states=None,
-                                       encoder_attention_mask=None,
-                                       output_attentions=False,
-                                       output_hidden_states=False,
-                                       return_dict=False)[0]
+        sequence_output = self.encoder(
+            merged_output,
+            attention_mask=None,
+            head_mask=None,
+            encoder_hidden_states=None,
+            encoder_attention_mask=None,
+            output_attentions=False,
+            output_hidden_states=False,
+            return_dict=False
+        )[0]
         pooled_output = self.pooler(sequence_output)
         return pooled_output
 

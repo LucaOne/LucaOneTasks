@@ -158,7 +158,6 @@ class LucaTransformerLayer(nn.Module):
     def _init_submodules(self, add_bias_kv, use_luca_layer_norm_v2):
         LucaLayerNorm = LucaLayerNormV2 if use_luca_layer_norm_v2 else LucaLayerNormV1
 
-
         # pre layer norm
         self.pre_layer_norm = LucaLayerNorm(self.embed_dim)
 

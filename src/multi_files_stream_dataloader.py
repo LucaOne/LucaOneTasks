@@ -183,6 +183,8 @@ class MultiFilesStreamLoader(object):
         try:
             row = self.cur_fin.__next__()
             if self.input_mode == "pair":
+                if "express" in self.input_type or "variant" in self.input_type:
+                    assert len(row) in [9, 13]
                 if len(row) == 5:
                     seq_id_a, seq_id_b, seq_a, seq_b, label = row[0:5]
                     seq_type_a, seq_type_b, vector_filename_a, vector_filename_b, matrix_filename_a, matrix_filename_b = None, None, None, None, None, None
@@ -194,9 +196,22 @@ class MultiFilesStreamLoader(object):
                 elif len(row) == 11:
                     seq_id_a, seq_id_b, seq_type_a, seq_type_b, seq_a, seq_b, vector_filename_a, vector_filename_b, matrix_filename_a, matrix_filename_b, label = row[0:11]
                     express_list_a, express_list_b = None, None
-                elif len(row) == 13:
-                    seq_id_a, seq_id_b, seq_type_a, seq_type_b, seq_a, seq_b, vector_filename_a, vector_filename_b, \
-                    matrix_filename_a, matrix_filename_b, express_list_a, express_list_b, label = row[0:13]
+                elif len(row) in [9, 13] and "express" in self.input_type:
+                    if len(row) == 9:
+                        seq_id_a, seq_id_b, seq_type_a, seq_type_b, seq_a, seq_b, \
+                        express_list_a, express_list_b, label = row[0:9]
+                        vector_filename_a, vector_filename_b, matrix_filename_a, matrix_filename_b = None, None, None, None
+                    else:
+                        seq_id_a, seq_id_b, seq_type_a, seq_type_b, seq_a, seq_b, vector_filename_a, vector_filename_b, \
+                        matrix_filename_a, matrix_filename_b, express_list_a, express_list_b, label = row[0:13]
+                elif len(row) in [9, 13] and "variant" in self.input_type:
+                    if len(row) == 9:
+                        seq_id_a, seq_id_b, seq_type_a, seq_type_b, seq_a, seq_b, \
+                        variant_list_a, variant_list_b, label = row[0:9]
+                        vector_filename_a, vector_filename_b, matrix_filename_a, matrix_filename_b = None, None, None, None
+                    else:
+                        seq_id_a, seq_id_b, seq_type_a, seq_type_b, seq_a, seq_b, vector_filename_a, vector_filename_b, \
+                        matrix_filename_a, matrix_filename_b, variant_list_a, variant_list_b, label = row[0:13]
                 else:
                     raise Exception("the cols num not in [5, 7, 11, 13]")
                 res = {
@@ -226,8 +241,14 @@ class MultiFilesStreamLoader(object):
                         "express_list_a": eval(express_list_a) if express_list_a else None,
                         "express_list_b": eval(express_list_b) if express_list_b else None
                     })
-
+                elif "variant" in self.input_type:
+                    res.update({
+                        "variant_list_a": [int(v) for v in variant_list_a] if variant_list_a else None,
+                        "variant_list_b": [int(v) for v in variant_list_b] if variant_list_b else None
+                    })
             else:
+                if "express" in self.input_type or "variant" in self.input_type:
+                    assert len(row) == 5 or len(row) == 7
                 if len(row) == 3:
                     seq_id, seq, label = row[0:3]
                     seq_type, vector_filename, matrix_filename = "prot", None, None
@@ -239,8 +260,18 @@ class MultiFilesStreamLoader(object):
                 elif len(row) == 6:
                     seq_id, seq_type, seq, vector_filename, matrix_filename, label = row[0:6]
                     express_list = None
-                elif len(row) == 7:
-                    seq_id, seq_type, seq, vector_filename, matrix_filename, express_list, label = row[0:7]
+                elif len(row) in [5, 7] and "express" in self.input_type:
+                    if len(row) == 5:
+                        seq_id, seq_type, seq, express_list, label = row[0:5]
+                        vector_filename, matrix_filename = None, None
+                    else:
+                        seq_id, seq_type, seq, vector_filename, matrix_filename, express_list, label = row[0:7]
+                elif len(row) in [5, 7] and "variant" in self.input_type:
+                    if len(row) == 5:
+                        seq_id, seq_type, seq, variant_list, label = row[0:5]
+                        vector_filename, matrix_filename = None, None
+                    else:
+                        seq_id, seq_type, seq, vector_filename, matrix_filename, variant_list, label = row[0:7]
                 else:
                     raise Exception("the cols num not in [3, 4, 6, 7]")
                 res = {
@@ -263,6 +294,10 @@ class MultiFilesStreamLoader(object):
                 if "express" in self.input_type:
                     res.update({
                         "express_list": eval(express_list) if express_list else None
+                    })
+                elif "variant" in self.input_type:
+                    res.update({
+                        "variant_list": [int(v) for v in variant_list] if variant_list else None
                     })
             return res
         except Exception as e:

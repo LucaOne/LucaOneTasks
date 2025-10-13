@@ -1062,6 +1062,7 @@ class Encoder(object):
             vector_filename=None,
             matrix_filename=None,
             express_list=None,
+            variant_list=None,
             label=None
     ):
         seq_type = seq_type.strip().lower()
@@ -1088,7 +1089,7 @@ class Encoder(object):
 
         # for embedding matrix
         matrix = None
-        if self.input_type in ["matrix", "seq_matrix", "matrix_express"]:
+        if self.input_type in ["matrix", "seq_matrix", "matrix_express", "matrix_variant"]:
             if matrix_filename is None:
                 if seq is None:
                     raise Exception("seq is none and matrix_filename is none")
@@ -1130,6 +1131,15 @@ class Encoder(object):
         if express_list is not None:
             if not isinstance(express_list, list):
                 express_list = eval(express_list)
+            assert isinstance(express_list, list)
+        elif variant_list is not None:
+            if isinstance(variant_list, str):
+                # five special tokens
+                variant_list = [int(v) + 5 for v in variant_list]
+            elif not isinstance(variant_list, list):
+                variant_list = eval(variant_list)
+                variant_list = [v + 5 for v in variant_list]
+            assert isinstance(variant_list, list)
         return {
             "seq_id": seq_id,
             "seq": seq,
@@ -1137,6 +1147,7 @@ class Encoder(object):
             "vector": vector,
             "matrix": matrix,
             "express_list": express_list,
+            "variant_list": variant_list,
             "label": label
         }
 

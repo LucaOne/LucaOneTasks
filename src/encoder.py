@@ -14,6 +14,8 @@ import os
 import torch
 import sys
 import numpy as np
+import random
+random.seed(1221)
 sys.path.append(".")
 sys.path.append("../")
 sys.path.append("../src")
@@ -372,7 +374,9 @@ class Encoder(object):
     def put_into_buffer(self, seq_id, embedding_info):
         if self.embedding_buffer_size > 0:
             if len(self.embedding_buffer) >= self.embedding_buffer_size:
-                self.embedding_buffer = {}
+                random_key = random.choice(list(self.embedding_buffer.keys()))
+                self.embedding_buffer.pop(random_key)
+                # self.embedding_buffer = {}
             self.embedding_buffer[seq_id] = embedding_info
 
     def __get_embedding__(self, seq_id, seq_type, seq, embedding_type):
@@ -1062,6 +1066,7 @@ class Encoder(object):
             vector_filename=None,
             matrix_filename=None,
             express_list=None,
+            variant_list=None,
             label=None
     ):
         seq_type = seq_type.strip().lower()
@@ -1088,14 +1093,17 @@ class Encoder(object):
 
         # for embedding matrix
         matrix = None
-        if self.input_type in ["matrix", "seq_matrix", "matrix_express"]:
+        if self.input_type in ["matrix", "seq_matrix", "matrix_express", "matrix_variant"]:
             if matrix_filename is None:
                 if seq is None:
                     raise Exception("seq is none and matrix_filename is none")
                 elif seq_type == "molecule":
                     raise Exception("now not support embedding of the seq_type=%s" % seq_type)
                 else:
-                    matrix = self.__get_embedding__(seq_id, seq_type, seq, "matrix")
+                    if self.input_type == "matrix_variant":
+                        matrix = self.__get_embedding__("_".join(seq_id.split("_")[1:]), seq_type, seq, "matrix")
+                    else:
+                        matrix = self.__get_embedding__(seq_id, seq_type, seq, "matrix")
             elif isinstance(matrix_filename, str):
                 for matrix_dir in self.matrix_dirpath:
                     matrix_filepath = os.path.join(matrix_dir, matrix_filename)
@@ -1130,6 +1138,14 @@ class Encoder(object):
         if express_list is not None:
             if not isinstance(express_list, list):
                 express_list = eval(express_list)
+        elif variant_list is not None:
+            if isinstance(variant_list, str):
+                # five special tokens
+                variant_list = [int(v) + 5 for v in variant_list]
+            elif not isinstance(variant_list, list):
+                variant_list = eval(variant_list)
+                variant_list = [v + 5 for v in variant_list]
+            assert isinstance(variant_list, list)
         return {
             "seq_id": seq_id,
             "seq": seq,
@@ -1137,6 +1153,7 @@ class Encoder(object):
             "vector": vector,
             "matrix": matrix,
             "express_list": express_list,
+            "variant_list": variant_list,
             "label": label
         }
 
@@ -1155,7 +1172,6 @@ class Encoder(object):
             express_list_a=None,
             express_list_b=None,
             label=None
-
     ):
         seq_type_a = seq_type_a.strip().lower()
         seq_type_b = seq_type_b.strip().lower()

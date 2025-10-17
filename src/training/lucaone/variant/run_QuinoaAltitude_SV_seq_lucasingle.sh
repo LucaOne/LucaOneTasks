@@ -1,9 +1,9 @@
 #!/bin/bash
-export CUDA_VISIBLE_DEVICES=0,1,2,3
+export CUDA_VISIBLE_DEVICES=0
 seed=1221
 
 # for dataset
-DATASET_NAME="QuinoaAltitude_SNP"
+DATASET_NAME="QuinoaAltitude_SV"
 DATASET_TYPE="gene"
 
 # for task
@@ -55,7 +55,7 @@ num_train_epochs=50
 ## accumulation gradient steps
 gradient_accumulation_steps=1
 # 间隔多少个step在log文件中写入信息（实际上是gradient_accumulation_steps与logging_steps的最小公倍数）
-logging_steps=4000
+logging_steps=1000
 ## checkpoint的间隔step数。-1表示按照epoch粒度保存checkpoint
 save_steps=-1
 ## warmup_steps个step到达peak lr
@@ -69,13 +69,12 @@ batch_size=16
 learning_rate=2e-4
 ## data loading buffer size
 buffer_size=102400
-weight=4,1,2,2
+weight=2,4,1,1
 variant_bin_size=4
 
 time_str=$(date "+%Y%m%d%H%M%S")
 cd ../../../
-python -W ignore -m torch.distributed.launch --nnodes 1 --node_rank 0 --master_port=25687 --nproc_per_node=4 \
-  run.py \
+python run.py \
   --train_data_dir ../dataset/$DATASET_NAME/$DATASET_TYPE/$TASK_TYPE/train/ \
   --dev_data_dir ../dataset/$DATASET_NAME/$DATASET_TYPE/$TASK_TYPE/val/ \
   --test_data_dir ../dataset/$DATASET_NAME/$DATASET_TYPE/$TASK_TYPE/test/ \
@@ -149,8 +148,7 @@ python -W ignore -m torch.distributed.launch --nnodes 1 --node_rank 0 --master_p
   --logging_steps $logging_steps \
   --loss_reduction mean \
   --variant_bin_size $variant_bin_size \
-  --matrix_add_special_token \
-  --matrix_embedding_exists
+  --matrix_add_special_token
 
 
 

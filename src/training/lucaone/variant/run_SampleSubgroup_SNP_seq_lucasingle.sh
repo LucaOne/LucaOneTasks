@@ -3,13 +3,13 @@ export CUDA_VISIBLE_DEVICES=0
 seed=1221
 
 # for dataset
-DATASET_NAME="QuinoaAltitude_SNP"
+DATASET_NAME="SampleSubgroup_SNP"
 DATASET_TYPE="gene"
 
 # for task
 TASK_TYPE="multi_class"
 TASK_LEVEL_TYPE="seq_level"
-LABEL_TYPE="QuinoaAltitude"
+LABEL_TYPE="SampleSubgroup"
 
 # for input
 ## here only embedding matrix-channel
@@ -69,7 +69,7 @@ batch_size=16
 learning_rate=2e-4
 ## data loading buffer size
 buffer_size=102400
-weight=4,1,2,2
+weight=20,2,10,1,20,20,3,10,4,2,6,10,4
 variant_bin_size=4
 
 time_str=$(date "+%Y%m%d%H%M%S")

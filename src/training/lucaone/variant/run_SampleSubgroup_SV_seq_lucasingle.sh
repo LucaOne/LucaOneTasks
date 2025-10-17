@@ -3,13 +3,13 @@ export CUDA_VISIBLE_DEVICES=0
 seed=1221
 
 # for dataset
-DATASET_NAME="QuinoaAltitude_SNP"
+DATASET_NAME="SampleSubgroup_SV"
 DATASET_TYPE="gene"
 
 # for task
 TASK_TYPE="multi_class"
 TASK_LEVEL_TYPE="seq_level"
-LABEL_TYPE="QuinoaAltitude"
+LABEL_TYPE="SampleSubgroup"
 
 # for input
 ## here only embedding matrix-channel
@@ -55,7 +55,7 @@ num_train_epochs=50
 ## accumulation gradient steps
 gradient_accumulation_steps=1
 # 间隔多少个step在log文件中写入信息（实际上是gradient_accumulation_steps与logging_steps的最小公倍数）
-logging_steps=4000
+logging_steps=1000
 ## checkpoint的间隔step数。-1表示按照epoch粒度保存checkpoint
 save_steps=-1
 ## warmup_steps个step到达peak lr
@@ -69,7 +69,7 @@ batch_size=16
 learning_rate=2e-4
 ## data loading buffer size
 buffer_size=102400
-weight=4,1,2,2
+weight=2,10,40,20,4,40,20,40,10,1,40,20,40
 variant_bin_size=4
 
 time_str=$(date "+%Y%m%d%H%M%S")
@@ -149,6 +149,5 @@ python run.py \
   --loss_reduction mean \
   --variant_bin_size $variant_bin_size \
   --matrix_add_special_token
-
 
 

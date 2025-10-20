@@ -41,6 +41,7 @@ try:
     from lucasingle.models.LucaSingle import LucaSingle
     from lucapair.models.LucaPair1 import LucaPair1
     from lucapair.models.LucaPair2 import LucaPair2
+    from lucapair.models.LucaSetPairHeter import LucaSetPairHeter
     from common.alphabet import Alphabet
     from common.model_config import LucaConfig
     from encoder import Encoder
@@ -60,6 +61,7 @@ except ImportError:
     from src.lucasingle.models.LucaSingle import LucaSingle
     from src.lucapair.models.LucaPair1 import LucaPair1
     from src.lucapair.models.LucaPair2 import LucaPair2
+    from src.lucapair.models.LucaSetPairHeter import LucaSetPairHeter
     from src.common.alphabet import Alphabet
     from src.common.model_config import LucaConfig
     from src.encoder import Encoder
@@ -165,6 +167,7 @@ def get_args():
             "lucapair_homo",
             "lucapair_heter",
             "lucapair_intrainter"
+            "lucasetpair_heter"
         ],
         help="the model type of selected"
     )
@@ -1304,6 +1307,8 @@ def get_model(args):
         model_class = LucaPairHomo
     elif args.model_type == "lucapair_heter":
         model_class = LucaPairHeter
+    elif args.model_type == "lucasetpair_heter":
+        model_class = LucaSetPairHeter
     elif args.model_type == "lucapair_intrainter":
         model_class = LucaPairIntraInter
     else:

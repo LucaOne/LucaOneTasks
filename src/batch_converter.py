@@ -986,8 +986,6 @@ class BatchConverter(object):
         return filled_matrices, attention_masks, max_sentence_num, max_sentence_len
 
     def __call_single__(self, batch_size, seq_types, seqs, vectors, matrices, labels):
-        print(seq_types)
-        input("continue")
         max_length = sys.maxsize
         input_ids, position_ids, token_type_ids, seq_attention_masks = None, None, None, None
         seq_part_of_input = False
@@ -1198,8 +1196,10 @@ class BatchConverter(object):
                     if num_sentences < cur_vector_num:
                         num_sentences = cur_vector_num
                     for vector_idx in range(cur_vector_num):
-                        encoded_vectors[sample_idx, vector_idx, :] = torch.tensor(vectors[sample_idx][vector_idx],
-                                                                                  dtype=torch.float32)
+                        encoded_vectors[sample_idx, vector_idx, :] = torch.tensor(
+                            vectors[sample_idx][vector_idx],
+                            dtype=torch.float32
+                        )
                 else:
                     encoded_vectors[sample_idx, :] = torch.tensor(vectors[sample_idx], dtype=torch.float32)
 

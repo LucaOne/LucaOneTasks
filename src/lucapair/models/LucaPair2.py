@@ -320,7 +320,7 @@ class LucaPair2(BertPreTrainedModel):
                                  return_types=["dropout", "hidden_layer", "hidden_act", "classifier", "output", "loss"])
         self.post_init()
 
-    def __forworrd_a__(self,
+    def __forword_a__(self,
                      input_ids,
                      seq_attention_masks,
                      token_type_ids,
@@ -414,7 +414,7 @@ class LucaPair2(BertPreTrainedModel):
             raise Exception("Not support input_type=%s" % self.input_type)
         return concat_vector
 
-    def __forworrd_b__(self,
+    def __forword_b__(self,
                        input_ids,
                        seq_attention_masks,
                        token_type_ids,
@@ -519,7 +519,7 @@ class LucaPair2(BertPreTrainedModel):
             matrix_attention_masks_a=None, matrix_attention_masks_b=None,
             labels=None
     ):
-        representation_vector_a = self.__forworrd_a__(
+        representation_vector_a = self.__forword_a__(
             input_ids_a,
             seq_attention_masks_a,
             token_type_ids_a,
@@ -528,7 +528,7 @@ class LucaPair2(BertPreTrainedModel):
             matrices_a,
             matrix_attention_masks_a
         )
-        representation_vector_b = self.__forworrd_b__(
+        representation_vector_b = self.__forword_b__(
             input_ids_b,
             seq_attention_masks_b,
             token_type_ids_b,

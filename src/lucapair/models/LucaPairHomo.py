@@ -171,7 +171,7 @@ class LucaPairHomo(BertPreTrainedModel):
             )
         self.post_init()
 
-    def __forworrd__(
+    def __forword__(
             self,
             input_ids,
             seq_attention_masks,
@@ -268,7 +268,7 @@ class LucaPairHomo(BertPreTrainedModel):
             matrix_attention_masks_a=None, matrix_attention_masks_b=None,
             labels=None
     ):
-        representation_vector_a = self.__forworrd__(
+        representation_vector_a = self.__forword__(
             input_ids_a,
             seq_attention_masks_a,
             token_type_ids_a,
@@ -277,7 +277,7 @@ class LucaPairHomo(BertPreTrainedModel):
             matrices_a,
             matrix_attention_masks_a
         )
-        representation_vector_b = self.__forworrd__(
+        representation_vector_b = self.__forword__(
             input_ids_b,
             seq_attention_masks_b,
             token_type_ids_b,

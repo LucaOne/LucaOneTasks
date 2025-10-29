@@ -535,7 +535,7 @@ class LucaSetPairHeter(BertPreTrainedModel):
             )
         self.post_init()
 
-    def __forworrd_a__(
+    def __forword_a__(
             self,
             input_ids,
             seq_attention_masks,
@@ -653,7 +653,7 @@ class LucaSetPairHeter(BertPreTrainedModel):
             raise Exception("Not support input_type=%s" % self.input_type)
         return concat_vector, seq_attentions, matrix_attentions
 
-    def __forworrd_b__(
+    def __forword_b__(
             self,
             input_ids,
             seq_attention_masks,
@@ -789,7 +789,6 @@ class LucaSetPairHeter(BertPreTrainedModel):
         attention_pooling_scores_savepath = kwargs["attention_pooling_scores_savepath"] if "attention_pooling_scores_savepath" in kwargs else None
         output_classification_vector_dirpath = kwargs["output_classification_vector_dirpath"] if "output_classification_vector_dirpath" in kwargs else None
 
-
         input_ids_set_a = input_ids_a
         input_ids_set_b = input_ids_b
         position_ids_set_a = position_ids_a
@@ -806,7 +805,7 @@ class LucaSetPairHeter(BertPreTrainedModel):
         matrix_attention_masks_set_b = matrix_attention_masks_b
         express_input_ids_set_a = express_input_ids_a
         express_input_ids_set_b = express_input_ids_b
-
+        '''
         print("input_ids_a:")
         print(input_ids_a.shape if input_ids_a is not None else None)
         print("input_ids_b:")
@@ -835,20 +834,41 @@ class LucaSetPairHeter(BertPreTrainedModel):
         print(matrix_attention_masks_set_a.shape if matrix_attention_masks_set_a is not None else None)
         print("matrix_attention_masks_set_b:")
         print(matrix_attention_masks_set_b.shape if matrix_attention_masks_set_b is not None else None)
-        print("express_input_ids_set_a:")
-        print(express_input_ids_set_a.shape if express_input_ids_set_a is not None else None)
-        print("matrix_attention_masks_set_b:")
+        print("express_input_ids_a:")
+        print(express_input_ids_a.shape if express_input_ids_a is not None else None)
+        print("express_input_ids_b:")
         print(express_input_ids_b.shape if express_input_ids_b is not None else None)
-        input("continue:")
+        '''
+
         seq_attention_mask_a = torch.max(seq_attention_masks_set_a, dim=2).values if seq_attention_masks_set_a is not None else None
         seq_attention_mask_b = torch.max(seq_attention_masks_set_b, dim=2).values if seq_attention_masks_set_b is not None else None
-
+        '''
+        print("seq_attention_mask_a:")
+        print(seq_attention_mask_a.shape if seq_attention_mask_a is not None else None)
+        print("seq_attention_mask_b:")
+        print(seq_attention_mask_b.shape if seq_attention_mask_b is not None else None)
+        '''
         matrix_attention_mask_a = torch.max(matrix_attention_masks_set_a, dim=2).values if matrix_attention_masks_set_a is not None else None
         matrix_attention_mask_b = torch.max(matrix_attention_masks_set_b, dim=2).values if matrix_attention_masks_set_b is not None else None
-
+        '''
+        print("matrix_attention_mask_a:")
+        print(matrix_attention_mask_a.shape if matrix_attention_mask_a is not None else None)
+        print(matrix_attention_mask_a)
+        print("matrix_attention_mask_b:")
+        print(matrix_attention_mask_b.shape if matrix_attention_mask_b is not None else None)
+        print(matrix_attention_mask_b)
+        '''
+        '''
         representation_vector_set_a, seq_attentions_set_a, matrix_attentions_set_a = [], [], []
-        for idx_a in range(input_ids_set_a.shape[1]):
-            representation_vector_a, seq_attentions_a, matrix_attentions_a = self.__forworrd_a__(
+        input_sentences_num_a = 0
+        if input_ids_a is not None:
+            input_sentences_num_a = input_ids_a.shape[1]
+        elif matrices_a is not None:
+            input_sentences_num_a = matrices_a.shape[1]
+        elif vectors_a is not None:
+            input_sentences_num_a = vectors_a.shape[1]
+        for idx_a in range(input_sentences_num_a):
+            representation_vector_a, seq_attentions_a, matrix_attentions_a = self.__forword_a__(
                 input_ids_set_a[:, idx_a] if input_ids_set_a is not None else None,
                 seq_attention_masks_set_a[:, idx_a] if seq_attention_masks_set_a is not None else None,
                 token_type_ids_set_a[:, idx_a] if token_type_ids_set_a is not None else None,
@@ -865,9 +885,16 @@ class LucaSetPairHeter(BertPreTrainedModel):
             seq_attentions_set_a.append(seq_attentions_a)
             matrix_attentions_set_a.append(matrix_attentions_a)
 
+        input_sentences_num_b = 0
+        if input_ids_b is not None:
+            input_sentences_num_b = input_ids_b.shape[1]
+        elif matrices_b is not None:
+            input_sentences_num_b = matrices_b.shape[1]
+        elif vectors_b is not None:
+            input_sentences_num_b = vectors_b.shape[1]
         representation_vector_set_b, seq_attentions_set_b, matrix_attentions_set_b = [], [], []
-        for idx_b in range(input_ids_set_b.shape[1]):
-            representation_vector_b, seq_attentions_b, matrix_attentions_b = self.__forworrd_b__(
+        for idx_b in range(input_sentences_num_b):
+            representation_vector_b, seq_attentions_b, matrix_attentions_b = self.__forword_b__(
                 input_ids_set_b[:, idx_b] if input_ids_set_b is not None else None,
                 seq_attention_masks_set_b[:, idx_b] if seq_attention_masks_set_b is not None else None,
                 token_type_ids_set_b[:, idx_b] if token_type_ids_set_b is not None else None,
@@ -883,7 +910,77 @@ class LucaSetPairHeter(BertPreTrainedModel):
             representation_vector_set_b.append(representation_vector_b)
             seq_attentions_set_b.append(seq_attentions_b)
             matrix_attentions_set_b.append(matrix_attentions_b)
+        representation_vector_matrix_a = torch.stack(representation_vector_set_a, dim=1)
+        representation_vector_matrix_b = torch.stack(representation_vector_set_b, dim=1)
+        '''
 
+        if input_ids_set_a is not None:
+            batch_size, num_seq_a, seq_len_a = input_ids_set_a.shape
+        elif matrices_set_a is not None:
+            batch_size, num_seq_a, seq_len_a, dim = matrices_set_a.shape
+        elif vectors_set_a is not None:
+            batch_size, num_seq_a, dim = vectors_set_a.shape
+        representation_vector_matrix_a, seq_attentions_set_a, matrix_attentions_set_a = self.__forword_a__(
+            input_ids_set_a.view(-1, seq_len_a) if input_ids_set_a is not None else None,
+            seq_attention_masks_set_a.view(-1, seq_len_a) if seq_attention_masks_set_a is not None else None,
+            token_type_ids_set_a.view(-1, seq_len_a) if token_type_ids_set_a is not None else None,
+            position_ids_set_a.view(-1, seq_len_a) if position_ids_set_a is not None else None,
+            vectors_set_a.view(-1, dim) if vectors_set_a is not None else None,
+            matrices_set_a.view(-1, seq_len_a, dim) if matrices_set_a is not None else None,
+            matrix_attention_masks_set_a.view(-1, seq_len_a) if matrix_attention_masks_set_a is not None else None,
+            sample_ids=sample_ids,
+            attention_scores_savepath=attention_scores_savepath,
+            attention_pooling_scores_savepath=attention_pooling_scores_savepath,
+            express_input_ids=express_input_ids_set_a.view(-1, seq_len_a) if express_input_ids_set_a is not None else None,
+        )
+        '''
+        print("representation_vector_matrix_a:")
+        print(representation_vector_matrix_a.shape)
+        print("seq_attentions_set_a:")
+        print(seq_attentions_set_a.shape if seq_attentions_set_a is not None else None)
+        print("matrix_attentions_set_a:")
+        print(matrix_attentions_set_a.shape if matrix_attentions_set_a is not None else None)
+        '''
+        representation_vector_matrix_a = representation_vector_matrix_a.view(batch_size, num_seq_a, -1)
+        '''
+        print("representation_vector_matrix_a:")
+        print(representation_vector_matrix_a.shape)
+        '''
+
+        if input_ids_set_b is not None:
+            batch_size, num_seq_b, seq_len_b = input_ids_set_b.shape
+        elif matrices_set_b is not None:
+            batch_size, num_seq_b, seq_len_b, dim = matrices_set_b.shape
+        elif vectors_set_b is not None:
+            batch_size, num_seq_b, dim = vectors_set_b.shape
+        representation_vector_matrix_b, seq_attentions_set_b, matrix_attentions_set_b = self.__forword_b__(
+            input_ids_set_b.view(-1, seq_len_b) if input_ids_set_b is not None else None,
+            seq_attention_masks_set_b.view(-1, seq_len_b) if seq_attention_masks_set_b is not None else None,
+            token_type_ids_set_b.view(-1, seq_len_b) if token_type_ids_set_b is not None else None,
+            position_ids_set_b.view(-1, seq_len_b) if position_ids_set_b is not None else None,
+            vectors_set_b.view(-1, dim) if vectors_set_b is not None else None,
+            matrices_set_b.view(-1, seq_len_b, dim) if matrices_set_b is not None else None,
+            matrix_attention_masks_set_b.view(-1, seq_len_b) if matrix_attention_masks_set_b is not None else None,
+            sample_ids=sample_ids,
+            attention_scores_savepath=attention_scores_savepath,
+            attention_pooling_scores_savepath=attention_pooling_scores_savepath,
+            express_input_ids=express_input_ids_set_b.view(-1, seq_len_b) if express_input_ids_set_b is not None else None,
+        )
+
+        '''
+        print("representation_vector_matrix_b:")
+        print(representation_vector_matrix_b.shape)
+        print("seq_attentions_set_b:")
+        print(seq_attentions_set_b.shape if seq_attentions_set_b is not None else None)
+        print("matrix_attentions_set_b:")
+        print(matrix_attentions_set_b.shape if matrix_attentions_set_b is not None else None)
+        '''
+        representation_vector_matrix_b = representation_vector_matrix_b.view(batch_size, num_seq_b, -1)
+        '''
+        print("representation_vector_matrix_b:")
+        print(representation_vector_matrix_b.shape)
+        input("continue:")
+        '''
         if attention_scores_savepath and sample_ids:
             for sample_idx, sample_id in enumerate(sample_ids):
                 if seq_attentions_set_a is not None:
@@ -914,9 +1011,6 @@ class LucaSetPairHeter(BertPreTrainedModel):
                             new_matrix_attentions_b.append(matrix_attention_b[sample_idx].detach().cpu())
                         filepath = os.path.join(attention_scores_savepath, "%s_matrix_set_%d_b_attention_scores.pt" % (sample_id, idx_b))
                         torch.save(new_matrix_attentions_b, filepath)
-
-        representation_vector_matrix_a = torch.stack(representation_vector_set_a, dim=1)
-        representation_vector_matrix_b = torch.stack(representation_vector_set_b, dim=1)
 
         if self.input_type == "seq_vs_seq":
             representation_vector_a = self.seq_set_pooler_a(

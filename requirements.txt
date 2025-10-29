@@ -57,3 +57,4 @@ peft==0.8.2
 openpyxl==3.1.2
 pynvml==11.5.0
 pyarrow==17.0.0
+fairscale==0.4.13

@@ -332,7 +332,7 @@ class LucaGPLM(nn.Module):
             raise Exception("Not support output_mode=%s" % output_mode)
         return loss
 
-    def __forword__(self,
+    def __forward__(self,
                     input_ids: Optional[torch.Tensor] = None,
                     attention_mask: Optional[torch.Tensor] = None,
                     token_type_ids: Optional[torch.Tensor] = None,
@@ -549,7 +549,7 @@ class LucaGPLM(nn.Module):
         has_pair = False
         has_pair_b = False
         if input_ids is not None or inputs_embeds is not None:
-            encoding, logits, outputs, losses = self.__forword__(
+            encoding, logits, outputs, losses = self.__forward__(
                 input_ids=input_ids,
                 attention_mask=attention_mask,
                 token_type_ids=token_type_ids,
@@ -563,7 +563,7 @@ class LucaGPLM(nn.Module):
             )
             has_pair = True
         if input_ids_b is not None or inputs_embeds_b is not None:
-            encoding_b, logits_b, outputs_b, losses_b = self.__forword__(
+            encoding_b, logits_b, outputs_b, losses_b = self.__forward__(
                 input_ids=input_ids_b,
                 attention_mask=attention_mask_b,
                 token_type_ids=token_type_ids_b,

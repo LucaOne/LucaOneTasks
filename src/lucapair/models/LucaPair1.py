@@ -210,7 +210,7 @@ class LucaPair1(BertPreTrainedModel):
                                  return_types=["dropout", "hidden_layer", "hidden_act", "classifier", "output", "loss"])
         self.post_init()
 
-    def __forword__(self,
+    def __forward__(self,
                      input_ids,
                      seq_attention_masks,
                      token_type_ids,
@@ -315,7 +315,7 @@ class LucaPair1(BertPreTrainedModel):
             matrix_attention_masks_a=None, matrix_attention_masks_b=None,
             labels=None
     ):
-        representation_vector_a = self.__forword__(
+        representation_vector_a = self.__forward__(
             input_ids_a,
             seq_attention_masks_a,
             token_type_ids_a,
@@ -324,7 +324,7 @@ class LucaPair1(BertPreTrainedModel):
             matrices_a,
             matrix_attention_masks_a
         )
-        representation_vector_b = self.__forword__(
+        representation_vector_b = self.__forward__(
             input_ids_b,
             seq_attention_masks_b,
             token_type_ids_b,

@@ -535,7 +535,7 @@ class LucaSetPairHeter(BertPreTrainedModel):
             )
         self.post_init()
 
-    def __forword_a__(
+    def __forward_a__(
             self,
             input_ids,
             seq_attention_masks,
@@ -653,7 +653,7 @@ class LucaSetPairHeter(BertPreTrainedModel):
             raise Exception("Not support input_type=%s" % self.input_type)
         return concat_vector, seq_attentions, matrix_attentions
 
-    def __forword_b__(
+    def __forward_b__(
             self,
             input_ids,
             seq_attention_masks,
@@ -868,7 +868,7 @@ class LucaSetPairHeter(BertPreTrainedModel):
         elif vectors_a is not None:
             input_sentences_num_a = vectors_a.shape[1]
         for idx_a in range(input_sentences_num_a):
-            representation_vector_a, seq_attentions_a, matrix_attentions_a = self.__forword_a__(
+            representation_vector_a, seq_attentions_a, matrix_attentions_a = self.__forward_a__(
                 input_ids_set_a[:, idx_a] if input_ids_set_a is not None else None,
                 seq_attention_masks_set_a[:, idx_a] if seq_attention_masks_set_a is not None else None,
                 token_type_ids_set_a[:, idx_a] if token_type_ids_set_a is not None else None,
@@ -894,7 +894,7 @@ class LucaSetPairHeter(BertPreTrainedModel):
             input_sentences_num_b = vectors_b.shape[1]
         representation_vector_set_b, seq_attentions_set_b, matrix_attentions_set_b = [], [], []
         for idx_b in range(input_sentences_num_b):
-            representation_vector_b, seq_attentions_b, matrix_attentions_b = self.__forword_b__(
+            representation_vector_b, seq_attentions_b, matrix_attentions_b = self.__forward_b__(
                 input_ids_set_b[:, idx_b] if input_ids_set_b is not None else None,
                 seq_attention_masks_set_b[:, idx_b] if seq_attention_masks_set_b is not None else None,
                 token_type_ids_set_b[:, idx_b] if token_type_ids_set_b is not None else None,
@@ -920,7 +920,7 @@ class LucaSetPairHeter(BertPreTrainedModel):
             batch_size, num_seq_a, seq_len_a, dim = matrices_set_a.shape
         elif vectors_set_a is not None:
             batch_size, num_seq_a, dim = vectors_set_a.shape
-        representation_vector_matrix_a, seq_attentions_set_a, matrix_attentions_set_a = self.__forword_a__(
+        representation_vector_matrix_a, seq_attentions_set_a, matrix_attentions_set_a = self.__forward_a__(
             input_ids_set_a.view(-1, seq_len_a) if input_ids_set_a is not None else None,
             seq_attention_masks_set_a.view(-1, seq_len_a) if seq_attention_masks_set_a is not None else None,
             token_type_ids_set_a.view(-1, seq_len_a) if token_type_ids_set_a is not None else None,
@@ -953,7 +953,7 @@ class LucaSetPairHeter(BertPreTrainedModel):
             batch_size, num_seq_b, seq_len_b, dim = matrices_set_b.shape
         elif vectors_set_b is not None:
             batch_size, num_seq_b, dim = vectors_set_b.shape
-        representation_vector_matrix_b, seq_attentions_set_b, matrix_attentions_set_b = self.__forword_b__(
+        representation_vector_matrix_b, seq_attentions_set_b, matrix_attentions_set_b = self.__forward_b__(
             input_ids_set_b.view(-1, seq_len_b) if input_ids_set_b is not None else None,
             seq_attention_masks_set_b.view(-1, seq_len_b) if seq_attention_masks_set_b is not None else None,
             token_type_ids_set_b.view(-1, seq_len_b) if token_type_ids_set_b is not None else None,

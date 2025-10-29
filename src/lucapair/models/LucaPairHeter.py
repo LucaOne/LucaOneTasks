@@ -523,7 +523,7 @@ class LucaPairHeter(BertPreTrainedModel):
             )
         self.post_init()
 
-    def __forword_a__(
+    def __forward_a__(
             self,
             input_ids,
             seq_attention_masks,
@@ -641,7 +641,7 @@ class LucaPairHeter(BertPreTrainedModel):
             raise Exception("Not support input_type=%s" % self.input_type)
         return concat_vector, seq_attentions, matrix_attentions
 
-    def __forword_b__(
+    def __forward_b__(
             self,
             input_ids,
             seq_attention_masks,
@@ -776,7 +776,7 @@ class LucaPairHeter(BertPreTrainedModel):
         attention_scores_savepath = kwargs["attention_scores_savepath"] if "attention_scores_savepath" in kwargs else None
         attention_pooling_scores_savepath = kwargs["attention_pooling_scores_savepath"] if "attention_pooling_scores_savepath" in kwargs else None
         output_classification_vector_dirpath = kwargs["output_classification_vector_dirpath"] if "output_classification_vector_dirpath" in kwargs else None
-        representation_vector_a, seq_attentions_a, matrix_attentions_a = self.__forword_a__(
+        representation_vector_a, seq_attentions_a, matrix_attentions_a = self.__forward_a__(
             input_ids_a,
             seq_attention_masks_a,
             token_type_ids_a,
@@ -790,7 +790,7 @@ class LucaPairHeter(BertPreTrainedModel):
             express_input_ids=express_input_ids_a
         )
 
-        representation_vector_b, seq_attentions_b, matrix_attentions_b = self.__forword_b__(
+        representation_vector_b, seq_attentions_b, matrix_attentions_b = self.__forward_b__(
             input_ids_b,
             seq_attention_masks_b,
             token_type_ids_b,

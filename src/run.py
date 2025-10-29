@@ -166,8 +166,8 @@ def get_args():
             "lucapair2",
             "lucapair_homo",
             "lucapair_heter",
-            "lucapair_intrainter"
-            "lucasetpair_heter"
+            "lucapair_intrainter",
+            "lucasetpair_heter",
         ],
         help="the model type of selected"
     )

@@ -791,7 +791,7 @@ def get_args():
         "--llm_step",
         type=str,
         default=None,
-        choices=["5600000", "17600000", "30000000", "36000000", "36800000"],
+        choices=["5600000", "17600000", "30000000", "36000000", "36800000", "58700000"],
         help="the llm checkpoint step."
     )
 
@@ -870,7 +870,7 @@ def main(model_args):
         model_args.llm_type = "lucaone"
     if not hasattr(model_args, "llm_version") or model_args.llm_version is None:
         model_args.llm_version = "lucaone"
-    if model_args.llm_step is None or model_args.llm_step not in ["5600000", "17600000", "30000000", "36000000" "36800000"]:
+    if model_args.llm_step is None or model_args.llm_step not in ["5600000", "17600000", "30000000", "36000000" "36800000", "58700000"]:
         if model_args.llm_version == "lucaone":
             model_args.llm_step = "36000000"
         elif model_args.llm_version == "lucaone-gene":

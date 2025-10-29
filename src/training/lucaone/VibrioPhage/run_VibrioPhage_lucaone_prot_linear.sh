@@ -24,7 +24,7 @@ CONFIG_NAME="lucasetpair_heter_config.json"
 FUSION_TYPE="concat"
 dropout_prob=0.1
 fc_size=256
-classifier_size=$fc_size
+classifier_size=128
 BEST_METRIC_TYPE="f1"
 # binary-class, multi-label: bce, multi-class: cce, regression: l1 or l2
 loss_type="bce"
@@ -46,8 +46,8 @@ MATRIX_POOLING_TYPE="weighted_attention"
 
 # for llm
 llm_type="lucaone"
-llm_version="lucaone"
-llm_step=36000000
+llm_version="lucaone-prot"
+llm_step=58700000
 
 # for training
 ## max epochs

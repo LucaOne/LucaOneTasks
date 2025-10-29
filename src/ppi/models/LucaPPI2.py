@@ -315,14 +315,16 @@ class LucaPPI2(BertPreTrainedModel):
                                  return_types=["dropout", "hidden_layer", "hidden_act", "classifier", "output", "loss"])
         self.post_init()
 
-    def __forworrd_a__(self,
-                     input_ids,
-                     seq_attention_masks,
-                     token_type_ids,
-                     position_ids,
-                     vectors,
-                     matrices,
-                     matrix_attention_masks):
+    def __forward_a__(
+            self,
+            input_ids,
+            seq_attention_masks,
+            token_type_ids,
+            position_ids,
+            vectors,
+            matrices,
+            matrix_attention_masks
+    ):
         if input_ids is not None and self.seq_encoder_a is not None:
             seq_outputs = self.seq_encoder_a(
                 input_ids,
@@ -409,7 +411,7 @@ class LucaPPI2(BertPreTrainedModel):
             raise Exception("Not support input_type=%s" % self.input_type)
         return concat_vector
 
-    def __forworrd_b__(self,
+    def __forward_b__(self,
                        input_ids,
                        seq_attention_masks,
                        token_type_ids,
@@ -513,14 +515,14 @@ class LucaPPI2(BertPreTrainedModel):
                 matrix_attention_masks_a=None, matrix_attention_masks_b=None,
                 labels=None
                 ):
-        representation_vector_a = self.__forworrd_a__(input_ids_a,
+        representation_vector_a = self.__forward_a__(input_ids_a,
                                                     seq_attention_masks_a,
                                                     token_type_ids_a,
                                                     position_ids_a,
                                                     vectors_a,
                                                     matrices_a,
                                                     matrix_attention_masks_a)
-        representation_vector_b = self.__forworrd_b__(input_ids_b,
+        representation_vector_b = self.__forward_b__(input_ids_b,
                                                     seq_attention_masks_b,
                                                     token_type_ids_b,
                                                     position_ids_b,

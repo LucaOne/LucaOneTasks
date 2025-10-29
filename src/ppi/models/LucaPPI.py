@@ -214,14 +214,16 @@ class LucaPPI(BertPreTrainedModel):
                                  return_types=["dropout", "hidden_layer", "hidden_act", "classifier", "output", "loss"])
         self.post_init()
 
-    def __forworrd__(self,
-                     input_ids,
-                     seq_attention_masks,
-                     token_type_ids,
-                     position_ids,
-                     vectors,
-                     matrices,
-                     matrix_attention_masks):
+    def __forward__(
+            self,
+            input_ids,
+            seq_attention_masks,
+            token_type_ids,
+            position_ids,
+            vectors,
+            matrices,
+            matrix_attention_masks
+    ):
         if input_ids is not None and self.seq_encoder is not None:
             seq_outputs = self.seq_encoder(
                 input_ids,
@@ -318,14 +320,14 @@ class LucaPPI(BertPreTrainedModel):
                 matrix_attention_masks_a=None, matrix_attention_masks_b=None,
                 labels=None
                 ):
-        representation_vector_a = self.__forworrd__(input_ids_a,
+        representation_vector_a = self.__forward__(input_ids_a,
                                                     seq_attention_masks_a,
                                                     token_type_ids_a,
                                                     position_ids_a,
                                                     vectors_a,
                                                     matrices_a,
                                                     matrix_attention_masks_a)
-        representation_vector_b = self.__forworrd__(input_ids_b,
+        representation_vector_b = self.__forward__(input_ids_b,
                                                     seq_attention_masks_b,
                                                     token_type_ids_b,
                                                     position_ids_b,

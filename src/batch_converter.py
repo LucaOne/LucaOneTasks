@@ -891,6 +891,8 @@ class BatchConverter(object):
         molecule_flag = False
         # 是否是多输入（比如多个序列）for one sample
         multi_seq_flag = False
+        if "multi_" in seq_types[0]:
+            multi_seq_flag = True
         # 原始序列是否作为输入之一
         seq_part_of_input = False
         input_ids, position_ids, token_type_ids, seq_attention_masks = None, None, None, None
@@ -907,10 +909,10 @@ class BatchConverter(object):
                     molecule_flag = True
                 elif seq_type == "multi_gene":
                     new_seqs.append([gene_seq_replace(seq).upper() for seq in seqs[seq_idx].split(",")])
-                    multi_seq_flag = True
+                    # multi_seq_flag = True
                 elif seq_type == "multi_prot":
                     new_seqs.append([seq.upper() for seq in seqs[seq_idx].split(",")])
-                    multi_seq_flag = True
+                    # multi_seq_flag = True
                 else:
                     new_seqs.append(seqs[seq_idx].upper())
             if molecule_flag:

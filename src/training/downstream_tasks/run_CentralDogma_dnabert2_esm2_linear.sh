@@ -53,7 +53,7 @@ MATRIX_POOLING_TYPE="value_attention"
 # for llm
 llm_type="dnabert-esm"
 llm_version="dnabert2-esm2"
-llm_step="117M_3B"
+llm_step="117M-3B"
 
 # for training
 ## max epochs

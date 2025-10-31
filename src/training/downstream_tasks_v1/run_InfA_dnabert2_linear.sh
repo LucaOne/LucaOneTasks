@@ -34,7 +34,8 @@ classifier_size=128
 loss_type="bce"
 llm_type="dnabert"
 llm_version="dnabert2"
-llm_step="117M_3B"
+llm_step="117M"
+
 batch_size=16
 learning_rate=1e-4
 gradient_accumulation_steps=1

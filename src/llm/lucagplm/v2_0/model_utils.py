@@ -13,7 +13,7 @@
 from typing import Optional, Tuple
 from dataclasses import dataclass
 from transformers.modeling_outputs import ModelOutput
-import sys, copy, math
+import sys, copy
 sys.path.append(".")
 sys.path.append("..")
 sys.path.append("../../")
@@ -21,8 +21,8 @@ sys.path.append("../../../")
 sys.path.append("../../../../")
 sys.path.append("../../../../src")
 try:
-    from .pooling import *
-    from ..common.loss import *
+    from llm.lucagplm.v2_0.pooling import *
+    from llm.lucagplm.common.loss import *
 except ImportError:
     from src.llm.lucagplm.v2_0.pooling import *
     from src.llm.lucagplm.common.loss import *

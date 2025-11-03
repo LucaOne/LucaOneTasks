@@ -20,8 +20,8 @@ sys.path.append("../../../")
 sys.path.append("../../../../")
 sys.path.append("../../../../src")
 try:
-    from classification_loss import *
-    from regression_loss import *
+    from llm.lucagplm.common.classification_loss import *
+    from llm.lucagplm.common.regression_loss import *
 except ImportError:
     from src.llm.lucagplm.common.classification_loss import *
     from src.llm.lucagplm.common.regression_loss import *

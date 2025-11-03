@@ -10,7 +10,6 @@
 @file: masked_loss.py
 @desc: masked loss
 '''
-import warnings
 import torch
 import torch.nn as nn
 

@@ -19,7 +19,7 @@ sys.path.append("..")
 sys.path.append("../..")
 sys.path.append("../../src")
 try:
-    from .modeling_bert import BertPooler, BertModel, BertEncoder
+    from common.modeling_bert import BertPooler, BertModel, BertEncoder
 except ImportError:
     from src.common.modeling_bert import BertPooler, BertModel, BertEncoder
 

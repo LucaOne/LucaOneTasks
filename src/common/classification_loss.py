@@ -10,7 +10,6 @@
 @file: loss.py
 @desc: loss
 '''
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import sys
@@ -19,7 +18,7 @@ sys.path.append("..")
 sys.path.append("../..")
 sys.path.append("../../src")
 try:
-    from masked_loss import _MaskedLoss
+    from common.masked_loss import _MaskedLoss
 except ImportError:
     from src.common.masked_loss import _MaskedLoss
 

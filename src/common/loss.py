@@ -18,8 +18,8 @@ sys.path.append("..")
 sys.path.append("../..")
 sys.path.append("../../src")
 try:
-    from classification_loss import *
-    from regression_loss import *
+    from common.classification_loss import *
+    from common.regression_loss import *
 except ImportError:
     from src.common.classification_loss import *
     from src.common.regression_loss import *

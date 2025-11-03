@@ -23,7 +23,7 @@ sys.path.append("../../../")
 sys.path.append("../../../../")
 sys.path.append("../../../../src")
 try:
-    from masked_loss import _MaskedLoss
+    from llm.lucagplm.common.masked_loss import _MaskedLoss
 except ImportError:
     from src.llm.lucagplm.common.masked_loss import _MaskedLoss
 

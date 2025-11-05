@@ -27,24 +27,26 @@ csv.field_size_limit(sys.maxsize)
 
 
 class MultiFilesStreamLoader(object):
-    def __init__(self,
-                 filepaths,
-                 batch_size,
-                 buffer_size,
-                 parse_row_func,
-                 batch_data_func,
-                 task_level_type,
-                 input_mode,
-                 input_type,
-                 output_mode,
-                 label_size,
-                 dataset_type="train",
-                 vector_dirpath=None,
-                 matrix_dirpath=None,
-                 inference=False,
-                 header=True,
-                 shuffle=False,
-                 seed=1221):
+    def __init__(
+            self,
+            filepaths,
+            batch_size,
+            buffer_size,
+            parse_row_func,
+            batch_data_func,
+            task_level_type,
+            input_mode,
+            input_type,
+            output_mode,
+            label_size,
+            dataset_type="train",
+            vector_dirpath=None,
+            matrix_dirpath=None,
+            inference=False,
+            header=True,
+            shuffle=False,
+            seed=1221
+    ):
         if buffer_size % batch_size != 0:
             raise Exception("buffer_size must be evenly div by batch_size")
         self.shuffle = shuffle

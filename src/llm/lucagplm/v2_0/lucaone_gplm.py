@@ -27,6 +27,7 @@ except ImportError:
     from src.llm.lucagplm.v2_0.model_utils import AllOutput, create_output_loss_lucagplm
     from src.llm.lucagplm.v2_0.alphabet import Alphabet
     from src.llm.lucagplm.v2_0.modeling_gplm import *
+from typing import  Union
 
 
 class LucaGPLM(nn.Module):

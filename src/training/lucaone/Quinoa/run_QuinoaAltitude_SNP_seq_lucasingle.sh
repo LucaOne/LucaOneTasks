@@ -3,7 +3,7 @@ export CUDA_VISIBLE_DEVICES=0
 seed=1221
 
 # for dataset
-DATASET_NAME="QuinoaAltitude_SV"
+DATASET_NAME="QuinoaAltitude_SNP"
 DATASET_TYPE="gene"
 
 # for task
@@ -55,7 +55,7 @@ num_train_epochs=50
 ## accumulation gradient steps
 gradient_accumulation_steps=1
 # 间隔多少个step在log文件中写入信息（实际上是gradient_accumulation_steps与logging_steps的最小公倍数）
-logging_steps=1000
+logging_steps=4000
 ## checkpoint的间隔step数。-1表示按照epoch粒度保存checkpoint
 save_steps=-1
 ## warmup_steps个step到达peak lr
@@ -69,7 +69,7 @@ batch_size=16
 learning_rate=2e-4
 ## data loading buffer size
 buffer_size=102400
-weight=2,4,1,1
+weight=4,1,2,2
 variant_bin_size=4
 
 time_str=$(date "+%Y%m%d%H%M%S")
@@ -120,7 +120,7 @@ python run.py \
   --no_token_type_embeddings \
   --no_position_embeddings \
   --buffer_size $buffer_size \
-  --delete_old \
+  --save_all \
   --llm_dir .. \
   --llm_type $llm_type \
   --llm_version $llm_version \

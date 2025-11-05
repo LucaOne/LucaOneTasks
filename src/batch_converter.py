@@ -56,7 +56,7 @@ class BatchConverter(object):
             append_eos=None,
             **kwargs
     ):
-        print("------BatchConverter------")
+        print("-" * 25 + "BatchConverter" + "-" * 25)
         print("BatchConverter, kwargs:")
         print(kwargs)
         self.task_level_type = task_level_type
@@ -169,10 +169,12 @@ class BatchConverter(object):
                                                         self.atom_eos_idx, self.atom_mask_idx]
             self.atom_append_len = int(self.atom_prepend_bos) + int(self.atom_append_eos)
 
-        print("BatchConverter: prepend_bos=%r, append_eos=%r" % (self.prepend_bos, self.append_eos))
+        # print("BatchConverter: prepend_bos=%r, append_eos=%r" % (self.prepend_bos, self.append_eos))
+        '''
         if self.atom_tokenizer is not None:
             print("BatchConverter: atom_prepend_bos=%r, atom_append_eos=%r" % (
                 self.atom_prepend_bos, self.atom_append_eos))
+        '''
         self.matrix_add_special_token = False
         if "matrix_add_special_token" in kwargs and kwargs["matrix_add_special_token"]:
             self.matrix_add_special_token = kwargs["matrix_add_special_token"]

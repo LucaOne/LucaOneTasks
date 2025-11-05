@@ -10,7 +10,6 @@
 @file: predict
 @desc: predict or inference for trained downstream models
 '''
-
 import csv
 import json
 import uuid
@@ -72,8 +71,7 @@ def transform_one_sample_2_feature(
     sample_ids = []
     if input_mode == "pair":
         sample_ids.append(row[0] + "#" + row[1])
-        if input_type in ["seq_vs_seq", "seq_vs_vector", "seq_vs_matrix", "vector_vs_vector",
-                          "vector_vs_matrix", "matrix_vs_matrix", "matrix_express_vs_matrix", "matrix_express_vs_matrix_express"]:
+        if "_vs_" in input_type:
             if input_type == "matrix_express_vs_matrix":
                 en = encoder.encode_pair(
                     row[0],
@@ -144,6 +142,9 @@ def transform_one_sample_2_feature(
             elif input_type == "matrix_express_vs_matrix_express":
                 batch_info.append([row[0], row[1], row[8], row[9]])
                 seq_lens = [en["matrix_a"].shape[0], en["matrix_b"].shape[0]]
+            elif "variant" in input_type:
+                batch_info.append([row[0], row[1], row[4], row[5]])
+                seq_lens = [len(row[4]), len(row[5])]
             else:
                 raise Exception("Not support input_mode=%s, input_type=%s" % (input_mode, input_type))
         else:
@@ -168,42 +169,103 @@ def transform_one_sample_2_feature(
         seq_lens = []
         en_list = []
         cur_seq = row[2]
+
         if batch_convecter.task_level_type not in ["seq_level", "seq-level"]:
+            if "express" in input_type or "variant" in input_type:
+                cur_split_express_or_variant = row[3]
+                if not isinstance(cur_split_express_or_variant, list):
+                    cur_split_express_or_variant = eval(cur_split_express_or_variant)
             split_seqs = []
+            if "express" in input_type or "variant" in input_type:
+                split_express_or_variant = []
             # segment for long sequence in token-level task
             max_len = 10240 - int(batch_convecter.prepend_bos) - int(batch_convecter.append_eos)
             while max_len < len(cur_seq):
-                split_seqs.append(cur_seq[:max_len])
                 seq_lens.append(max_len)
+                split_seqs.append(cur_seq[:max_len])
                 cur_seq = cur_seq[max_len:]
+                if "express" in input_type or "variant" in input_type:
+                    split_express_or_variant.append(cur_split_express_or_variant[:max_len])
+                    cur_split_express_or_variant = cur_split_express_or_variant[max_len:]
             if len(cur_seq) > 0:
-                split_seqs.append(cur_seq)
                 seq_lens.append(len(cur_seq))
-            for split_seq in split_seqs:
+                split_seqs.append(cur_seq)
+                if "express" in input_type or "variant" in input_type:
+                    split_express_or_variant.append(cur_split_express_or_variant)
+
+            for split_idx, split_seq in enumerate(split_seqs):
+                if "express" in input_type:
+                    en = encoder.encode_single(
+                        row[0],
+                        row[1],
+                        split_seq,
+                        vector_filename=None,
+                        matrix_filename=None,
+                        express_list=split_express_or_variant[split_idx],
+                        label=None
+                    )
+                elif "variant" in input_type:
+                    en = encoder.encode_single(
+                        row[0],
+                        row[1],
+                        split_seq,
+                        vector_filename=None,
+                        matrix_filename=None,
+                        variant_list=split_express_or_variant[split_idx],
+                        label=None
+                    )
+                else:
+                    en = encoder.encode_single(
+                        row[0],
+                        row[1],
+                        split_seq,
+                        vector_filename=None,
+                        matrix_filename=None,
+                        label=None
+                    )
+                en_list.append(en)
+        else:
+            if "express" in input_type:
+                assert len(row) >= 4
                 en = encoder.encode_single(
                     row[0],
                     row[1],
-                    split_seq,
+                    row[2],
                     vector_filename=None,
                     matrix_filename=None,
+                    express_list=row[3],
                     label=None
                 )
-                en_list.append(en)
-        else:
-            en = encoder.encode_single(
-                row[0],
-                row[1],
-                row[2],
-                vector_filename=row[3] if len(row) > 3 else None,
-                matrix_filename=row[4] if len(row) > 4 else None,
-                express_list=row[5] if len(row) > 5 else None,
-                label=None
-            )
+            elif "variant" in input_type:
+                assert len(row) >= 4
+                en = encoder.encode_single(
+                    row[0],
+                    row[1],
+                    row[2],
+                    vector_filename=None,
+                    matrix_filename=None,
+                    variant_list=row[3],
+                    label=None
+                )
+            else:
+                assert len(row) >= 3
+                en = encoder.encode_single(
+                    row[0],
+                    row[1],
+                    row[2],
+                    vector_filename=row[3] if len(row) > 3 else None,
+                    matrix_filename=row[4] if len(row) > 4 else None,
+                    label=None
+                )
             en_list = en
             seq_lens = len(row[2])
             if "matrix" in en and en["matrix"] is not None:
-                seq_lens = min(seq_lens, en["matrix"].shape[0] - int(batch_convecter.prepend_bos) - int(batch_convecter.append_eos))
-        batch_info.append([row[0], row[2]])
+                seq_lens = min(seq_lens, en["matrix"].shape[0] - (2 if batch_convecter.matrix_add_special_token else 0))
+        if "express" in input_type or "variant" in input_type:
+            batch_info.append([row[0], row[2], row[3]])
+        else:
+            batch_info.append([row[0], row[2]])
+
     batch = [en_list]
     if isinstance(batch[0], list):
         batch_features = []
@@ -259,22 +321,22 @@ def predict_probs(args, encoder, batch_convecter, model, row):
 
 
 def predict_token_level_binary_class(args, encoder, batch_convecter, label_id_2_name, model, row):
-    # to do
+    # todo
     pass
 
 
 def predict_token_level_multi_class(args, encoder, batch_convecter, label_id_2_name, model, row):
-    # to do
+    # todo
     pass
 
 
 def predict_token_level_multi_label(args, encoder, batch_convecter, label_id_2_name, model, row):
-    # to do
+    # todo
     pass
 
 
 def predict_token_level_regression(args, encoder, batch_convecter, label_id_2_name, model, row):
-    # to do
+    # todo
     pass
 
 
@@ -584,7 +646,8 @@ def run(
         matrix_embedding_exists,
         output_attention_scores_dirpath,
         output_attention_pooling_scores_dirpath,
-        output_classification_vector_dirpath
+        output_classification_vector_dirpath,
+        delete_emb=False
 ):
     global global_model_config, global_seq_subword, global_seq_tokenizer, global_trained_model
     model_dir = "%s/models/%s/%s/%s/%s/%s/%s/%s" % (
@@ -638,7 +701,7 @@ def run(
 
     model_args.matrix_embedding_exists = matrix_embedding_exists
     # embedding saved dir during prediction
-    if emb_dir and not matrix_embedding_exists:
+    if emb_dir and not matrix_embedding_exists and "variant" not in input_type:
         # now = datetime.now()
         # formatted_time = now.strftime("%Y%m%d%H%M%S")
         # emb_dir = os.path.join(emb_dir, "%s-%d" % (formatted_time, gpu_id))
@@ -720,28 +783,42 @@ def run(
                 seq_type_b = item[3]
                 seq_a = item[4]
                 seq_b = item[5]
-                encoder.__get_embedding__(
-                    seq_id=seq_id_a,
-                    seq_type=seq_type_a,
-                    seq=seq_a,
-                    embedding_type="matrix" if "matrix" in input_type else "vector"
-                )
-                encoder.__get_embedding__(
-                    seq_id=seq_id_b,
-                    seq_type=seq_type_b,
-                    seq=seq_b,
-                    embedding_type="matrix" if "matrix" in input_type else "vector"
-                )
+                if "matrix" in input_type or "vector" in input_type:
+                    if "variant" in model_args.input_type:
+                        emb_seq_id_a = "_".join(seq_id_a.split("_")[1:])
+                    else:
+                        emb_seq_id_a = seq_id_a
+                    encoder.__get_embedding__(
+                        seq_id=seq_id_a,
+                        seq_type=emb_seq_id_a,
+                        seq=seq_a,
+                        embedding_type="matrix" if "matrix" in input_type else "vector"
+                    )
+                    if "variant" in model_args.input_type:
+                        emb_seq_id_b = "_".join(seq_id_b.split("_")[1:])
+                    else:
+                        emb_seq_id_b = seq_id_b
+                    encoder.__get_embedding__(
+                        seq_id=emb_seq_id_b,
+                        seq_type=seq_type_b,
+                        seq=seq_b,
+                        embedding_type="matrix" if "matrix" in input_type else "vector"
+                    )
             else:
                 seq_id = item[0]
                 seq_type = item[1]
                 seq = item[2]
-                encoder.__get_embedding__(
-                    seq_id=seq_id,
-                    seq_type=seq_type,
-                    seq=seq,
-                    embedding_type="matrix" if "matrix" in input_type else "vector"
-                )
+                if "matrix" in input_type or "vector" in input_type:
+                    if "variant" in model_args.input_type:
+                        emb_seq_id = "_".join(seq_id.split("_")[1:])
+                    else:
+                        emb_seq_id = seq_id
+                    encoder.__get_embedding__(
+                        seq_id=emb_seq_id,
+                        seq_type=seq_type,
+                        seq=seq,
+                        embedding_type="matrix" if "matrix" in input_type else "vector"
+                    )
             torch.cuda.empty_cache()
         encoder.matrix_embedding_exists = True
         # embedding 完之后to device
@@ -773,7 +850,7 @@ def run(
     predicted_results = []
     print()
     print("Device:", model_args.device)
-    if hasattr(model_args, "input_mode") and model_args.input_mode in ["pair"]:
+    if input_mode == "pair":
         for item in sequences:
             seq_id_a = item[0]
             seq_id_b = item[1]
@@ -782,19 +859,43 @@ def run(
             seq_a = item[4]
             seq_b = item[5]
             row = [seq_id_a, seq_id_b, seq_type_a, seq_type_b, seq_a, seq_b]
-            if "_vs_" in model_args.input_type:
-                vector_filename_a = item[6]
-                vector_filename_b = item[7]
-                matrix_filename_a = item[8]
-                matrix_filename_b = item[9]
-                row = row + [vector_filename_a, vector_filename_b, matrix_filename_a, matrix_filename_b]
-                if model_args.input_type == "matrix_express_vs_matrix":
-                    express_list_a = item[10]
+            if "_vs_" in input_type:
+                if len(item) >= 10:
+                    vector_filename_a = item[6]
+                    vector_filename_b = item[7]
+                    matrix_filename_a = item[8]
+                    matrix_filename_b = item[9]
+                    row = row + [vector_filename_a, vector_filename_b, matrix_filename_a, matrix_filename_b]
+                if input_type == "matrix_express_vs_matrix":
+                    if len(item) >= 12:
+                        express_list_a = item[10]
+                    else:
+                        express_list_a = item[6]
                     row = row + [express_list_a]
-                elif model_args.input_type == "matrix_express_vs_matrix_express":
-                    express_list_a = item[10]
-                    express_list_b = item[11]
+                elif input_type == "matrix_express_vs_matrix_express":
+                    if len(item) >= 12:
+                        express_list_a = item[10]
+                        express_list_b = item[11]
+                    else:
+                        express_list_a = item[6]
+                        express_list_b = item[7]
                     row = row + [express_list_a, express_list_b]
+                elif "variant" in input_type:
+                    if len(item) >= 12:
+                        variant_list_a = item[10]
+                        variant_list_b = item[11]
+                    else:
+                        variant_list_a = item[6]
+                        variant_list_b = item[7]
+                    row = row + [variant_list_a, variant_list_b]
+            elif "variant" in input_type:
+                if len(row) >= 12:
+                    variant_list_a = item[10]
+                    variant_list_b = item[11]
+                else:
+                    variant_list_a = item[6]
+                    variant_list_b = item[7]
+                row = row + [variant_list_a, variant_list_b]
             if task_level_type in ["seq_level", "seq-level"] and task_type in ["multi_class", "multi-class"]:
                 cur_res = predict_func(
                     model_args,
@@ -806,15 +907,137 @@ def run(
                     topk=topk
                 )
                 if topk is not None and topk > 1:
+                    if input_type == "matrix_express_vs_matrix":
+                        predicted_results.append([
+                            cur_res[0][0],
+                            cur_res[0][1],
+                            cur_res[0][2],
+                            cur_res[0][3],
+                            row[-1],
+                            cur_res[0][4],
+                            cur_res[0][5],
+                            cur_res[0][6],
+                            cur_res[0][7]
+                        ])
+                    elif input_type == "matrix_express_vs_matrix_express":
+                        predicted_results.append([
+                            cur_res[0][0],
+                            cur_res[0][1],
+                            cur_res[0][2],
+                            cur_res[0][3],
+                            row[-2],
+                            row[-1],
+                            cur_res[0][4],
+                            cur_res[0][5],
+                            cur_res[0][6],
+                            cur_res[0][7]
+                        ])
+                    elif "variant" in input_type:
+                        predicted_results.append([
+                            cur_res[0][0],
+                            cur_res[0][1],
+                            cur_res[0][2],
+                            cur_res[0][3],
+                            row[-2],
+                            row[-1],
+                            cur_res[0][4],
+                            cur_res[0][5],
+                            cur_res[0][6],
+                            cur_res[0][7]
+                        ])
+                    else:
+                        predicted_results.append([
+                            cur_res[0][0],
+                            cur_res[0][1],
+                            cur_res[0][2],
+                            cur_res[0][3],
+                            cur_res[0][4],
+                            cur_res[0][5],
+                            cur_res[0][6],
+                            cur_res[0][7]
+                        ])
+                else:
+                    if input_type == "matrix_express_vs_matrix":
+                        predicted_results.append([
+                            cur_res[0][0],
+                            cur_res[0][1],
+                            cur_res[0][2],
+                            cur_res[0][3],
+                            row[-1],
+                            cur_res[0][4],
+                            cur_res[0][5],
+                        ])
+                    elif input_type == "matrix_express_vs_matrix_express":
+                        predicted_results.append([
+                            cur_res[0][0],
+                            cur_res[0][1],
+                            cur_res[0][2],
+                            cur_res[0][3],
+                            row[-2],
+                            row[-1],
+                            cur_res[0][4],
+                            cur_res[0][5]
+                        ])
+                    elif "variant" in input_type:
+                        predicted_results.append([
+                            cur_res[0][0],
+                            cur_res[0][1],
+                            cur_res[0][2],
+                            cur_res[0][3],
+                            row[-2],
+                            row[-1],
+                            cur_res[0][4],
+                            cur_res[0][5]
+                        ])
+                    else:
+                        predicted_results.append([
+                            cur_res[0][0],
+                            cur_res[0][1],
+                            cur_res[0][2],
+                            cur_res[0][3],
+                            cur_res[0][4],
+                            cur_res[0][5]
+                        ])
+            else:
+                cur_res = predict_func(
+                    model_args,
+                    encoder,
+                    batch_convecter,
+                    label_id_2_name,
+                    trained_model,
+                    row
+                )
+                if input_type == "matrix_express_vs_matrix":
                     predicted_results.append([
                         cur_res[0][0],
                         cur_res[0][1],
                         cur_res[0][2],
                         cur_res[0][3],
+                        row[-1],
                         cur_res[0][4],
                         cur_res[0][5],
-                        cur_res[0][6],
-                        cur_res[0][7]
+                    ])
+                elif input_type == "matrix_express_vs_matrix_express":
+                    predicted_results.append([
+                        cur_res[0][0],
+                        cur_res[0][1],
+                        cur_res[0][2],
+                        cur_res[0][3],
+                        row[-2],
+                        row[-1],
+                        cur_res[0][4],
+                        cur_res[0][5]
+                    ])
+                elif "variant" in input_type:
+                    predicted_results.append([
+                        cur_res[0][0],
+                        cur_res[0][1],
+                        cur_res[0][2],
+                        cur_res[0][3],
+                        row[-2],
+                        row[-1],
+                        cur_res[0][4],
+                        cur_res[0][5]
                     ])
                 else:
                     predicted_results.append([
@@ -825,23 +1048,6 @@ def run(
                         cur_res[0][4],
                         cur_res[0][5]
                     ])
-            else:
-                cur_res = predict_func(
-                    model_args,
-                    encoder,
-                    batch_convecter,
-                    label_id_2_name,
-                    trained_model,
-                    row
-                )
-                predicted_results.append([
-                    cur_res[0][0],
-                    cur_res[0][1],
-                    cur_res[0][2],
-                    cur_res[0][3],
-                    cur_res[0][4],
-                    cur_res[0][5]
-                ])
     else:
         for item in sequences:
             seq_id = item[0]
@@ -863,13 +1069,23 @@ def run(
                     topk=topk
                 )
                 if topk is not None and topk > 1:
-                    predicted_results.append([
-                        seq_id, seq, cur_res[0][2], cur_res[0][3], cur_res[0][4], cur_res[0][5]
-                    ])
+                    if "express" in input_type or "variant" in input_type:
+                        predicted_results.append([
+                            seq_id, seq, row[3], cur_res[0][2], cur_res[0][3], cur_res[0][4], cur_res[0][5]
+                        ])
+                    else:
+                        predicted_results.append([
+                            seq_id, seq, cur_res[0][2], cur_res[0][3], cur_res[0][4], cur_res[0][5]
+                        ])
                 else:
-                    predicted_results.append([
-                        seq_id, seq, cur_res[0][2], cur_res[0][3]
-                    ])
+                    if "express" in input_type or "variant" in input_type:
+                        predicted_results.append([
+                            seq_id, seq, row[3], cur_res[0][2], cur_res[0][3]
+                        ])
+                    else:
+                        predicted_results.append([
+                            seq_id, seq, cur_res[0][2], cur_res[0][3]
+                        ])
             else:
                 cur_res = predict_func(
                     model_args,
@@ -879,30 +1095,41 @@ def run(
                     trained_model,
                     row
                 )
-                predicted_results.append([
-                    seq_id, seq, cur_res[0][2], cur_res[0][3]
-                ])
+                if "express" in input_type or "variant" in input_type:
+                    predicted_results.append([
+                        seq_id, seq, row[3], cur_res[0][2], cur_res[0][3]
+                    ])
+                else:
+                    predicted_results.append([
+                        seq_id, seq, cur_res[0][2], cur_res[0][3]
+                    ])
     # torch.cuda.empty_cache()
     # 删除embedding
-    if not matrix_embedding_exists and os.path.exists(model_args.emb_dir) and input_type != "seq":
+    if not matrix_embedding_exists and os.path.exists(model_args.emb_dir) and delete_emb:
         shutil.rmtree(model_args.emb_dir)
-    return predicted_results
+    return predicted_results, label_id_2_name
 
 
-def run_args():
+def create_run_args():
     parser = argparse.ArgumentParser(description="Prediction")
     # for one seq sample of the input
     parser.add_argument("--seq_id", default=None, type=str,  help="the seq id")
     parser.add_argument("--seq_type", default=None, type=str, choices=["prot", "gene"], help="seq type.")
     parser.add_argument("--seq", default=None, type=str,  help="the sequence")
+    parser.add_argument("--express", default=None, type=str,  help="the seq express")
+    parser.add_argument("--variant", default=None, type=str,  help="the seq variant")
 
     # for one seq-seq sample of the input
     parser.add_argument("--seq_id_a", default=None, type=str,  help="the seq id a")
     parser.add_argument("--seq_type_a", default=None, type=str, choices=["prot", "gene"], help="seq type a.")
     parser.add_argument("--seq_a", default=None, type=str,  help="the sequence a")
+    parser.add_argument("--express_a", default=None, type=str,  help="the seq express a")
+    parser.add_argument("--variant_a", default=None, type=str,  help="the seq variant a")
     parser.add_argument("--seq_id_b", default=None, type=str,  help="the seq id b")
     parser.add_argument("--seq_type_b", default=None, type=str, choices=["prot", "gene"], help="seq type b.")
     parser.add_argument("--seq_b", default=None, type=str,  help="the sequence b")
+    parser.add_argument("--express_b", default=None, type=str,  help="the seq express b")
+    parser.add_argument("--variant_b", default=None, type=str,  help="the seq variant b")
 
     # for many samples
     parser.add_argument(
@@ -946,7 +1173,13 @@ def run_args():
         "--express_col_idx",
         default=None,
         type=int,
-        help="the matrix_filename column index for csv/tsv file"
+        help="the express column index for csv/tsv file"
+    )
+    parser.add_argument(
+        "--variant_col_idx",
+        default=None,
+        type=int,
+        help="the variant column index for csv/tsv file"
     )
 
     parser.add_argument(
@@ -986,6 +1219,12 @@ def run_args():
         help="the express_col_idx_a column index for csv/tsv file"
     )
     parser.add_argument(
+        "--variant_col_idx_a",
+        default=None,
+        type=int,
+        help="the variant_col_idx_a column index for csv/tsv file"
+    )
+    parser.add_argument(
         "--seq_id_col_idx_b",
         default=None,
         type=int,
@@ -1021,6 +1260,12 @@ def run_args():
         type=int,
         help="the express_col_idx_b column index for csv/tsv file"
     )
+    parser.add_argument(
+        "--variant_col_idx_b",
+        default=None,
+        type=int,
+        help="the variant_col_idx_b column index for csv/tsv file"
+    )
 
     # for embedding
     parser.add_argument(
@@ -1040,6 +1285,11 @@ def run_args():
         default=None,
         type=str,
         help="the seq embedding save dir. default: None"
+    )
+    parser.add_argument(
+        "--delete_emb",
+        action="store_true",
+        help="whether to delete the seq embedding files, which generated during running"
     )
 
     # for trained model
@@ -1150,7 +1400,12 @@ def run_args():
         "--ground_truth_idx",
         default=None,
         type=int,
-        help="the ground truth idx, when the input file contains"
+        help="the ground truth col idx, when the input file contains"
+    )
+    parser.add_argument(
+        "--ground_truth_label_idx_2_name",
+        action="store_true",
+        help="whether to transform the ground_truth_label_idx to label name"
     )
 
     # for results(csv format, contain header)
@@ -1195,11 +1450,432 @@ def run_args():
     return input_args
 
 
-if __name__ == "__main__":
-    args = run_args()
+def create_results_csv_header(run_args):
+    if run_args.input_mode == "pair":
+        if "_vs_" in run_args.input_type:
+            if run_args.input_type == "seq_vs_seq":
+                if run_args.task_type == "multi_class" and run_args.topk is not None and run_args.topk > 1 and run_args.task_level_type == "seq_level":
+                    header = [
+                        "seq_id_a",
+                        "seq_id_b",
+                        "seq_a",
+                        "seq_b",
+                        "top1_prob",
+                        "top1_label",
+                        "top%d_probs" % run_args.topk,
+                        "top%d_labels" % run_args.topk
+                    ]
+                else:
+                    header = [
+                        "seq_id_a",
+                        "seq_id_b",
+                        "seq_a",
+                        "seq_b",
+                        "prob",
+                        "label"
+                    ]
+            elif run_args.input_type == "seq_vs_vector":
+                if run_args.task_type == "multi_class" and run_args.topk is not None and run_args.topk > 1 and run_args.task_level_type == "seq_level":
+                    header = ["seq_id_a", "seq_id_b", "seq_a", "vector_filename_b", "top1_prob", "top1_label", "top%d_probs" % run_args.topk, "top%d_labels" % run_args.topk]
+                else:
+                    header = ["seq_id_a", "seq_id_b", "seq_a", "vector_filename_b", "prob", "label"]
+            elif run_args.input_type == "seq_vs_matrix":
+                if run_args.task_type == "multi_class" and run_args.topk is not None and run_args.topk > 1 and run_args.task_level_type == "seq_level":
+                    header = ["seq_id_a", "seq_id_b", "seq_a", "matrix_filename_b", "top1_prob", "top1_label", "top%d_probs" % run_args.topk, "top%d_labels" % run_args.topk]
+                else:
+                    header = ["seq_id_a", "seq_id_b", "seq_a", "matrix_filename_b", "prob", "label"]
+            elif run_args.input_type == "vector_vs_vector":
+                if run_args.task_type == "multi_class" and run_args.topk is not None and run_args.topk > 1 and run_args.task_level_type == "seq_level":
+                    header = ["seq_id_a", "seq_id_b", "vector_filename_a", "vector_filename_b", "top1_prob", "top1_label", "top%d_probs" % run_args.topk, "top%d_labels" % run_args.topk]
+                else:
+                    header = ["seq_id_a", "seq_id_b", "vector_filename_a", "vector_filename_b", "prob", "label"]
+            elif run_args.input_type == "vector_vs_matrix":
+                if run_args.task_type == "multi_class" and run_args.topk is not None and run_args.topk > 1 and run_args.task_level_type == "seq_level":
+                    header = ["seq_id_a", "seq_id_b", "vector_filename_a", "matrix_filename_b", "top1_prob", "top1_label", "top%d_probs" % run_args.topk, "top%d_labels" % run_args.topk]
+                else:
+                    header = ["seq_id_a", "seq_id_b", "vector_filename_a", "matrix_filename_b", "prob", "label"]
+            elif run_args.input_type == "matrix_vs_matrix":
+                if run_args.task_type == "multi_class" and run_args.topk is not None and run_args.topk > 1 and run_args.task_level_type == "seq_level":
+                    header = ["seq_id_a", "seq_id_b", "matrix_filename_a", "matrix_filename_b", "top1_prob", "top1_label", "top%d_probs" % run_args.topk, "top%d_labels" % run_args.topk]
+                else:
+                    header = ["seq_id_a", "seq_id_b", "matrix_filename_a", "matrix_filename_b", "prob", "label"]
+            elif run_args.input_type == "matrix_express_vs_matrix":
+                if run_args.task_type == "multi_class" and run_args.topk is not None and run_args.topk > 1 and run_args.task_level_type == "seq_level":
+                    header = ["seq_id_a", "seq_id_b", "matrix_filename_a", "matrix_filename_b", "express_list_a", "top1_prob", "top1_label", "top%d_probs" % run_args.topk, "top%d_labels" % run_args.topk]
+                else:
+                    header = ["seq_id_a", "seq_id_b", "matrix_filename_a", "matrix_filename_b", "express_list_a",  "prob", "label"]
+            elif run_args.input_type == "matrix_express_vs_matrix_express":
+                if run_args.task_type == "multi_class" and run_args.topk is not None and run_args.topk > 1 and run_args.task_level_type == "seq_level":
+                    header = ["seq_id_a", "seq_id_b", "matrix_filename_a", "matrix_filename_b", "express_list_a", "express_list_b", "top1_prob", "top1_label", "top%d_probs" % run_args.topk, "top%d_labels" % run_args.topk]
+                else:
+                    header = ["seq_id_a", "seq_id_b", "matrix_filename_a", "matrix_filename_b", "express_list_a", "express_list_b", "prob", "label"]
+            elif "variant" in run_args.input_type:
+                if run_args.task_type == "multi_class" and run_args.topk is not None and run_args.topk > 1 and run_args.task_level_type == "seq_level":
+                    header = ["seq_id_a", "seq_id_b", "seq_a", "seq_b", "variant_a", "variant_b", "top1_prob", "top1_label", "top%d_probs" % run_args.topk, "top%d_labels" % run_args.topk]
+                else:
+                    header = ["seq_id_a", "seq_id_b", "seq_a", "seq_b", "variant_a", "variant_b", "prob", "label"]
+            else:
+                raise Exception("Not support input_mode=%s, input_type=%s" % (run_args.input_mode, run_args.input_type))
+        else:
+            if run_args.task_type == "multi_class" and run_args.topk is not None and run_args.topk > 1 and run_args.task_level_type == "seq_level":
+                if "variant" in run_args.input_type:
+                    header = [
+                        "seq_id_a",
+                        "seq_id_b",
+                        "seq_a",
+                        "seq_b",
+                        "variant_a",
+                        "variant_b",
+                        "top1_prob",
+                        "top1_label",
+                        "top%d_probs" % run_args.topk,
+                        "top%d_labels" % run_args.topk
+                    ]
+                else:
+                    header = [
+                        "seq_id_a",
+                        "seq_id_b",
+                        "seq_a",
+                        "seq_b",
+                        "top1_prob",
+                        "top1_label",
+                        "top%d_probs" % run_args.topk,
+                        "top%d_labels" % run_args.topk
+                    ]
+            else:
+                if "variant" in run_args.input_type:
+                    header = [
+                        "seq_id_a",
+                        "seq_id_b",
+                        "seq_a",
+                        "seq_b",
+                        "variant_a",
+                        "variant_b",
+                        "top1_prob",
+                        "top1_label"
+                    ]
+                else:
+                    header = [
+                        "seq_id_a",
+                        "seq_id_b",
+                        "seq_a",
+                        "seq_b",
+                        "prob",
+                        "label"
+                    ]
+    else:
+        if run_args.task_type == "multi_class" and run_args.topk is not None and run_args.topk > 1 and run_args.task_level_type == "seq_level":
+            if "variant" in run_args.input_type:
+                header = [
+                    "seq_id",
+                    "seq",
+                    "variant",
+                    "top1_prob",
+                    "top1_label",
+                    "top%d_probs" % run_args.topk,
+                    "top%d_labels" % run_args.topk
+                ]
+            else:
+                header = [
+                    "seq_id",
+                    "seq",
+                    "top1_prob",
+                    "top1_label",
+                    "top%d_probs" % run_args.topk,
+                    "top%d_labels" % run_args.topk
+                ]
+        else:
+            if "variant" in run_args.input_type:
+                header = ["seq_id", "seq", "variant", "prob", "label"]
+            else:
+                header = ["seq_id", "seq", "prob", "label"]
+    return header
+
+
+def create_batch_input(run_args, row, batch_data, batch_ground_truth, exists_ids):
+    if run_args.input_mode == "pair":
+        if run_args.seq_id_col_idx_a is None:
+            run_args.seq_id_col_idx_a = 0
+        if run_args.seq_id_col_idx_b is None:
+            run_args.seq_id_col_idx_b = 1
+        if run_args.seq_type_col_idx_a is None:
+            run_args.seq_type_col_idx_a = 2
+        if run_args.seq_type_col_idx_b is None:
+            run_args.seq_type_col_idx_b = 3
+        if run_args.seq_col_idx_a is None:
+            run_args.seq_col_idx_a = 4
+        if run_args.seq_col_idx_b is None:
+            run_args.seq_col_idx_b = 5
+        if len(row) >= 10:
+            if run_args.vector_col_idx_a is None:
+                run_args.vector_col_idx_a = 6
+            if run_args.vector_col_idx_b is None:
+                run_args.vector_col_idx_b = 7
+            if run_args.matrix_col_idx_a is None:
+                run_args.matrix_col_idx_a = 8
+            if run_args.matrix_col_idx_b is None:
+                run_args.matrix_col_idx_b = 9
+        if len(row) >= 12:
+            if "express" in run_args.input_mode:
+                if run_args.express_col_idx_a is None:
+                    run_args.express_col_idx_a = 10
+                if run_args.express_col_idx_b is None:
+                    run_args.express_col_idx_b = 11
+            if "variant" in run_args.input_mode:
+                if run_args.variant_col_idx_a is None:
+                    run_args.variant_col_idx_a = 10
+                if run_args.variant_col_idx_b is None:
+                    run_args.variant_col_idx_b = 11
+        else:
+            if "express" in run_args.input_mode:
+                if run_args.express_col_idx_a is None:
+                    run_args.express_col_idx_a = 5
+                if run_args.express_col_idx_b is None:
+                    run_args.express_col_idx_b = 6
+            if "variant" in run_args.input_mode:
+                if run_args.variant_col_idx_a is None:
+                    run_args.variant_col_idx_a = 5
+                if run_args.variant_col_idx_b is None:
+                    run_args.variant_col_idx_b = 6
+        if row[run_args.seq_id_col_idx_a] + "_" + row[run_args.seq_id_col_idx_b] in exists_ids:
+            return None
+        # seq_id_a, seq_id_b, seq_type_a, seq_type_b, seq_a, seq_b
+        if "seq" in run_args.input_type:
+            if not seq_type_is_match_seq(row[run_args.seq_type_col_idx_a], row[run_args.seq_col_idx_a]):
+                print("Error! the input seq_a(seq_id_a=%s) not match the seq_type_a=%s: %s" % (
+                    row[run_args.seq_id_col_idx_a],
+                    row[run_args.seq_type_col_idx_a],
+                    row[run_args.seq_col_idx_a]
+                ))
+                sys.exit(-1)
+            if not seq_type_is_match_seq(row[run_args.seq_type_col_idx_b], row[run_args.seq_col_idx_b]):
+                print("Error! the input seq_b(seq_id_b=%s) not match the seq_type_b=%s: %s" % (
+                    row[run_args.seq_id_col_idx_b],
+                    row[run_args.seq_type_col_idx_b],
+                    row[run_args.seq_col_idx_b]
+                ))
+                sys.exit(-1)
+        if "_vs_" in run_args.input_type:
+            if "express" in run_args.input_type:
+                if len(row) >= 12:
+                    batch_data.append([
+                        row[run_args.seq_id_col_idx_a],
+                        row[run_args.seq_id_col_idx_b],
+                        row[run_args.seq_type_col_idx_a],
+                        row[run_args.seq_type_col_idx_b],
+                        row[run_args.seq_col_idx_a],
+                        row[run_args.seq_col_idx_b],
+                        row[run_args.vector_col_idx_a],
+                        row[run_args.vector_col_idx_b],
+                        row[run_args.matrix_col_idx_a],
+                        row[run_args.matrix_col_idx_b],
+                        row[run_args.express_col_idx_a],
+                        row[run_args.express_col_idx_b],
+                    ])
+                else:
+                    batch_data.append([
+                        row[run_args.seq_id_col_idx_a],
+                        row[run_args.seq_id_col_idx_b],
+                        row[run_args.seq_type_col_idx_a],
+                        row[run_args.seq_type_col_idx_b],
+                        row[run_args.seq_col_idx_a],
+                        row[run_args.seq_col_idx_b],
+                        row[run_args.express_col_idx_a],
+                        row[run_args.express_col_idx_b],
+                    ])
+            elif "variant" in run_args.input_type:
+                if len(row) >= 12:
+                    batch_data.append([
+                        row[run_args.seq_id_col_idx_a],
+                        row[run_args.seq_id_col_idx_b],
+                        row[run_args.seq_type_col_idx_a],
+                        row[run_args.seq_type_col_idx_b],
+                        row[run_args.seq_col_idx_a],
+                        row[run_args.seq_col_idx_b],
+                        row[run_args.vector_col_idx_a],
+                        row[run_args.vector_col_idx_b],
+                        row[run_args.matrix_col_idx_a],
+                        row[run_args.matrix_col_idx_b],
+                        row[run_args.variant_col_idx_a],
+                        row[run_args.variant_col_idx_b]
+                    ])
+                else:
+                    batch_data.append([
+                        row[run_args.seq_id_col_idx_a],
+                        row[run_args.seq_id_col_idx_b],
+                        row[run_args.seq_type_col_idx_a],
+                        row[run_args.seq_type_col_idx_b],
+                        row[run_args.seq_col_idx_a],
+                        row[run_args.seq_col_idx_b],
+                        row[run_args.variant_col_idx_a],
+                        row[run_args.variant_col_idx_b]
+                    ])
+            else:
+                if len(row) >= 10:
+                    batch_data.append([
+                        row[run_args.seq_id_col_idx_a],
+                        row[run_args.seq_id_col_idx_b],
+                        row[run_args.seq_type_col_idx_a],
+                        row[run_args.seq_type_col_idx_b],
+                        row[run_args.seq_col_idx_a],
+                        row[run_args.seq_col_idx_b],
+                        row[run_args.vector_col_idx_a],
+                        row[run_args.vector_col_idx_b],
+                        row[run_args.matrix_col_idx_a],
+                        row[run_args.matrix_col_idx_b]
+                    ])
+                else:
+                    batch_data.append([
+                        row[run_args.seq_id_col_idx_a],
+                        row[run_args.seq_id_col_idx_b],
+                        row[run_args.seq_type_col_idx_a],
+                        row[run_args.seq_type_col_idx_b],
+                        row[run_args.seq_col_idx_a],
+                        row[run_args.seq_col_idx_b],
+                    ])
+        else:
+            if len(row) >= 10:
+                batch_data.append([
+                    row[run_args.seq_id_col_idx_a],
+                    row[run_args.seq_id_col_idx_b],
+                    row[run_args.seq_type_col_idx_a],
+                    row[run_args.seq_type_col_idx_b],
+                    row[run_args.seq_col_idx_a],
+                    row[run_args.seq_col_idx_b],
+                    row[run_args.vector_col_idx_a],
+                    row[run_args.vector_col_idx_b],
+                    row[run_args.matrix_col_idx_a],
+                    row[run_args.matrix_col_idx_b]
+                ])
+            else:
+                batch_data.append([
+                    row[run_args.seq_id_col_idx_a],
+                    row[run_args.seq_id_col_idx_b],
+                    row[run_args.seq_type_col_idx_a],
+                    row[run_args.seq_type_col_idx_b],
+                    row[run_args.seq_col_idx_a],
+                    row[run_args.seq_col_idx_b]
+                ])
+    else:
+        if run_args.seq_id_col_idx is None:
+            run_args.seq_id_col_idx = 0
+        if run_args.seq_type_col_idx is None:
+            run_args.seq_type_col_idx = 1
+        if run_args.seq_col_idx is None:
+            run_args.seq_col_idx = 2
+        if "express" in run_args.input_type:
+            if len(row) >= 6:
+                if run_args.vector_col_idx is None:
+                    run_args.vector_col_idx = 3
+                if run_args.matrix_col_idx is None:
+                    run_args.matrix_col_idx = 4
+                if run_args.express_col_idx is None:
+                    run_args.express_col_idx = 5
+            else:
+                if run_args.express_col_idx is None:
+                    run_args.express_col_idx = 3
+        elif "variant" in run_args.input_type:
+            if len(row) >= 6:
+                if run_args.vector_col_idx is None:
+                    run_args.vector_col_idx = 3
+                if run_args.matrix_col_idx is None:
+                    run_args.matrix_col_idx = 4
+                if run_args.variant_col_idx is None:
+                    run_args.variant_col_idx = 5
+            else:
+                if run_args.variant_col_idx is None:
+                    run_args.variant_col_idx = 3
+        else:
+            if len(row) >= 5:
+                if run_args.vector_col_idx is None:
+                    run_args.vector_col_idx = 3
+                if run_args.matrix_col_idx is None:
+                    run_args.matrix_col_idx = 4
+
+        if row[run_args.seq_id_col_idx] in exists_ids:
+            return None
+        if len(row) == 2:
+            assert run_args.seq_type is not None
+            run_args.seq_type_col_idx = None
+            run_args.seq_col_idx = 1
+            if not seq_type_is_match_seq(run_args.seq_type, row[run_args.seq_col_idx]):
+                print("Error! the input seq(seq_id=%s) not match the arg: --seq_type=%s: %s" % (
+                    row[run_args.seq_id_col_idx],
+                    run_args.seq_type,
+                    row[run_args.seq_col_idx]
+                ))
+                sys.exit(-1)
+            batch_data.append([row[run_args.seq_id_col_idx], run_args.seq_type, row[run_args.seq_col_idx]])
+        elif len(row) > 2:
+            if not seq_type_is_match_seq(row[run_args.seq_type_col_idx], row[run_args.seq_col_idx]):
+                print("Error! the input seq(seq_id=%s) not match the seq_type=%s: %s" % (
+                    row[run_args.seq_id_col_idx],
+                    row[run_args.seq_type_col_idx],
+                    row[run_args.seq_col_idx]
+                ))
+                sys.exit(-1)
+            # seq_id, seq_type, seq, vector, matrix, express
+            if len(row) == 3:
+                batch_data.append([
+                    row[run_args.seq_id_col_idx],
+                    row[run_args.seq_type_col_idx],
+                    row[run_args.seq_col_idx]
+                ])
+            elif "express" in run_args.input_type:
+                if len(row) >= 6:
+                    batch_data.append([
+                        row[run_args.seq_id_col_idx],
+                        row[run_args.seq_type_col_idx],
+                        row[run_args.seq_col_idx],
+                        row[run_args.vector_col_idx],
+                        row[run_args.matrix_col_idx],
+                        row[run_args.express_col_idx],
+                    ])
+                else:
+                    batch_data.append([
+                        row[run_args.seq_id_col_idx],
+                        row[run_args.seq_type_col_idx],
+                        row[run_args.seq_col_idx],
+                        row[run_args.express_col_idx],
+                    ])
+            elif "variant" in run_args.input_type:
+                if len(row) >= 6:
+                    batch_data.append([
+                        row[run_args.seq_id_col_idx],
+                        row[run_args.seq_type_col_idx],
+                        row[run_args.seq_col_idx],
+                        row[run_args.vector_col_idx],
+                        row[run_args.matrix_col_idx],
+                        row[run_args.variant_col_idx],
+                    ])
+                else:
+                    batch_data.append([
+                        row[run_args.seq_id_col_idx],
+                        row[run_args.seq_type_col_idx],
+                        row[run_args.seq_col_idx],
+                        row[run_args.variant_col_idx],
+                    ])
+        else:
+            raise Exception("the col num(%s) of row less than 2 of the input_type=%s" % (len(row), run_args.input_type))
+    if run_args.ground_truth_idx is not None and run_args.ground_truth_idx >= 0:
+        batch_ground_truth.append(row[run_args.ground_truth_idx])
+
+
+def print_run_args(run_args):
     print("-" * 25 + "Run Args" + "-" * 25)
-    print(args.__dict__)
+    args_dict = {}
+    for item in run_args.__dict__.items():
+        if item[1] is not None:
+            if item[0] == "threshold" and run_args.task_type not in ["binary_class", "multi_label"]:
+                continue
+            args_dict[item[0]] = item[1]
+    print(args_dict)
     print("-" * 50)
+
+
+if __name__ == "__main__":
+    args = create_run_args()
+    print_run_args(args)
     if args.output_attention_scores_dirpath:
         args.output_attention_scores = True
         if not os.path.exists(args.output_attention_scores_dirpath):
@@ -1212,6 +1888,7 @@ if __name__ == "__main__":
         args.output_classification_vectors = True
         if not os.path.exists(args.output_classification_vector_dirpath):
             os.makedirs(args.output_classification_vector_dirpath)
+
     if args.input_file is not None:
         input_file_suffix = os.path.basename(args.input_file).split(".")[-1]
         if args.input_mode == "pair":
@@ -1227,6 +1904,7 @@ if __name__ == "__main__":
         exists_ids = set()
         exists_res = []
         if os.path.exists(args.save_path):
+            # continue
             print("save_path=%s exists." % args.save_path)
             if args.input_mode == "pair":
                 for row in csv_reader(args.save_path, header=True, header_filter=True):
@@ -1246,83 +1924,7 @@ if __name__ == "__main__":
             os.makedirs(os.path.dirname(args.save_path))
         with open(args.save_path, "w") as wfp:
             writer = csv.writer(wfp)
-            if args.input_mode == "pair":
-                if "_vs_" in args.input_type:
-                    if args.input_type == "seq_vs_seq":
-                        if args.task_type == "multi_class" and args.topk is not None and args.topk > 1 and args.task_level_type == "seq_level":
-                            header = ["seq_id_a", "seq_id_b", "seq_a", "seq_b", "top1_prob", "top1_label", "top%d_probs" % args.topk, "top%d_labels" % args.topk]
-                        else:
-                            header = ["seq_id_a", "seq_id_b", "seq_a", "seq_b", "prob", "label"]
-                    elif args.input_type == "seq_vs_vector":
-                        if args.task_type == "multi_class" and args.topk is not None and args.topk > 1 and args.task_level_type == "seq_level":
-                            header = ["seq_id_a", "seq_id_b", "seq_a", "vector_filename_b", "top1_prob", "top1_label", "top%d_probs" % args.topk, "top%d_labels" % args.topk]
-                        else:
-                            header = ["seq_id_a", "seq_id_b", "seq_a", "vector_filename_b", "prob", "label"]
-                    elif args.input_type == "seq_vs_matrix":
-                        if args.task_type == "multi_class" and args.topk is not None and args.topk > 1 and args.task_level_type == "seq_level":
-                            header = ["seq_id_a", "seq_id_b", "seq_a", "matrix_filename_b", "top1_prob", "top1_label", "top%d_probs" % args.topk, "top%d_labels" % args.topk]
-                        else:
-                            header = ["seq_id_a", "seq_id_b", "seq_a", "matrix_filename_b", "prob", "label"]
-                    elif args.input_type == "vector_vs_vector":
-                        if args.task_type == "multi_class" and args.topk is not None and args.topk > 1 and args.task_level_type == "seq_level":
-                            header = ["seq_id_a", "seq_id_b", "vector_filename_a", "vector_filename_b", "top1_prob", "top1_label", "top%d_probs" % args.topk, "top%d_labels" % args.topk]
-                        else:
-                            header = ["seq_id_a", "seq_id_b", "vector_filename_a", "vector_filename_b", "prob", "label"]
-                    elif args.input_type == "vector_vs_matrix":
-                        if args.task_type == "multi_class" and args.topk is not None and args.topk > 1 and args.task_level_type == "seq_level":
-                            header = ["seq_id_a", "seq_id_b", "vector_filename_a", "matrix_filename_b", "top1_prob", "top1_label", "top%d_probs" % args.topk, "top%d_labels" % args.topk]
-                        else:
-                            header = ["seq_id_a", "seq_id_b", "vector_filename_a", "matrix_filename_b", "prob", "label"]
-                    elif args.input_type == "matrix_vs_matrix":
-                        if args.task_type == "multi_class" and args.topk is not None and args.topk > 1 and args.task_level_type == "seq_level":
-                            header = ["seq_id_a", "seq_id_b", "matrix_filename_a", "matrix_filename_b", "top1_prob", "top1_label", "top%d_probs" % args.topk, "top%d_labels" % args.topk]
-                        else:
-                            header = ["seq_id_a", "seq_id_b", "matrix_filename_a", "matrix_filename_b", "prob", "label"]
-                    elif args.input_type == "matrix_express_vs_matrix":
-                        if args.task_type == "multi_class" and args.topk is not None and args.topk > 1 and args.task_level_type == "seq_level":
-                            header = ["seq_id_a", "seq_id_b", "matrix_filename_a", "matrix_filename_b", "top1_prob", "top1_label", "top%d_probs" % args.topk, "top%d_labels" % args.topk]
-                        else:
-                            header = ["seq_id_a", "seq_id_b", "matrix_filename_a", "matrix_filename_b", "prob", "label"]
-                    elif args.input_type == "matrix_express_vs_matrix_express":
-                        if args.task_type == "multi_class" and args.topk is not None and args.topk > 1 and args.task_level_type == "seq_level":
-                            header = ["seq_id_a", "seq_id_b", "matrix_filename_a", "matrix_filename_b", "top1_prob", "top1_label", "top%d_probs" % args.topk, "top%d_labels" % args.topk]
-                        else:
-                            header = ["seq_id_a", "seq_id_b", "matrix_filename_a", "matrix_filename_b", "prob", "label"]
-                    else:
-                        raise Exception("Not support input_mode=%s, input_type=%s" % (args.input_mode, args.input_type))
-                else:
-                    if args.task_type == "multi_class" and args.topk is not None and args.topk > 1 and args.task_level_type == "seq_level":
-                        header = [
-                            "seq_id_a",
-                            "seq_id_b",
-                            "seq_a",
-                            "seq_b",
-                            "top1_prob",
-                            "top1_label",
-                            "top%d_probs" % args.topk,
-                            "top%d_labels" % args.topk
-                        ]
-                    else:
-                        header = [
-                            "seq_id_a",
-                            "seq_id_b",
-                            "seq_a",
-                            "seq_b",
-                            "prob",
-                            "label"
-                        ]
-            else:
-                if args.task_type == "multi_class" and args.topk is not None and args.topk > 1 and args.task_level_type == "seq_level":
-                    header = [
-                        "seq_id",
-                        "seq",
-                        "top1_prob",
-                        "top1_label",
-                        "top%d_probs" % args.topk,
-                        "top%d_labels" % args.topk
-                    ]
-                else:
-                    header = ["seq_id", "seq", "prob", "label"]
+            header = create_results_csv_header(args)
             if args.ground_truth_idx is not None and args.ground_truth_idx >= 0:
                 header.append("ground_truth")
             writer.writerow(header)
@@ -1335,150 +1937,9 @@ if __name__ == "__main__":
 
             reader = file_reader(args.input_file) if args.input_file.endswith(".csv") or args.input_file.endswith(".tsv") else fasta_reader(args.input_file)
             for row in reader:
-                if args.input_mode == "pair":
-                    if args.seq_id_col_idx_a is None:
-                        args.seq_id_col_idx_a = 0
-                    if args.seq_id_col_idx_b is None:
-                        args.seq_id_col_idx_b = 1
-                    if args.seq_type_col_idx_a is None:
-                        args.seq_type_col_idx_a = 2
-                    if args.seq_type_col_idx_b is None:
-                        args.seq_type_col_idx_b = 3
-                    if args.seq_col_idx_a is None:
-                        args.seq_col_idx_a = 4
-                    if args.seq_col_idx_b is None:
-                        args.seq_col_idx_b = 5
-                    if args.vector_col_idx_a is None:
-                        args.vector_col_idx_a = 6
-                    if args.vector_col_idx_b is None:
-                        args.vector_col_idx_b = 7
-                    if args.matrix_col_idx_a is None:
-                        args.matrix_col_idx_a = 8
-                    if args.matrix_col_idx_b is None:
-                        args.matrix_col_idx_b = 9
-                    if args.express_col_idx_a is None:
-                        args.express_col_idx_a = 10
-                    if args.express_col_idx_b is None:
-                        args.express_col_idx_b = 11
-                    if row[args.seq_id_col_idx_a] + "_" + row[args.seq_id_col_idx_b] in exists_ids:
-                        continue
-                    # seq_id_a, seq_id_b, seq_type_a, seq_type_b, seq_a, seq_b
-                    if args.input_type in ["seq", "seq_vector", "seq_matrix", "seq_vs_seq", "seq_vs_vector", "seq_vs_matrix"] \
-                            and not seq_type_is_match_seq(
-                            row[args.seq_type_col_idx_a], row[args.seq_col_idx_a]
-                    ):
-                        print("Error! the input seq_a(seq_id_a=%s) not match the seq_type_a=%s: %s" % (
-                            row[args.seq_id_col_idx_a],
-                            row[args.seq_type_col_idx_a],
-                            row[args.seq_col_idx_a]
-                        ))
-                        sys.exit(-1)
-                    if args.input_type in ["seq", "seq_vector", "seq_matrix", "seq_vs_seq", "seq_vs_vector", "seq_vs_matrix"] \
-                            and not seq_type_is_match_seq(
-                            row[args.seq_type_col_idx_b], row[args.seq_col_idx_b]
-                    ):
-                        print("Error! the input seq_b(seq_id_b=%s) not match the seq_type_b=%s: %s" % (
-                            row[args.seq_id_col_idx_b],
-                            row[args.seq_type_col_idx_b],
-                            row[args.seq_col_idx_b]
-                        ))
-                        sys.exit(-1)
-                    if "_vs_" in args.input_type:
-                        if args.input_type in ["matrix_express_vs_matrix", "matrix_express_vs_matrix_express"]:
-                            batch_data.append([
-                                row[args.seq_id_col_idx_a],
-                                row[args.seq_id_col_idx_b],
-                                row[args.seq_type_col_idx_a],
-                                row[args.seq_type_col_idx_b],
-                                row[args.seq_col_idx_a],
-                                row[args.seq_col_idx_b],
-                                row[args.vector_col_idx_a],
-                                row[args.vector_col_idx_b],
-                                row[args.matrix_col_idx_a],
-                                row[args.matrix_col_idx_b],
-                                row[args.express_col_idx_a],
-                                row[args.express_col_idx_b],
-                            ])
-                        else:
-                            batch_data.append([
-                                row[args.seq_id_col_idx_a],
-                                row[args.seq_id_col_idx_b],
-                                row[args.seq_type_col_idx_a],
-                                row[args.seq_type_col_idx_b],
-                                row[args.seq_col_idx_a],
-                                row[args.seq_col_idx_b],
-                                row[args.vector_col_idx_a],
-                                row[args.vector_col_idx_b],
-                                row[args.matrix_col_idx_a],
-                                row[args.matrix_col_idx_b]
-                            ])
-                    else:
-                        batch_data.append([
-                            row[args.seq_id_col_idx_a],
-                            row[args.seq_id_col_idx_b],
-                            row[args.seq_type_col_idx_a],
-                            row[args.seq_type_col_idx_b],
-                            row[args.seq_col_idx_a],
-                            row[args.seq_col_idx_b]
-                        ])
-                    if args.ground_truth_idx is not None and args.ground_truth_idx >= 0:
-                        batch_ground_truth.append(row[args.ground_truth_idx])
-                else:
-                    if args.seq_id_col_idx is None:
-                        args.seq_id_col_idx = 0
-                    if args.seq_type_col_idx is None:
-                        args.seq_type_col_idx = 1
-                    if args.seq_col_idx is None:
-                        args.seq_col_idx = 2
-                    if args.vector_col_idx is None:
-                        args.vector_col_idx = 3
-                    if args.matrix_col_idx is None:
-                        args.matrix_col_idx = 4
-                    if args.express_col_idx is None:
-                        args.express_col_idx = 5
-                    if row[args.seq_id_col_idx] in exists_ids:
-                        continue
-                    if len(row) == 2:
-                        args.seq_type_col_idx = None
-                        args.seq_col_idx = 1
-                        if not seq_type_is_match_seq(args.seq_type, row[args.seq_col_idx]):
-                            print("Error! the input seq(seq_id=%s) not match the arg: --seq_type=%s: %s" % (
-                                row[args.seq_id_col_idx],
-                                args.seq_type,
-                                row[args.seq_col_idx]
-                            ))
-                            sys.exit(-1)
-                        batch_data.append([row[args.seq_id_col_idx], args.seq_type, row[args.seq_col_idx ]])
-                    elif len(row) > 2:
-                        if not seq_type_is_match_seq(row[args.seq_type_col_idx], row[args.seq_col_idx]):
-                            print("Error! the input seq(seq_id=%s) not match the seq_type=%s: %s" % (
-                                row[args.seq_id_col_idx],
-                                row[args.seq_type_col_idx],
-                                row[args.seq_col_idx]
-                            ))
-                            sys.exit(-1)
-                        if args.ground_truth_idx is not None and args.ground_truth_idx >= 0:
-                            batch_ground_truth.append(row[args.ground_truth_idx])
-                        # seq_id, seq_type, seq, vector, matrix, express
-                        if len(row) == 3:
-                            batch_data.append([
-                                row[args.seq_id_col_idx],
-                                row[args.seq_type_col_idx],
-                                row[args.seq_col_idx]
-                            ])
-                        else:
-                            batch_data.append([
-                                row[args.seq_id_col_idx],
-                                row[args.seq_type_col_idx],
-                                row[args.seq_col_idx],
-                                row[args.vector_col_idx],
-                                row[args.matrix_col_idx],
-                                row[args.express_col_idx],
-                            ])
-                    else:
-                        continue
+                create_batch_input(args, row, batch_data, batch_ground_truth, exists_ids)
                 if len(batch_data) % args.print_per_num == 0:
-                    batch_results = run(
+                    batch_results, label_id_2_name = run(
                         batch_data,
                         args.llm_truncation_seq_length,
                         args.model_path,
@@ -1498,11 +1959,15 @@ if __name__ == "__main__":
                         matrix_embedding_exists=args.matrix_embedding_exists,
                         output_attention_scores_dirpath=args.output_attention_scores_dirpath,
                         output_attention_pooling_scores_dirpath=args.output_attention_pooling_scores_dirpath,
-                        output_classification_vector_dirpath=args.output_classification_vector_dirpath
+                        output_classification_vector_dirpath=args.output_classification_vector_dirpath,
+                        delete_emb=args.delete_emb
                     )
                     for item_idx, item in enumerate(batch_results):
                         if args.ground_truth_idx is not None and args.ground_truth_idx >= 0:
-                            item.append(batch_ground_truth[item_idx])
+                            if args.ground_truth_label_idx_2_name:
+                                item.append(label_id_2_name[batch_ground_truth[item_idx]])
+                            else:
+                                item.append(batch_ground_truth[item_idx])
                         writer.writerow(item)
                     wfp.flush()
                     had_done += len(batch_data)
@@ -1510,7 +1975,7 @@ if __name__ == "__main__":
                     batch_data = []
                     batch_ground_truth = []
             if len(batch_data) > 0:
-                batch_results = run(
+                batch_results, label_id_2_name = run(
                     batch_data,
                     args.llm_truncation_seq_length,
                     args.model_path,
@@ -1530,11 +1995,15 @@ if __name__ == "__main__":
                     matrix_embedding_exists=args.matrix_embedding_exists,
                     output_attention_scores_dirpath=args.output_attention_scores_dirpath,
                     output_attention_pooling_scores_dirpath=args.output_attention_pooling_scores_dirpath,
-                    output_classification_vector_dirpath=args.output_classification_vector_dirpath
+                    output_classification_vector_dirpath=args.output_classification_vector_dirpath,
+                    delete_emb=args.delete_emb
                 )
                 for item_idx, item in enumerate(batch_results):
                     if args.ground_truth_idx is not None and args.ground_truth_idx >= 0:
-                        item.append(batch_ground_truth[item_idx])
+                        if args.ground_truth_label_idx_2_name:
+                            item.append(label_id_2_name[batch_ground_truth[item_idx]])
+                        else:
+                            item.append(batch_ground_truth[item_idx])
                     writer.writerow(item)
                 wfp.flush()
                 had_done += len(batch_data)
@@ -1548,8 +2017,14 @@ if __name__ == "__main__":
         if not seq_type_is_match_seq(args.seq_type, args.seq):
             print("Error! the input seq(seq_id=%s) not match its seq_type=%s: %s" % (args.seq_id, args.seq_type, args.seq))
             sys.exit(-1)
-        data = [[args.seq_id, args.seq_type, args.seq]]
-        results = run(
+        if "express" in args.input_type:
+            data = [[args.seq_id, args.seq_type, args.seq, [int(v) for v in args.express.split(",")]]]
+        elif "express" in args.input_type:
+            data = [[args.seq_id, args.seq_type, args.seq, [int(v) for v in args.variant.split(",")]]]
+        else:
+            data = [[args.seq_id, args.seq_type, args.seq]]
+
+        results, label_id_2_name = run(
             data,
             args.llm_truncation_seq_length,
             args.model_path,
@@ -1569,7 +2044,8 @@ if __name__ == "__main__":
             matrix_embedding_exists=args.matrix_embedding_exists,
             output_attention_scores_dirpath=args.output_attention_scores_dirpath,
             output_attention_pooling_scores_dirpath=args.output_attention_pooling_scores_dirpath,
-            output_classification_vector_dirpath=args.output_classification_vector_dirpath
+            output_classification_vector_dirpath=args.output_classification_vector_dirpath,
+            delete_emb=args.delete_emb
         )
         print("Predicted Result:")
         print("seq_id=%s" % args.seq_id)
@@ -1589,15 +2065,38 @@ if __name__ == "__main__":
         if not seq_type_is_match_seq(args.seq_type_b, args.seq_b):
             print("Error! the input seq_b(seq_id_b=%s) not match its seq_type_b=%s: %s" % (args.seq_id_b, args.seq_type_b, args.seq_b))
             sys.exit(-1)
-        data = [[
-            args.seq_id_a,
-            args.seq_id_b,
-            args.seq_type_a,
-            args.seq_type_b,
-            args.seq_a,
-            args.seq_b
-        ]]
-        results = run(
+        if "express" in args.input_type:
+            data = [[
+                args.seq_id_a,
+                args.seq_id_b,
+                args.seq_type_a,
+                args.seq_type_b,
+                args.seq_a,
+                args.seq_b,
+                [int(v) for v in args.express_a.split(",")],
+                [int(v) for v in args.express_b.split(",")]
+            ]]
+        elif "express" in args.input_type:
+            data = [[
+                args.seq_id_a,
+                args.seq_id_b,
+                args.seq_type_a,
+                args.seq_type_b,
+                args.seq_a,
+                args.seq_b,
+                [int(v) for v in args.variant_a.split(",")],
+                [int(v) for v in args.variant_b.split(",")]
+            ]]
+        else:
+            data = [[
+                args.seq_id_a,
+                args.seq_id_b,
+                args.seq_type_a,
+                args.seq_type_b,
+                args.seq_a,
+                args.seq_b,
+            ]]
+        results, label_id_2_name = run(
             data,
             args.llm_truncation_seq_length,
             args.model_path,
@@ -1617,7 +2116,8 @@ if __name__ == "__main__":
             matrix_embedding_exists=args.matrix_embedding_exists,
             output_attention_scores_dirpath=args.output_attention_scores_dirpath,
             output_attention_pooling_scores_dirpath=args.output_attention_pooling_scores_dirpath,
-            output_classification_vector_dirpath=args.output_classification_vector_dirpath
+            output_classification_vector_dirpath=args.output_classification_vector_dirpath,
+            delete_emb=args.delete_emb
         )
         print("Predicted Result:")
         print("seq_id_a=%s, seq_id_b=%s" % (args.seq_id_a, args.seq_id_b))

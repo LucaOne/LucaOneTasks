@@ -3,13 +3,13 @@ export CUDA_VISIBLE_DEVICES=0
 seed=1221
 
 # for dataset
-DATASET_NAME="SampleSubgroup_SV"
+DATASET_NAME="QuinoaAltitude_SV"
 DATASET_TYPE="gene"
 
 # for task
 TASK_TYPE="multi_class"
 TASK_LEVEL_TYPE="seq_level"
-LABEL_TYPE="SampleSubgroup"
+LABEL_TYPE="QuinoaAltitude"
 
 # for input
 ## here only embedding matrix-channel
@@ -69,7 +69,7 @@ batch_size=16
 learning_rate=2e-4
 ## data loading buffer size
 buffer_size=102400
-weight=2,10,40,20,4,40,20,40,10,1,40,20,40
+weight=2,4,1,1
 variant_bin_size=4
 
 time_str=$(date "+%Y%m%d%H%M%S")
@@ -120,7 +120,7 @@ python run.py \
   --no_token_type_embeddings \
   --no_position_embeddings \
   --buffer_size $buffer_size \
-  --delete_old \
+  --save_all \
   --llm_dir .. \
   --llm_type $llm_type \
   --llm_version $llm_version \
@@ -149,5 +149,6 @@ python run.py \
   --loss_reduction mean \
   --variant_bin_size $variant_bin_size \
   --matrix_add_special_token
+
 
 

@@ -314,7 +314,7 @@ class Encoder(object):
         if "matrix_add_special_token" in kwargs and kwargs["matrix_add_special_token"]:
             self.matrix_add_special_token = kwargs["matrix_add_special_token"]
 
-        print("Encoder: prepend_bos=%r, append_eos=%r" % (self.prepend_bos, self.append_eos))
+        # print("Encoder: prepend_bos=%r, append_eos=%r" % (self.prepend_bos, self.append_eos))
         if self.matrix_add_special_token:
             self.prepend_bos = True
             self.append_eos = True
@@ -1054,6 +1054,20 @@ class Encoder(object):
                 self.put_into_buffer(seq_id, embedding_info)
         return embedding_info
 
+
+    @staticmethod
+    def is_list(value):
+        if isinstance(value, list):
+            return True
+        if isinstance(value, str):
+            try:
+                evaluated_value = eval(value)
+                if isinstance(evaluated_value, list):
+                    return True
+            except (SyntaxError, NameError, TypeError):
+                return False
+        return False
+
     def encode_single(
             self,
             seq_id,
@@ -1066,16 +1080,48 @@ class Encoder(object):
             label=None
     ):
         seq_type = seq_type.strip().lower()
-        # for embedding vector
+        # for the llm embedding vector
         vector = None
-        if self.input_type in ["vector", "seq_vector"]:
+        # case: the llm embedding vector as a part of the input
+        if "vector" in self.input_type:
             if vector_filename is None:
                 if seq is None:
                     raise Exception("seq is none and vector_filename is none")
                 elif seq_type == "molecule":
                     raise Exception("now not support embedding of the seq_type=%s" % seq_type)
                 else:
-                    vector = self.__get_embedding__(seq_id, seq_type, seq, "vector")
+                    if self.is_list(seq_id):
+                        if isinstance(seq_id, str):
+                            seq_id_list = eval(seq_id)
+                            seq_list = eval(seq)
+                        else:
+                            seq_id_list = seq_id
+                            seq_list = seq
+                        vector = []
+                        for v_id, v_seq in zip(seq_id_list, seq_list):
+                            vector.append(self.__get_embedding__(v_id, seq_type.replace("multi_", ""), v_seq, "vector"))
+                    else:
+                        vector = self.__get_embedding__(seq_id, seq_type, seq, "vector")
+            elif isinstance(vector_filename, str) and self.is_list(vector_filename):
+                vector_filename_list = eval(vector_filename)
+                # multi vectors
+                vector = []
+                for v in vector_filename_list:
+                    for vector_dir in self.vector_dirpath:
+                        vector_filepath = os.path.join(vector_dir, v)
+                        if os.path.exists(vector_filepath):
+                            vector.append(torch.load(vector_filepath))
+                            break
+            elif isinstance(vector_filename, list):
+                vector_filename_list = vector_filename
+                # multi vectors
+                vector = []
+                for v in vector_filename_list:
+                    for vector_dir in self.vector_dirpath:
+                        vector_filepath = os.path.join(vector_dir, v)
+                        if os.path.exists(vector_filepath):
+                            vector.append(torch.load(vector_filepath))
+                            break
             elif isinstance(vector_filename, str):
                 for vector_dir in self.vector_dirpath:
                     vector_filepath = os.path.join(vector_dir, vector_filename)
@@ -1087,16 +1133,51 @@ class Encoder(object):
             else:
                 raise Exception("vector is not filepath-str and np.ndarray")
 
-        # for embedding matrix
+        # for the llm  embedding matrix
         matrix = None
-        if self.input_type in ["matrix", "seq_matrix", "matrix_express", "matrix_variant"]:
+        # case: the llm embedding matrix as a part of the input
+        if "matrix" in self.input_type:
             if matrix_filename is None:
                 if seq is None:
                     raise Exception("seq is none and matrix_filename is none")
                 elif seq_type == "molecule":
                     raise Exception("now not support embedding of the seq_type=%s" % seq_type)
                 else:
-                    matrix = self.__get_embedding__(seq_id, seq_type, seq, "matrix")
+                    if self.is_list(seq_id):
+                        if isinstance(seq_id, str):
+                            seq_id_list = eval(seq_id)
+                            seq_list = eval(seq)
+                        else:
+                            seq_id_list = seq_id
+                            seq_list = seq
+                        matrix = []
+                        for v_id, v_seq in zip(seq_id_list, seq_list):
+                            matrix.append(self.__get_embedding__(v_id, seq_type.replace("multi_", ""), v_seq, "matrix"))
+                    else:
+                        if self.input_type == "matrix_variant":
+                            matrix = self.__get_embedding__("_".join(seq_id.split("_")[1:]), seq_type, seq, "matrix")
+                        else:
+                            matrix = self.__get_embedding__(seq_id, seq_type, seq, "matrix")
+            elif isinstance(matrix_filename, str) and self.is_list(matrix_filename):
+                matrix_filename_list = eval(matrix_filename)
+                # multi matrices
+                matrix = []
+                for v in matrix_filename_list:
+                    for matrix_dir in self.matrix_dirpath:
+                        matrix_filepath = os.path.join(matrix_dir, v)
+                        if os.path.exists(matrix_filepath):
+                            matrix.append(torch.load(matrix_filepath))
+                            break
+            elif isinstance(matrix_filename, list):
+                matrix_filename_list = matrix_filename
+                # multi matrices
+                matrix = []
+                for v in matrix_filename_list:
+                    for matrix_dir in self.matrix_dirpath:
+                        matrix_filepath = os.path.join(matrix_dir, v)
+                        if os.path.exists(matrix_filepath):
+                            matrix.append(torch.load(matrix_filepath))
+                            break
             elif isinstance(matrix_filename, str):
                 for matrix_dir in self.matrix_dirpath:
                     matrix_filepath = os.path.join(matrix_dir, matrix_filename)
@@ -1127,18 +1208,19 @@ class Encoder(object):
                 seq = clean_seq_esm(seq_id, seq)
             elif seq_type == "multi_prot":
                 seq = ",".join([clean_seq_esm(seq_id, v) for v in seq.split(",")])
-
-        if express_list is not None:
+        # case: the expression bin a part of the input
+        if "express" in self.input_type:
+            assert express_list is not None
             if not isinstance(express_list, list):
                 express_list = eval(express_list)
             assert isinstance(express_list, list)
-        elif variant_list is not None:
-            if isinstance(variant_list, str):
-                # five special tokens
-                variant_list = [int(v) + 5 for v in variant_list]
-            elif not isinstance(variant_list, list):
+        # case: the seq variant(SNP or SV) a part of the input
+        if "variant" in self.input_type:
+            assert variant_list is not None and len(variant_list) > 0
+            if not isinstance(variant_list, list) and not isinstance(variant_list, str):
                 variant_list = eval(variant_list)
-                variant_list = [v + 5 for v in variant_list]
+            # five special tokens
+            variant_list = [int(v) + 5 for v in variant_list]
             assert isinstance(variant_list, list)
         return {
             "seq_id": seq_id,
@@ -1165,111 +1247,224 @@ class Encoder(object):
             matrix_filename_b=None,
             express_list_a=None,
             express_list_b=None,
+            variant_list_a=None,
+            variant_list_b=None,
             label=None
 
     ):
         seq_type_a = seq_type_a.strip().lower()
         seq_type_b = seq_type_b.strip().lower()
-        # for embedding vector
+        # for the llm embedding vector
         vector_a, vector_b = None, None
-        if self.input_type in [
-            "vector",
-            "seq_vector",
-            "seq_vs_vector",
-            "vector_vs_seq",
-            "vector_vs_vector",
-            "vector_vs_matrix",
-            "matrix_vs_vector"
-        ]:
-            if self.input_type not in ["seq_vs_vector", "matrix_vs_vector"]:
-                if vector_filename_a is None:
-                    if seq_a is None:
-                        raise Exception("seq_a is none and vector_filename_a is none")
-                    elif seq_type_a == "molecule":
-                        raise Exception("now not support embedding of the seq_type_a=%s" % seq_type_a)
+        # case: the llm embedding vector a as a part of the input
+        if "vector_" in self.input_type or self.input_type in ["vector", "seq_vector"]:
+            if vector_filename_a is None:
+                if seq_a is None:
+                    raise Exception("seq_a is none and vector_filename_a is none")
+                elif seq_type_a == "molecule":
+                    raise Exception("now not support embedding of the seq_type_a=%s" % seq_type_a)
+                else:
+                    if self.is_list(seq_id_a):
+                        if isinstance(seq_id_a, str):
+                            seq_id_list_a = eval(seq_id_a)
+                            seq_list_a = eval(seq_a)
+                        else:
+                            seq_id_list_a = seq_id_a
+                            seq_list_a = seq_a
+                        vector_a = []
+                        for v_id_a, v_seq_a in zip(seq_id_list_a, seq_list_a):
+                            vector_a.append(self.__get_embedding__(v_id_a, seq_type_a.replace("multi_", ""), v_seq_a, "vector"))
                     else:
                         vector_a = self.__get_embedding__(seq_id_a, seq_type_a, seq_a, "vector")
-                elif isinstance(vector_filename_a, str):
+            elif isinstance(vector_filename_a, str) and self.is_list(vector_filename_a):
+                vector_filename_list_a = eval(vector_filename_a)
+                # multi vectors
+                vector_a = []
+                for v in vector_filename_list_a:
                     for vector_dir in self.vector_dirpath:
-                        vector_filepath_a = os.path.join(vector_dir, vector_filename_a)
+                        vector_filepath_a = os.path.join(vector_dir, v)
                         if os.path.exists(vector_filepath_a):
-                            vector_a = torch.load(vector_filepath_a)
+                            vector_a.append(torch.load(vector_filepath_a))
                             break
-                elif isinstance(vector_filename_a, np.ndarray) or isinstance(vector_filename_a, torch.Tensor):
-                    vector_a = vector_filename_a
+            elif isinstance(vector_filename_a, list):
+                vector_filename_list_a = vector_filename_a
+                # multi vectors
+                vector_a = []
+                for v in vector_filename_list_a:
+                    for vector_dir in self.vector_dirpath:
+                        vector_filepath_a = os.path.join(vector_dir, v)
+                        if os.path.exists(vector_filepath_a):
+                            vector_a.append(torch.load(vector_filepath_a))
+                            break
+            elif isinstance(vector_filename_a, str):
+                for vector_dir in self.vector_dirpath:
+                    vector_filepath_a = os.path.join(vector_dir, vector_filename_a)
+                    if os.path.exists(vector_filepath_a):
+                        vector_a = torch.load(vector_filepath_a)
+                        break
+            elif isinstance(vector_filename_a, np.ndarray) or isinstance(vector_filename_a, torch.Tensor):
+                vector_a = vector_filename_a
+            else:
+                raise Exception("vector_a is not filepath-str and np.ndarray")
+        # case: the llm embedding vector b as a part of the input
+        if "_vector" in self.input_type or self.input_type in ["vector", "seq_vector"]:
+            if vector_filename_b is None:
+                if seq_b is None:
+                    raise Exception("seq_b is none and vector_filename_b is none")
+                elif seq_type_b == "molecule":
+                    raise Exception("now not support embedding of the seq_type_b=%s" % seq_type_b)
                 else:
-                    raise Exception("vector_a is not filepath-str and np.ndarray")
-            if self.input_type not in ["vector_vs_seq", "vector_vs_matrix"]:
-                if vector_filename_b is None:
-                    if seq_b is None:
-                        raise Exception("seq_b is none and vector_filename_b is none")
-                    elif seq_type_b == "molecule":
-                        raise Exception("now not support embedding of the seq_type_b=%s" % seq_type_b)
+                    if self.is_list(seq_id_b):
+                        if isinstance(seq_id_b, str):
+                            seq_id_list_b = eval(seq_id_b)
+                            seq_list_b = eval(seq_b)
+                        else:
+                            seq_id_list_b = seq_id_b
+                            seq_list_b = seq_b
+                        vector_b = []
+                        for v_id_b, v_seq_b in zip(seq_id_list_b, seq_list_b):
+                            vector_b.append(self.__get_embedding__(v_id_b, seq_type_b.replace("multi_", ""), v_seq_b, "vector"))
                     else:
                         vector_b = self.__get_embedding__(seq_id_b, seq_type_b, seq_b, "vector")
-                elif isinstance(vector_filename_b, str):
+            elif isinstance(vector_filename_b, str) and self.is_list(vector_filename_b):
+                vector_filename_list_b = eval(vector_filename_b)
+                # multi vectors
+                vector_b = []
+                for v in vector_filename_list_b:
                     for vector_dir in self.vector_dirpath:
-                        vector_filepath_b = os.path.join(vector_dir, vector_filename_b)
+                        vector_filepath_b = os.path.join(vector_dir, v)
                         if os.path.exists(vector_filepath_b):
-                            vector_b = torch.load(vector_filepath_b)
+                            vector_b.append(torch.load(vector_filepath_b))
                             break
-                elif isinstance(vector_filename_b, np.ndarray) or isinstance(vector_filename_b, torch.Tensor):
-                    vector_b = vector_filename_b
-                else:
-                    raise Exception("vector_b is not filepath-str and np.ndarray")
+            elif isinstance(vector_filename_b, list):
+                vector_filename_list_b = vector_filename_b
+                # multi vectors
+                vector_b = []
+                for v in vector_filename_list_b:
+                    for vector_dir in self.vector_dirpath:
+                        vector_filepath_b = os.path.join(vector_dir, v)
+                        if os.path.exists(vector_filepath_b):
+                            vector_b.append(torch.load(vector_filepath_b))
+                            break
+            elif isinstance(vector_filename_b, str):
+                for vector_dir in self.vector_dirpath:
+                    vector_filepath_b = os.path.join(vector_dir, vector_filename_b)
+                    if os.path.exists(vector_filepath_b):
+                        vector_b = torch.load(vector_filepath_b)
+                        break
+            elif isinstance(vector_filename_b, np.ndarray) or isinstance(vector_filename_b, torch.Tensor):
+                vector_b = vector_filename_b
+            else:
+                raise Exception("vector_b is not filepath-str and np.ndarray")
 
-        # for embedding matrix
+        # for the llm embedding matrix
         matrix_a, matrix_b = None, None
-        if self.input_type in [
-            "matrix",
-            "seq_matrix",
-            "seq_vs_matrix",
-            "vector_vs_matrix",
-            "matrix_vs_seq",
-            "matrix_vs_vector",
-            "matrix_vs_matrix",
-            "matrix_express_vs_matrix",
-            "matrix_express_vs_matrix_express"
-        ]:
-            if self.input_type not in ["seq_vs_matrix", "vector_vs_matrix"]:
-                if matrix_filename_a is None:
-                    if seq_a is None:
-                        raise Exception("seq_a is none and matrix_filename_a is none")
+
+        # case: the llm embedding matrix a as a part of the input
+        if "matrix_" in self.input_type or self.input_type in ["matrix", "seq_matrix"]:
+            if matrix_filename_a is None:
+                if seq_a is None:
+                    raise Exception("seq_a is none and matrix_filename_a is none")
+                else:
+                    if self.is_list(seq_id_a):
+                        if isinstance(seq_id_a, str):
+                            seq_id_list_a = eval(seq_id_a)
+                            seq_list_a = eval(seq_a)
+                        else:
+                            seq_id_list_a = seq_id_a
+                            seq_list_a = seq_a
+                        matrix_a = []
+                        for v_id_a, v_seq_a in zip(seq_id_list_a, seq_list_a):
+                            matrix_a.append(self.__get_embedding__(v_id_a, seq_type_a.replace("multi_", ""), v_seq_a, "matrix"))
                     else:
                         matrix_a = self.__get_embedding__(seq_id_a, seq_type_a, seq_a, "matrix")
-                elif isinstance(matrix_filename_a, str):
+            elif isinstance(matrix_filename_a, str) and self.is_list(matrix_filename_a):
+                matrix_filename_list_a = eval(matrix_filename_a)
+                # multi matrices
+                matrix_a = []
+                for v in matrix_filename_list_a:
                     for matrix_dir in self.matrix_dirpath:
-                        matrix_filepath_a = os.path.join(matrix_dir, matrix_filename_a)
+                        matrix_filepath_a = os.path.join(matrix_dir, v)
                         if os.path.exists(matrix_filepath_a):
-                            matrix_a = torch.load(matrix_filepath_a)
+                            matrix_a.append(torch.load(matrix_filepath_a))
                             break
-                elif isinstance(matrix_filename_a, np.ndarray) or isinstance(matrix_filename_a, torch.Tensor):
-                    matrix_a = matrix_filename_a
+            elif isinstance(matrix_filename_a, list):
+                matrix_filename_list_a = matrix_filename_a
+                # multi matrices
+                matrix_a = []
+                for v in matrix_filename_list_a:
+                    for matrix_dir in self.matrix_dirpath:
+                        matrix_filepath_a = os.path.join(matrix_dir, v)
+                        if os.path.exists(matrix_filepath_a):
+                            matrix_a.append(torch.load(matrix_filepath_a))
+                            break
+            elif isinstance(matrix_filename_a, str):
+                for matrix_dir in self.matrix_dirpath:
+                    matrix_filepath_a = os.path.join(matrix_dir, matrix_filename_a)
+                    if os.path.exists(matrix_filepath_a):
+                        matrix_a = torch.load(matrix_filepath_a)
+                        break
+            elif isinstance(matrix_filename_a, np.ndarray) or isinstance(matrix_filename_a, torch.Tensor):
+                matrix_a = matrix_filename_a
+            else:
+                raise Exception("matrix_a is not filepath-str and np.ndarray")
+        # case: the llm embedding matrix b as a part of the input
+        if "_matrix" in self.input_type or self.input_type in ["matrix", "seq_matrix"]:
+            if matrix_filename_b is None:
+                if seq_b is None:
+                    raise Exception("seq_b is none and matrix_filename_b is none")
                 else:
-                    raise Exception("matrix_a is not filepath-str and np.ndarray")
-            if self.input_type not in ["matrix_vs_seq", "matrix_vs_vector"]:
-                if matrix_filename_b is None:
-                    if seq_b is None:
-                        raise Exception("seq_b is none and matrix_filename_b is none")
+                    if self.is_list(seq_id_b):
+                        if isinstance(seq_id_b, str):
+                            seq_id_list_b = eval(seq_id_b)
+                            seq_list_b = eval(seq_b)
+                        else:
+                            seq_id_list_b = seq_id_b
+                            seq_list_b = seq_b
+                        matrix_b = []
+                        for v_id_b, v_seq_b in zip(seq_id_list_b, seq_list_b):
+                            matrix_b.append(self.__get_embedding__(v_id_b, seq_type_b.replace("multi_", ""), v_seq_b, "matrix"))
                     else:
                         matrix_b = self.__get_embedding__(seq_id_b, seq_type_b, seq_b, "matrix")
-                elif isinstance(matrix_filename_b, str):
+            elif isinstance(matrix_filename_b, str) and self.is_list(matrix_filename_b):
+                matrix_filename_list_b = eval(matrix_filename_b)
+                # multi matrices
+                matrix_b = []
+                for v in matrix_filename_list_b:
                     for matrix_dir in self.matrix_dirpath:
-                        matrix_filepath_b = os.path.join(matrix_dir, matrix_filename_b)
+                        matrix_filepath_b = os.path.join(matrix_dir, v)
                         if os.path.exists(matrix_filepath_b):
-                            matrix_b = torch.load(matrix_filepath_b)
+                            matrix_b.append(torch.load(matrix_filepath_b))
                             break
-                elif isinstance(matrix_filename_b, np.ndarray) or isinstance(matrix_filename_b, torch.Tensor):
-                    matrix_b = matrix_filename_b
-                else:
-                    raise Exception("matrix_b is not filepath-str and np.ndarray")
+            elif isinstance(matrix_filename_b, list):
+                matrix_filename_list_b = matrix_filename_b
+                # multi matrices
+                matrix_b = []
+                for v in matrix_filename_list_b:
+                    for matrix_dir in self.matrix_dirpath:
+                        matrix_filepath_b = os.path.join(matrix_dir, v)
+                        if os.path.exists(matrix_filepath_b):
+                            matrix_b.append(torch.load(matrix_filepath_b))
+                            break
+            elif isinstance(matrix_filename_b, str):
+                for matrix_dir in self.matrix_dirpath:
+                    matrix_filepath_b = os.path.join(matrix_dir, matrix_filename_b)
+                    if os.path.exists(matrix_filepath_b):
+                        matrix_b = torch.load(matrix_filepath_b)
+                        break
+            elif isinstance(matrix_filename_b, np.ndarray) or isinstance(matrix_filename_b, torch.Tensor):
+                matrix_b = matrix_filename_b
+            else:
+                raise Exception("matrix_b is not filepath-str and np.ndarray")
 
         # for seq
+        # case: the raw seq a as a part of the input
         if seq_type_a == "molecule":
             # to do
             pass
         elif "seq" in self.input_type:
             seq_a = seq_a.upper()
+        # case: the raw seq b as a part of the input
         if seq_type_b == "molecule":
             # to do
             pass
@@ -1287,12 +1482,24 @@ class Encoder(object):
                     seq_b = clean_seq_esm(seq_id_b, seq_b)
                 elif seq_type_b == "multi_prot":
                     seq_b = ",".join([clean_seq_esm(seq_id_b, v) for v in seq_b.split(",")])
-        if express_list_a is not None:
-            if not isinstance(express_list_a, list):
-                express_list_a = eval(express_list_a)
-        if express_list_b is not None:
-            if not isinstance(express_list_b, list):
-                express_list_b = eval(express_list_b)
+        # case: the expression as a part of the input
+        if "express" in self.input_type:
+            if express_list_a is not None:
+                if not isinstance(express_list_a, list):
+                    express_list_a = eval(express_list_a)
+            if express_list_b is not None:
+                if not isinstance(express_list_b, list):
+                    express_list_b = eval(express_list_b)
+        # case: the seq variant as a part of the input
+        if "variant" in self.input_type:
+            if variant_list_a is not None:
+                if not isinstance(variant_list_a, list) and not isinstance(variant_list_a, str):
+                    variant_list_a = eval(variant_list_a)
+                variant_list_a = [int(v) + 5 for v in variant_list_a]
+            if variant_list_b is not None:
+                if not isinstance(variant_list_b, list) and not isinstance(variant_list_b, str):
+                    variant_list_b = eval(variant_list_b)
+                variant_list_b = [int(v) + 5 for v in variant_list_b]
         return {
             "seq_id_a": seq_id_a,
             "seq_a": seq_a,
@@ -1300,12 +1507,14 @@ class Encoder(object):
             "vector_a": vector_a,
             "matrix_a": matrix_a,
             "express_list_a": express_list_a,
+            "variant_list_a": variant_list_a,
             "seq_id_b": seq_id_b,
             "seq_b": seq_b,
             "seq_type_b": seq_type_b,
             "vector_b": vector_b,
             "matrix_b": matrix_b,
             "express_list_b": express_list_b,
+            "variant_list_b": variant_list_b,
             "label": label
         }
 

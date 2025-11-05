@@ -121,7 +121,7 @@ python run.py \
   --no_token_type_embeddings \
   --no_position_embeddings \
   --buffer_size $buffer_size \
-  --delete_old \
+  --save_all \
   --llm_dir .. \
   --llm_type $llm_type \
   --llm_version $llm_version \

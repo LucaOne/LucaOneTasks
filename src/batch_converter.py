@@ -1122,6 +1122,8 @@ class BatchConverter(object):
                         cur_seq_len = min(len(cur_seq), seq_max_len)
                         if isinstance(cur_seq, numpy.ndarray):
                             seq_tensor = torch.from_numpy(cur_seq)
+                        elif isinstance(cur_seq, list):
+                            seq_tensor = torch.tensor(cur_seq, dtype=torch.long)
                         else:
                             seq_tensor = cur_seq.clone()
                         input_ids[sample_idx, seq_idx, :cur_seq_len] = seq_tensor[:cur_seq_len]
@@ -1131,6 +1133,8 @@ class BatchConverter(object):
                 elif molecule_flag:
                     if isinstance(seq_encoded, numpy.ndarray):
                         seq_tensor = torch.from_numpy(seq_encoded)
+                    elif isinstance(seq_encoded, list):
+                        seq_tensor = torch.tensor(seq_encoded, dtype=torch.long)
                     else:
                         seq_tensor = seq_encoded.clone()
                     input_ids[sample_idx,
@@ -1141,6 +1145,8 @@ class BatchConverter(object):
                 else:
                     if isinstance(seq_encoded, numpy.ndarray):
                         seq_tensor = torch.from_numpy(seq_encoded)
+                    elif isinstance(cur_seq, list):
+                        seq_tensor = torch.tensor(seq_encoded, dtype=torch.long)
                     else:
                         seq_tensor = seq_encoded.clone()
                     input_ids[sample_idx, int(self.prepend_bos): real_seq_len + int(self.prepend_bos)] = seq_tensor

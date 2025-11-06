@@ -1145,7 +1145,7 @@ class BatchConverter(object):
                 else:
                     if isinstance(seq_encoded, numpy.ndarray):
                         seq_tensor = torch.from_numpy(seq_encoded)
-                    elif isinstance(cur_seq, list):
+                    elif isinstance(seq_encoded, list):
                         seq_tensor = torch.tensor(seq_encoded, dtype=torch.long)
                     else:
                         seq_tensor = seq_encoded.clone()

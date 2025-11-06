@@ -1965,7 +1965,7 @@ if __name__ == "__main__":
                     for item_idx, item in enumerate(batch_results):
                         if args.ground_truth_idx is not None and args.ground_truth_idx >= 0:
                             if args.ground_truth_label_idx_2_name:
-                                item.append(label_id_2_name[batch_ground_truth[item_idx]])
+                                item.append(label_id_2_name[int(batch_ground_truth[item_idx])])
                             else:
                                 item.append(batch_ground_truth[item_idx])
                         writer.writerow(item)
@@ -2001,7 +2001,7 @@ if __name__ == "__main__":
                 for item_idx, item in enumerate(batch_results):
                     if args.ground_truth_idx is not None and args.ground_truth_idx >= 0:
                         if args.ground_truth_label_idx_2_name:
-                            item.append(label_id_2_name[batch_ground_truth[item_idx]])
+                            item.append(label_id_2_name[int(batch_ground_truth[item_idx])])
                         else:
                             item.append(batch_ground_truth[item_idx])
                     writer.writerow(item)

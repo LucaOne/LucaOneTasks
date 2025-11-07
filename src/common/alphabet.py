@@ -65,7 +65,7 @@ class Alphabet(object):
         self.cls_idx = self.get_idx("[CLS]")
         self.mask_idx = self.get_idx("[MASK]")
         self.eos_idx = self.get_idx("[SEP]")
-        self.all_special_tokens = prepend_toks + append_toks
+        self.all_special_tokens = self.prepend_toks + self.append_toks
         self.all_special_token_idx_list = [self.tok_to_idx[v] for v in self.all_special_tokens]
         self.unique_no_split_tokens = self.all_toks
         self.vocab_size = self.__len__()

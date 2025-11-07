@@ -281,7 +281,7 @@ def encoder(args_info, model_config, seq, seq_type, tokenizer):
                 for idx in range(0, cur_len):
                     position_ids[i, idx] = idx
             if not model_config.no_token_type_embeddings:
-                if seq_type == "gene":
+                if seq_type in ["gene", "dna", "rna"]:
                     type_value = 0
                 else:
                     type_value = 1
@@ -332,7 +332,7 @@ def get_embedding(
         device
 ):
     if args_info["model_type"] in ["lucaone_gplm", "lucaone", "lucagplm"]:
-        if seq_type == "gene":
+        if seq_type in ["gene", "dna", "rna"]:
             seq = gene_seq_replace(seq)
             batch, processed_seq_len = encoder(args_info, model_config, seq, seq_type, tokenizer)
         else:
@@ -348,7 +348,7 @@ def get_embedding(
         # print("batch:")
         # print(batch)
     else:
-        if seq_type == "gene":
+        if seq_type in ["gene", "dna", "rna"]:
             seq = gene_seq_replace(seq)
             encoding, processed_seq_len = encoder(args_info, model_config, seq, seq_type, tokenizer)
         else:
@@ -494,7 +494,7 @@ def predict_embedding(
             device
         )
     else:
-        if seq_type == "gene":
+        if seq_type in ["gene", "dna", "rna"]:
             emb, processed_seq_len = get_embedding(
                 lucaone_global_args_info["gene"],
                 lucaone_global_model_config["gene"],
@@ -524,7 +524,7 @@ def predict_embedding(
         prepend_len = int(lucaone_global_tokenizer.prepend_bos)
         append_len = int(lucaone_global_tokenizer.append_eos)
     else:
-        if seq_type == "gene":
+        if seq_type in ["gene", "dna", "rna"]:
             prepend_len = int(lucaone_global_tokenizer["gene"].prepend_bos)
             append_len = int(lucaone_global_tokenizer["gene"].append_eos)
         elif seq_type == "prot":
@@ -751,7 +751,7 @@ def get_args():
     parser.add_argument("--seq", type=str, default=None,
                         help="when input a seq")
     parser.add_argument("--seq_type", type=str, default=None,
-                        required=True, choices=["gene", "prot"], help="the input seq type")
+                        required=True, choices=["gene", "prot", "dna", "rna"], help="the input seq type")
 
     # for many seqs
     parser.add_argument("--input_file", type=str, default=None,
@@ -885,9 +885,11 @@ def main(model_args):
     emb_save_path = model_args.save_path
     print("emb save dir: %s" % os.path.abspath(emb_save_path))
 
-    if seq_type not in ["gene", "prot"]:
-        print("Error! arg: --seq_type=%s is not gene or prot" % seq_type)
+    if seq_type not in ["gene", "prot", "dna", "rna"]:
+        print("Error! arg: --seq_type=%s is not gene(dna or rna) or prot" % seq_type)
         sys.exit(-1)
+    if seq_type in ["dna", "rna"]:
+        seq_type = "gene"
     if not os.path.exists(emb_save_path):
         os.makedirs(emb_save_path)
     if model_args.input_file and os.path.exists(model_args.input_file):
@@ -1013,6 +1015,8 @@ def main(model_args):
         print("input seq length: %d" % len(model_args.seq))
         if model_args.seq_id is None:
             model_args.seq_id = "Unknown"
+        if model_args.seq_type in ["dna", "rna"]:
+            model_args.seq_type = "gene"
         if not seq_type_is_match_seq(model_args.seq_type, model_args.seq):
             print("Error! the input seq(seq_id=%s) not match its seq_type=%s: %s" % (model_args.seq_id, model_args.seq_type, model_args.seq))
             sys.exit(-1)

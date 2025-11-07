@@ -95,12 +95,25 @@ class AlphabetAtom(object):
     @classmethod
     def from_pretrained(cls, dir_path):
         import os, pickle
-        return pickle.load(open(os.path.join(dir_path, "alphabet_atom.pkl"), "rb"))
+        try:
+            return pickle.load(open(os.path.join(dir_path, "alphabet_atom.pkl"), "rb"))
+        except Exception:
+            return cls.from_predefined("atom_v1")
 
     def save_pretrained(self, save_dir):
-        import os, pickle
+        import os, pickle, json
         with open(os.path.join(save_dir, "alphabet_atom.pkl"), 'wb') as outp:
             pickle.dump(self, outp, pickle.HIGHEST_PROTOCOL)
+        all_tokens_json = {
+            "vocab_size": self.vocab_size,
+            "prepend": self.prepend_toks,
+            "standard": self.standard_toks,
+            "append": self.append_toks,
+            "prepend_bos": self.prepend_bos,
+            "append_eos": self.append_eos,
+        }
+        with open(os.path.join(save_dir, "all_tokens.json"), "w") as wfp:
+            json.dump(all_tokens_json, wfp, ensure_ascii=False)
 
     def tokenize(self, smi, prepend_bos, append_eos) -> List[str]:
         seq = AlphabetAtom.smiles_2_atom_seq(smi)

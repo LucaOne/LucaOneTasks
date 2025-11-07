@@ -138,7 +138,7 @@ def get_args():
     parser.add_argument("--seq", type=str, default=None,
                         help="when to input a seq")
     parser.add_argument("--seq_type", type=str, default="gene",
-                        choices=["gene"],
+                        choices=["gene", "dna", "rna"],
                         help="the input seq type")
 
     # for many
@@ -192,8 +192,8 @@ def main(model_args):
     seq_type = model_args.seq_type
     emb_save_path = model_args.save_path
     print("emb save dir: %s" % os.path.abspath(emb_save_path))
-    if seq_type not in ["gene"]:
-        print("Error! arg: --seq_type=%s is not 'gene'" % seq_type)
+    if seq_type not in ["gene", "dna", "rna"]:
+        print("Error! arg: --seq_type=%s is not 'gene(dna or rna)'" % seq_type)
         sys.exit(-1)
 
     if not os.path.exists(emb_save_path):
@@ -218,6 +218,7 @@ def main(model_args):
             embedding_filepath = os.path.join(emb_save_path, emb_filename)
             if not os.path.exists(embedding_filepath):
                 ori_seq_len = len(seq)
+                seq = seq.replace("U", "T")
                 truncation_seq_length = model_args.truncation_seq_length
                 if model_args.embedding_complete:
                     truncation_seq_length = ori_seq_len
@@ -260,6 +261,7 @@ def main(model_args):
         print("embedding over, done: %d" % done)
     elif model_args.seq:
         print("input seq length: %d" % len(model_args.seq))
+        model_args.seq = model_args.seq.replace("U", "T")
         emb, processed_seq_len = predict_embedding(
             ["input", model_args.seq],
             model_args.trunc_type,

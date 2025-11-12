@@ -876,6 +876,11 @@ def get_args():
         action="store_true",
         help="use self attention"
     )
+    parser.add_argument(
+        "--use_rotary_position_embeddings_for_cross",
+        action="store_true",
+        help="whether not to use rope for cross attention"
+    )
 
     # for pair
     parser.add_argument(
@@ -1132,6 +1137,10 @@ def get_model(args):
     args.label_size = num_labels
 
     model_config = LucaConfig.from_json_file(args.config_path)
+    if args.position_embedding_type == "RoPE":
+        model_config.use_rotary_position_embeddings = args.use_rotary_position_embeddings
+    model_config.use_rotary_position_embeddings_for_cross = args.use_rotary_position_embeddings_for_cross
+
     if args.intermediate_size is not None:
         model_config.intermediate_size = args.intermediate_size
         model_config.encoder_ffn_dim = args.intermediate_size

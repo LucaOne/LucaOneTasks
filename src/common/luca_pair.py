@@ -31,18 +31,11 @@ from transformers.utils import (
 )
 from transformers.modeling_attn_mask_utils import (
     _prepare_4d_attention_mask,
-    _prepare_4d_attention_mask_for_sdpa,
-    _prepare_4d_causal_attention_mask,
-    _prepare_4d_causal_attention_mask_for_sdpa,
+    _prepare_4d_attention_mask_for_sdpa
 )
 from transformers.modeling_outputs import (
     BaseModelOutput,
-    BaseModelOutputWithPastAndCrossAttentions,
-    CausalLMOutputWithCrossAttentions,
-    Seq2SeqLMOutput,
-    Seq2SeqModelOutput,
-    Seq2SeqQuestionAnsweringModelOutput,
-    Seq2SeqSequenceClassifierOutput,
+    BaseModelOutputWithPastAndCrossAttentions
 )
 logger = logging.get_logger(__name__)
 
@@ -876,6 +869,8 @@ class LucaPairLayer(nn.Module):
                     config.cross_attention_heads,
                     dropout=config.attention_dropout,
                     is_decoder=False,
+                    is_causal=False,
+                    use_rotary_position_embeddings=config.use_rotary_position_embeddings_for_cross,
                     config=config,
                 )
         else:
@@ -893,6 +888,8 @@ class LucaPairLayer(nn.Module):
                     embed_dim=self.embed_dim,
                     num_heads=config.self_attention_heads,
                     dropout=config.attention_dropout,
+                    is_encoder=False,
+                    is_causal=False,
                     use_rotary_position_embeddings=config.use_rotary_position_embeddings,
                     config=config,
                 )
@@ -1080,6 +1077,7 @@ class LucaPair(PreTrainedModel):
         self.dropout = config.dropout
         self.layer_dropout = config.encoder_layer_dropout
         self.use_rotary_position_embeddings = config.use_rotary_position_embeddings
+        self.use_rotary_position_embeddings_for_cross = config.use_rotary_position_embeddings_for_cross
         self.layer_norm_type = config.layer_norm_type
 
         self.embed_dim = config.embed_dim if hasattr(config, "embed_dim") else config.hidden_size

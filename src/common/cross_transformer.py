@@ -903,8 +903,8 @@ class LucaCrossTransformer(nn.Module):
                     add_bias_kv=False,
                     use_luca_layer_norm_v2=self.use_luca_layer_norm_v2,
                     attention_type="cross",
-                    use_rotary_embeddings=True if config.no_position_embeddings else False
-                    )
+                    use_rotary_embeddings=self.config.use_rotary_position_embeddings_for_cross,
+                )
                 for _ in range(self.config.num_hidden_layers)
             ]
         )
@@ -921,7 +921,7 @@ class LucaCrossTransformer(nn.Module):
                         add_bias_kv=False,
                         use_luca_layer_norm_v2=self.use_luca_layer_norm_v2,
                         attention_type="cross",
-                        use_rotary_embeddings=True if config.no_position_embeddings else False
+                        use_rotary_embeddings=self.config.use_rotary_position_embeddings_for_cross,
                     )
                     for _ in range(self.config.num_hidden_layers)
                 ]

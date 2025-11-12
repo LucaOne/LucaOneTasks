@@ -1061,7 +1061,10 @@ def get_model(args):
     args.label_size = num_labels
 
     model_config = LucaConfig.from_json_file(args.config_path)
+    if args.position_embedding_type == "RoPE":
+        model_config.use_rotary_position_embeddings = args.use_rotary_position_embeddings
     model_config.use_rotary_position_embeddings_for_cross = args.use_rotary_position_embeddings_for_cross
+
     if args.intermediate_size is not None:
         model_config.intermediate_size = args.intermediate_size
     else:

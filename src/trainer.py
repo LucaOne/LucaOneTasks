@@ -17,10 +17,6 @@ import logging
 import torch
 import time
 import shutil
-from utils import set_seed
-from tqdm import tqdm, trange
-from torch.utils.data import DataLoader, RandomSampler
-from torch.utils.data.distributed import DistributedSampler
 from tensorboardX import SummaryWriter
 from torch.optim import AdamW
 from transformers import get_linear_schedule_with_warmup
@@ -94,10 +90,12 @@ def train(args, train_dataloader, model_config, model, seq_tokenizer, parse_row_
             "weight_decay": 0.0
         }
     ]
-    optimizer = AdamW(optimizer_grouped_parameters,
-                      lr=args.learning_rate,
-                      betas=[args.beta1 if args.beta1 > 0 else 0.9, args.beta2 if args.beta2 > 0 else 0.98],
-                      eps=args.adam_epsilon)
+    optimizer = AdamW(
+        optimizer_grouped_parameters,
+        lr=args.learning_rate,
+        betas=[args.beta1 if args.beta1 > 0 else 0.9, args.beta2 if args.beta2 > 0 else 0.98],
+        eps=args.adam_epsilon
+    )
     print("Init lr: ", get_lr(optimizer))
     print("LR_update_strategy: %s" % args.lr_update_strategy)
     if args.lr_update_strategy == "step" and args.warmup_steps > 0:

@@ -29,9 +29,9 @@ sys.path.append("..")
 sys.path.append("../src")
 import torch.distributed as dist
 try:
-    from .evaluator import evaluate
-    from .tester import test
-    from .utils import sample_size, to_device, get_lr, writer_info_tb, print_batch, lcm
+    from evaluator import evaluate
+    from tester import test
+    from utils import sample_size, to_device, get_lr, writer_info_tb, print_batch, lcm
 except ImportError:
     from src.evaluator import evaluate
     from src.tester import test
@@ -274,7 +274,7 @@ def train(args, train_dataloader, model_config, model, seq_tokenizer, parse_row_
                 # print("lr: ", get_lr(optimizer))
             if args.local_rank in [-1, 0] and args.save_steps > 0 and global_step % args.save_steps == 0:
                 output_dir = os.path.join(args.output_dir, "checkpoint-step{}".format(global_step))
-                save_check_point(args, model, model_config, seq_tokenizer, output_dir)
+                save_check_point(args, model, model_config, optimizer, seq_tokenizer, output_dir)
 
         # 一个epoch完成
         if not no_grad_gradient_accumulation_step:
@@ -367,7 +367,7 @@ def train(args, train_dataloader, model_config, model, seq_tokenizer, parse_row_
             # save checkpoint
             output_dir = os.path.join(args.output_dir, "checkpoint-{}".format(global_step))
             if args.save_all:
-                save_check_point(args, model, model_config, seq_tokenizer, output_dir)
+                save_check_point(args, model, model_config, optimizer, seq_tokenizer, output_dir)
             elif update_flag:
                 if args.delete_old:
                     # delete the old CheckPoint
@@ -375,7 +375,7 @@ def train(args, train_dataloader, model_config, model, seq_tokenizer, parse_row_
                     for filename in filename_list:
                         if "checkpoint-" in filename and filename != "checkpoint-{}".format(global_step):
                             shutil.rmtree(os.path.join(args.output_dir, filename))
-                save_check_point(args, model, model_config, seq_tokenizer, output_dir)
+                save_check_point(args, model, model_config, optimizer, seq_tokenizer, output_dir)
 
         if args.local_rank in [0, -1]:
             if scheduler is not None and args.lr_update_strategy == "epoch":
@@ -420,11 +420,12 @@ def cleanup():
     dist.destroy_process_group()
     
 
-def save_check_point(args, model, model_config, seq_tokenizer, output_dir):
+def save_check_point(args, model, model_config, optimizer, seq_tokenizer, output_dir):
     '''
     save checkpoint
     :param args:
     :param model:
+    :param optimizer
     :param seq_tokenizer
     :param model_config
     :param output_dir:
@@ -448,6 +449,11 @@ def save_check_point(args, model, model_config, seq_tokenizer, output_dir):
         torch.save(model_to_save, os.path.join(output_dir, "pytorch.pt"))
         torch.save(model_to_save.state_dict(), os.path.join(output_dir, "pytorch.pth"))
     # torch.save(model_to_save, os.path.join(output_dir + "model.pth"))
+    if optimizer is not None:
+        optimizer_dir = os.path.join(output_dir, "optimizer")
+        if not os.path.exists(optimizer_dir):
+            os.makedirs(optimizer_dir)
+        torch.save({"optimizer": optimizer.state_dict()}, optimizer_dir)
     if seq_tokenizer:
         tokenizer_dir = os.path.join(output_dir, "tokenizer")
         if not os.path.exists(tokenizer_dir):

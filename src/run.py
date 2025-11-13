@@ -937,7 +937,11 @@ def get_args():
         default=None,
         help="When the input sequence is too long for your GPU to complete the inference at once, you can specify the fixed length of the inference at once"
     )
-
+    parser.add_argument(
+        "--use_rotary_position_embeddings_for_cross",
+        action="store_true",
+        help="whether not to use rope for cross attention"
+    )
     args = parser.parse_args()
     return args
 
@@ -1057,6 +1061,10 @@ def get_model(args):
     args.label_size = num_labels
 
     model_config = LucaConfig.from_json_file(args.config_path)
+    if args.position_embedding_type == "RoPE":
+        model_config.use_rotary_position_embeddings = args.use_rotary_position_embeddings
+    model_config.use_rotary_position_embeddings_for_cross = args.use_rotary_position_embeddings_for_cross
+
     if args.intermediate_size is not None:
         model_config.intermediate_size = args.intermediate_size
     else:

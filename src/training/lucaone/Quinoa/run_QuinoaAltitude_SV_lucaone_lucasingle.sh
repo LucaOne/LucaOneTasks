@@ -36,7 +36,7 @@ num_attention_heads=0
 num_hidden_layers=0
 VOCAB_NAME="gene"
 # none, avg, max, value_attention
-SEQ_POOLING_TYPE="value_attention"
+SEQ_POOLING_TYPE="weighted_attention"
 
 # for embedding channel
 matrix_max_length=3074

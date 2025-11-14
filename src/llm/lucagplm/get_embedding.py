@@ -944,8 +944,8 @@ def main(model_args):
             else:
                 seq_id, seq = row[model_args.id_idx].strip(), row[model_args.seq_idx].upper()
             if not seq_type_is_match_seq(seq_type, seq):
-                print("Error! the input seq(seq_id=%s) not match its seq_type=%s: %s" % (seq_id, seq_type, seq))
-                sys.exit(-1)
+                print("Warning! the input seq(seq_id=%s) not match its seq_type=%s: %s" % (seq_id, seq_type, seq))
+                # sys.exit(-1)
             emb_filename = calc_emb_filename_by_seq_id(seq_id=seq_id, embedding_type=embedding_type)
             embedding_filepath = os.path.join(emb_save_path, emb_filename)
             if not os.path.exists(embedding_filepath):

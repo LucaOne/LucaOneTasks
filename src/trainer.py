@@ -194,7 +194,8 @@ def train(args, train_dataloader, model_config, model, seq_tokenizer, parse_row_
             if torch.isnan(loss).any():
                 print(batch)
                 print(loss)
-                print(1/0)
+                print("Loss has NaN.")
+                sys.exit(0)
             if args.gradient_accumulation_steps > 1:
                 # The loss of each batch will be divided by gradient_accumulation_steps
                 loss = loss / args.gradient_accumulation_steps

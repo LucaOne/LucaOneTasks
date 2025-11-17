@@ -17,10 +17,6 @@ import logging
 import torch
 import time
 import shutil
-from utils import set_seed
-from tqdm import tqdm, trange
-from torch.utils.data import DataLoader, RandomSampler
-from torch.utils.data.distributed import DistributedSampler
 from tensorboardX import SummaryWriter
 from torch.optim import AdamW
 from transformers import get_linear_schedule_with_warmup
@@ -194,7 +190,8 @@ def train(args, train_dataloader, model_config, model, seq_tokenizer, parse_row_
             if torch.isnan(loss).any():
                 print(batch)
                 print(loss)
-                print(1/0)
+                print("loss has NaN")
+                sys.exit(0)
             if args.gradient_accumulation_steps > 1:
                 # The loss of each batch will be divided by gradient_accumulation_steps
                 loss = loss / args.gradient_accumulation_steps

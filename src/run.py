@@ -116,6 +116,8 @@ def get_args():
         choices=[
             "protein",
             "gene",
+            "rna",
+            "dna",
             "gene_gene",
             "gene_protein",
             "protein_gene",

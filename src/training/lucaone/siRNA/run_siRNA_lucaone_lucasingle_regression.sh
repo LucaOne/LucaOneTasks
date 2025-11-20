@@ -42,7 +42,7 @@ SEQ_POOLING_TYPE="value_attention"
 matrix_max_length=24
 embedding_input_size=2560
 # none, avg, max, value_attention, weighted_attention
-MATRIX_POOLING_TYPE="weighted_attention"
+MATRIX_POOLING_TYPE="value_attention"
 
 # for llm
 llm_type="lucaone"
@@ -129,8 +129,8 @@ python run.py \
   --num_hidden_layers $num_hidden_layers \
   --dropout_prob $dropout_prob \
   --classifier_size $classifier_size \
-  --vector_dirpath ../../vectors/Quinoa/$llm_type/$llm_version/$llm_step  \
-  --matrix_dirpath ../../matrices/Quinoa/$llm_type/$llm_version/$llm_step \
+  --vector_dirpath ../../vectors/$DATASET_NAME/$llm_type/$llm_version/$llm_step  \
+  --matrix_dirpath ../../matrices/$DATASET_NAME/$llm_type/$llm_version/$llm_step \
   --seq_fc_size null \
   --matrix_fc_size null \
   --vector_fc_size null \

@@ -520,8 +520,8 @@ class Encoder(object):
                                                 - int(self.prepend_bos) - int(self.append_eos)
                         truncation_seq_length = int(truncation_seq_length)
                         print("%s embedding error, truncation_seq_length: %d->%d" % (seq_id, cur_seq_len, truncation_seq_length))
-            elif "dnaberts" in self.llm_type and "gene" in seq_type:
-                if seq_type == "multi_gene":
+            elif "dnaberts" in self.llm_type and ("gene" in seq_type or "dna" in seq_type):
+                if seq_type in ["multi_gene", "multi_dna"]:
                     embedding_info = []
                     cur_seqs = seq.split(",")
                     if hasattr(self, "max_sentences"):
@@ -568,8 +568,8 @@ class Encoder(object):
                                                 - int(self.prepend_bos) - int(self.append_eos)
                         truncation_seq_length = int(truncation_seq_length)
                         print("%s embedding error, truncation_seq_length: %d->%d" % (seq_id, cur_seq_len, truncation_seq_length))
-            elif ("dnabert2" in self.llm_type or "dnabert" in self.llm_type) and "gene" in seq_type:
-                if seq_type == "multi_gene":
+            elif ("dnabert2" in self.llm_type or "dnabert" in self.llm_type) and ("gene" in seq_type or "dna" in seq_type):
+                if seq_type in ["multi_gene", "multi_dna"]:
                     embedding_info = []
                     cur_seqs = seq.split(",")
                     if hasattr(self, "max_sentences"):
@@ -622,7 +622,7 @@ class Encoder(object):
                 # to do
                 pass
             elif "lucaone" in self.llm_type and "lucaone-separated" in self.llm_version:
-                if seq_type in ["multi_gene", "multi_prot"]:
+                if seq_type in ["multi_gene", "multi_prot", "multi_dna", "multi_rna"]:
                     embedding_info = []
                     cur_seqs = seq.split(",")
                     if hasattr(self, "max_sentences"):
@@ -638,7 +638,7 @@ class Encoder(object):
                         else:
                             truncation_seq_length = self.seq_max_length - int(self.prepend_bos) - int(self.append_eos)
                             truncation_seq_length = min(cur_seq_len, truncation_seq_length)
-                        cur_seq_type = "gene" if seq_type == "multi_gene" else "prot"
+                        cur_seq_type = "gene" if seq_type in ["multi_gene", "multi_dna", "multi_rna"] else "prot"
                         while True:
                             # 设置了一次性推理长度
                             if self.embedding_fixed_len_a_time and self.embedding_fixed_len_a_time > 0:
@@ -835,7 +835,7 @@ class Encoder(object):
                         truncation_seq_length = int(truncation_seq_length)
                         print("%s embedding error, truncation_seq_length: %d->%d" % (seq_id, cur_seq_len, truncation_seq_length))
             else:
-                if seq_type in ["multi_gene", "multi_prot"]:
+                if seq_type in ["multi_gene", "multi_prot", "multi_dna", "multi_rna"]:
                     embedding_info = []
                     cur_seqs = seq.split(",")
                     if hasattr(self, "max_sentences"):
@@ -851,7 +851,7 @@ class Encoder(object):
                         else:
                             truncation_seq_length = self.seq_max_length - int(self.prepend_bos) - int(self.append_eos)
                             truncation_seq_length = min(cur_seq_len, truncation_seq_length)
-                        cur_seq_type = "gene" if seq_type == "multi_gene" else "prot"
+                        cur_seq_type = "gene" if seq_type in ["multi_gene", "multi_dna", "multi_rna"] else "prot"
                         while True:
                             # 设置了一次性推理长度
                             if self.embedding_fixed_len_a_time and self.embedding_fixed_len_a_time > 0:

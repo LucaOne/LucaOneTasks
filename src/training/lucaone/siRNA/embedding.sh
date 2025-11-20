@@ -13,7 +13,7 @@ python get_embedding.py \
     --trunc_type right \
     --seq_type rna \
     --input_file ../../../dataset/siRNA/rna/regression/all_rna_seqs.fasta \
-    --save_path ../../../../matrices/siRNA/lucaone/lucaone/30000000/ \
+    --save_path ../../../../matrices/siRNA/lucaone/lucaone/36000000/ \
     --embedding_type matrix \
     --matrix_add_special_token \
     --embedding_complete \

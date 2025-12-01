@@ -298,7 +298,8 @@ def predict_probs(args, encoder, batch_convecter, model, row):
                 sample_ids=sample_ids,
                 attention_scores_savepath=args.output_attention_scores_dirpath,
                 attention_pooling_scores_savepath=args.output_attention_pooling_scores_dirpath,
-                output_classification_vector_dirpath=args.output_classification_vector_dirpath
+                output_classification_vector_dirpath=args.output_classification_vector_dirpath,
+                output_matrix_dirpath=args.output_matrix_dirpath
             )[1]
             if cur_probs.is_cuda:
                 cur_probs = cur_probs.detach().cpu().numpy()
@@ -311,7 +312,8 @@ def predict_probs(args, encoder, batch_convecter, model, row):
             sample_ids=sample_ids,
             attention_scores_savepath=args.output_attention_scores_dirpath,
             attention_pooling_scores_savepath=args.output_attention_pooling_scores_dirpath,
-            output_classification_vector_dirpath=args.output_classification_vector_dirpath
+            output_classification_vector_dirpath=args.output_classification_vector_dirpath,
+            output_matrix_dirpath=args.output_matrix_dirpath
         )[1]
         if probs.is_cuda:
             probs = probs.detach().cpu().numpy()
@@ -646,7 +648,8 @@ def run(
         matrix_embedding_exists,
         output_attention_scores_dirpath,
         output_attention_pooling_scores_dirpath,
-        output_classification_vector_dirpath
+        output_classification_vector_dirpath,
+        output_matrix_dirpath
 ):
     global global_model_config, global_seq_subword, global_seq_tokenizer, global_trained_model
     model_dir = "%s/models/%s/%s/%s/%s/%s/%s/%s" % (
@@ -692,6 +695,7 @@ def run(
     model_args.output_attention_scores_dirpath = output_attention_scores_dirpath
     model_args.output_attention_pooling_scores_dirpath = output_attention_pooling_scores_dirpath
     model_args.output_classification_vector_dirpath = output_classification_vector_dirpath
+    model_args.output_matrix_dirpath = output_matrix_dirpath
     model_args.llm_truncation_seq_length = llm_truncation_seq_length
     model_args.seq_max_length = max(model_args.seq_max_length, llm_truncation_seq_length)
     model_args.atom_seq_max_length = None # to do
@@ -1377,6 +1381,12 @@ def create_run_args():
         help="the save path output the attention pooling scores(one file for each one sample)"
     )
     parser.add_argument(
+        "--output_matrix_dirpath",
+        default=None,
+        type=str,
+        help="the save path output the matrix (one file for each one sample)"
+    )
+    parser.add_argument(
         "--gpu_id",
         default=None,
         type=int,
@@ -1818,6 +1828,10 @@ if __name__ == "__main__":
         args.output_classification_vectors = True
         if not os.path.exists(args.output_classification_vector_dirpath):
             os.makedirs(args.output_classification_vector_dirpath)
+    if args.output_matrix_dirpath:
+        args.output_matrix = True
+        if not os.path.exists(args.output_matrix_dirpath):
+            os.makedirs(args.output_matrix_dirpath)
 
     if args.input_file is not None:
         input_file_suffix = os.path.basename(args.input_file).split(".")[-1]
@@ -1889,7 +1903,8 @@ if __name__ == "__main__":
                         matrix_embedding_exists=args.matrix_embedding_exists,
                         output_attention_scores_dirpath=args.output_attention_scores_dirpath,
                         output_attention_pooling_scores_dirpath=args.output_attention_pooling_scores_dirpath,
-                        output_classification_vector_dirpath=args.output_classification_vector_dirpath
+                        output_classification_vector_dirpath=args.output_classification_vector_dirpath,
+                        output_matrix_dirpath=args.output_matrix_dirpath
                     )
                     for item_idx, item in enumerate(batch_results):
                         if args.ground_truth_idx is not None and args.ground_truth_idx >= 0:
@@ -1924,7 +1939,8 @@ if __name__ == "__main__":
                     matrix_embedding_exists=args.matrix_embedding_exists,
                     output_attention_scores_dirpath=args.output_attention_scores_dirpath,
                     output_attention_pooling_scores_dirpath=args.output_attention_pooling_scores_dirpath,
-                    output_classification_vector_dirpath=args.output_classification_vector_dirpath
+                    output_classification_vector_dirpath=args.output_classification_vector_dirpath,
+                    output_matrix_dirpath=args.output_matrix_dirpath
                 )
                 for item_idx, item in enumerate(batch_results):
                     if args.ground_truth_idx is not None and args.ground_truth_idx >= 0:
@@ -1972,7 +1988,8 @@ if __name__ == "__main__":
             matrix_embedding_exists=args.matrix_embedding_exists,
             output_attention_scores_dirpath=args.output_attention_scores_dirpath,
             output_attention_pooling_scores_dirpath=args.output_attention_pooling_scores_dirpath,
-            output_classification_vector_dirpath=args.output_classification_vector_dirpath
+            output_classification_vector_dirpath=args.output_classification_vector_dirpath,
+            output_matrix_dirpath=args.output_matrix_dirpath
         )
         print("Predicted Result:")
         print("seq_id=%s" % args.seq_id)
@@ -2043,7 +2060,8 @@ if __name__ == "__main__":
             matrix_embedding_exists=args.matrix_embedding_exists,
             output_attention_scores_dirpath=args.output_attention_scores_dirpath,
             output_attention_pooling_scores_dirpath=args.output_attention_pooling_scores_dirpath,
-            output_classification_vector_dirpath=args.output_classification_vector_dirpath
+            output_classification_vector_dirpath=args.output_classification_vector_dirpath,
+            output_matrix_dirpath=args.output_matrix_dirpath
         )
         print("Predicted Result:")
         print("seq_id_a=%s, seq_id_b=%s" % (args.seq_id_a, args.seq_id_b))

@@ -341,6 +341,7 @@ class LucaSingle(BertPreTrainedModel):
         attention_scores_savepath = kwargs["attention_scores_savepath"] if "attention_scores_savepath" in kwargs else None
         attention_pooling_scores_savepath = kwargs["attention_pooling_scores_savepath"] if "attention_pooling_scores_savepath" in kwargs else None
         output_matrix_dirpath = kwargs["output_matrix_dirpath"] if "output_matrix_dirpath" in kwargs else None
+
         output_classification_vector_dirpath = kwargs["output_classification_vector_dirpath"] if "output_classification_vector_dirpath" in kwargs else None
         return_attentions = sample_ids is not None and attention_scores_savepath is not None
         if input_ids is not None and self.seq_encoder is not None:
@@ -426,10 +427,10 @@ class LucaSingle(BertPreTrainedModel):
                             cur_sample_output_matrix_attentions[layer_idx] = attn[sample_idx].detach().cpu()
                         filepath = os.path.join(attention_scores_savepath, "%s_matrix_attention_scores.pt" % sample_id)
                         torch.save(cur_sample_output_matrix_attentions, filepath)
-                if output_matrix_dirpath:
-                    for sample_idx, sample_id in enumerate(sample_ids):
-                        filepath = os.path.join(output_matrix_dirpath, "%s_embedding_representation_matrix.pt" % sample_id)
-                        torch.save(matrices[sample_idx].detach().cpu(), filepath)
+            if output_matrix_dirpath:
+                for sample_idx, sample_id in enumerate(sample_ids):
+                    filepath = os.path.join(output_matrix_dirpath, "%s_embedding_representation_matrix.pt" % sample_id)
+                    torch.save(matrices[sample_idx].detach().cpu(), filepath)
 
             # matrix_attention_masks的特殊位置为0
             if self.matrix_pooler is not None:

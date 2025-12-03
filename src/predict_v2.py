@@ -696,7 +696,7 @@ def run(
     model_args.output_attention_scores_dirpath = output_attention_scores_dirpath
     model_args.output_attention_pooling_scores_dirpath = output_attention_pooling_scores_dirpath
     model_args.output_classification_vector_dirpath = output_classification_vector_dirpath
-    model_args.output_matrix_dirpath = output_matrix_dirpath,
+    model_args.output_matrix_dirpath = output_matrix_dirpath
     model_args.llm_truncation_seq_length = llm_truncation_seq_length
     model_args.seq_max_length = max(model_args.seq_max_length, llm_truncation_seq_length)
     model_args.atom_seq_max_length = None # to do

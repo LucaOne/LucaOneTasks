@@ -341,7 +341,6 @@ class LucaSingle(BertPreTrainedModel):
         attention_scores_savepath = kwargs["attention_scores_savepath"] if "attention_scores_savepath" in kwargs else None
         attention_pooling_scores_savepath = kwargs["attention_pooling_scores_savepath"] if "attention_pooling_scores_savepath" in kwargs else None
         output_matrix_dirpath = kwargs["output_matrix_dirpath"] if "output_matrix_dirpath" in kwargs else None
-
         output_classification_vector_dirpath = kwargs["output_classification_vector_dirpath"] if "output_classification_vector_dirpath" in kwargs else None
         return_attentions = sample_ids is not None and attention_scores_savepath is not None
         if input_ids is not None and self.seq_encoder is not None:
@@ -452,6 +451,31 @@ class LucaSingle(BertPreTrainedModel):
             if matrix_linear_idx != -1:
                 for i, layer_module in enumerate(self.linear[matrix_linear_idx]):
                     matrix_vector = layer_module(matrix_vector)
+
+        if self.input_type in ["seq", "seq_variant"]:
+            concat_vector = seq_vector
+        elif self.input_type in ["matrix", "matrix_express", "matrix_variant"]:
+            concat_vector = matrix_vector
+        elif self.input_type == "vector":
+            concat_vector = vector_vector
+        elif self.input_type == "seq_matrix":
+            if self.fusion_type == "add":
+                concat_vector = torch.add(seq_vector, matrix_vector)
+            else:
+                concat_vector = torch.cat([seq_vector, matrix_vector], dim=-1)
+        elif self.input_type == "seq_vector":
+            if self.fusion_type == "add":
+                concat_vector = torch.add(seq_vector, vector_vector)
+            else:
+                concat_vector = torch.cat([seq_vector, vector_vector], dim=-1)
+        else:
+            raise Exception("Not support input_type=%s" % self.input_type)
+        if self.dropout is not None:
+            concat_vector = self.dropout(concat_vector)
+        if self.hidden_layer is not None:
+            concat_vector = self.hidden_layer(concat_vector)
+        if self.hidden_act is not None:
+            concat_vector = self.hidden_act(concat_vector)
         if output_classification_vector_dirpath and sample_ids:
             for sample_idx, sample_id in enumerate(sample_ids):
                 if self.input_type == "seq":
@@ -478,32 +502,9 @@ class LucaSingle(BertPreTrainedModel):
                     }
                 else:
                     raise Exception("Not support input_type=%s" % self.input_type)
+                output_classification_vector["classification_vector"] = concat_vector[sample_idx].detach().cpu()
                 filepath = os.path.join(output_classification_vector_dirpath, "%s_classification_vector.pt" % sample_id)
                 torch.save(output_classification_vector, filepath)
-        if self.input_type in ["seq", "seq_variant"]:
-            concat_vector = seq_vector
-        elif self.input_type in ["matrix", "matrix_express", "matrix_variant"]:
-            concat_vector = matrix_vector
-        elif self.input_type == "vector":
-            concat_vector = vector_vector
-        elif self.input_type == "seq_matrix":
-            if self.fusion_type == "add":
-                concat_vector = torch.add(seq_vector, matrix_vector)
-            else:
-                concat_vector = torch.cat([seq_vector, matrix_vector], dim=-1)
-        elif self.input_type == "seq_vector":
-            if self.fusion_type == "add":
-                concat_vector = torch.add(seq_vector, vector_vector)
-            else:
-                concat_vector = torch.cat([seq_vector, vector_vector], dim=-1)
-        else:
-            raise Exception("Not support input_type=%s" % self.input_type)
-        if self.dropout is not None:
-            concat_vector = self.dropout(concat_vector)
-        if self.hidden_layer is not None:
-            concat_vector = self.hidden_layer(concat_vector)
-        if self.hidden_act is not None:
-            concat_vector = self.hidden_act(concat_vector)
         logits = self.classifier(concat_vector)
         if self.output is not None:
             output = self.output(logits)

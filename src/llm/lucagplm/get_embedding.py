@@ -356,7 +356,8 @@ def get_embedding(
     model.eval()
     try:
         with torch.no_grad():
-            output = model(**batch)
+            with torch.autocast(device_type='cuda', dtype=torch.bfloat16):
+                output = model(**batch)
             return output, processed_seq_len
     except Exception as e:
         # print(e)
@@ -371,7 +372,8 @@ def predict_embedding(
         repr_layers=[-1],
         truncation_seq_length=4094,
         device=None,
-        matrix_add_special_token=False
+        matrix_add_special_token=False,
+        use_bp16=False
 ):
     """
     use sequence to predict the seq embedding matrix or vector([CLS])
@@ -383,6 +385,7 @@ def predict_embedding(
     :param truncation_seq_length: such as: [4094, 2046, 1982, 1790, 1534, 1278, 1150, 1022]
     :param device: running device
     :param matrix_add_special_token: embedding matrix contains [CLS] and [SEP] vector or not
+    :param use_bp16
     :return: embedding, processed_seq_len
     """
     global lucaone_global_log_filepath, lucaone_global_model_dirpath, lucaone_global_args_info, \
@@ -411,6 +414,7 @@ def predict_embedding(
                     embedding_inference=True
                 )
         lucaone_global_args_info["max_length"] = truncation_seq_length
+        lucaone_global_args_info["use_bp16"] = use_bp16
     else:
         for item in llm_dirpath.items():
             key = item[0]
@@ -437,7 +441,7 @@ def predict_embedding(
                 lucaone_global_model[key] = tmp_model
                 lucaone_global_tokenizer[key] = tmp_tokenizer
             lucaone_global_args_info[key]["max_length"] = truncation_seq_length
-
+            lucaone_global_args_info[key]["use_bp16"] = use_bp16
     processed_seq = clean_seq_luca(seq_id, seq)
     if len(processed_seq) > truncation_seq_length:
         if trunc_type == "left":
@@ -461,7 +465,7 @@ def predict_embedding(
             lucaone_global_model,
             processed_seq,
             seq_type,
-            device
+            device,
         )
     else:
         if seq_type in ["gene", "dna", "rna"]:
@@ -510,6 +514,8 @@ def predict_embedding(
             embedding = emb.hidden_states
         # processed_seq_len = seq_len + 2([CLS] and [SEP]
         # embedding matrix contain [CLS] and [SEP] vector
+        if use_bp16:
+            embedding = embedding.flaot()
         if matrix_add_special_token:
             embeddings["representations"] = embedding[0, 0: processed_seq_len, :].to(device="cpu").clone().numpy()
         else:
@@ -520,12 +526,16 @@ def predict_embedding(
             embedding = emb.hidden_states_b
         else:
             embedding = emb.hidden_states
+        if use_bp16:
+            embedding = embedding.flaot()
         embeddings["bos_representations"] = embedding[0, 0, :].to(device="cpu").clone().numpy()
     if "contacts" in embedding_type:
         if seq_type == "prot":
             embedding = emb.contacts_b
         else:
             embedding = emb.contacts
+        if use_bp16:
+            embedding = embedding.flaot()
         embeddings["contacts"] = embedding.to(device="cpu")[0, :, :].clone().numpy()
 
     if len(embeddings) > 1:
@@ -544,7 +554,8 @@ def complete_embedding_matrix(
         init_emb,
         model_args,
         embedding_type,
-        use_cpu=False
+        use_cpu=False,
+        use_bp16=False,
 ):
     if init_emb is not None and model_args.embedding_complete and ("representations" in embedding_type or "matrix" in embedding_type):
         torch.cuda.empty_cache()
@@ -580,7 +591,8 @@ def complete_embedding_matrix(
                         repr_layers=[-1],
                         truncation_seq_length=truncation_seq_length,
                         device=model_args.device if not use_cpu else torch.device("cpu"),
-                        matrix_add_special_token=False
+                        matrix_add_special_token=False,
+                        use_bp16=use_bp16
                     )
 
                     # 有seq overlap 所以要截取
@@ -600,7 +612,8 @@ def complete_embedding_matrix(
                         repr_layers=[-1],
                         truncation_seq_length=truncation_seq_length,
                         device=model_args.device if not use_cpu else torch.device("cpu"),
-                        matrix_add_special_token=False
+                        matrix_add_special_token=False,
+                        use_bp16=use_bp16
                     )
                     # 有seq overlap 所以要截取
                     if complete_emb is None:
@@ -622,7 +635,8 @@ def complete_embedding_matrix(
                         repr_layers=[-1],
                         truncation_seq_length=truncation_seq_length,
                         device=model_args.device if not use_cpu else torch.device("cpu"),
-                        matrix_add_special_token=False
+                        matrix_add_special_token=False,
+                        use_bp16=use_bp16
                     )
                     # 有seq overlap 所以要截取
                     if complete_emb is None:
@@ -641,7 +655,8 @@ def complete_embedding_matrix(
                         repr_layers=[-1],
                         truncation_seq_length=truncation_seq_length,
                         device=model_args.device if not use_cpu else torch.device("cpu"),
-                        matrix_add_special_token=False
+                        matrix_add_special_token=False,
+                        use_bp16=use_bp16
                     )
                     # 有seq overlap 所以要截取
                     if complete_emb is None:
@@ -664,7 +679,8 @@ def complete_embedding_matrix(
                     repr_layers=[-1],
                     truncation_seq_length=truncation_seq_length,
                     device=model_args.device if not use_cpu else torch.device("cpu"),
-                    matrix_add_special_token=False
+                    matrix_add_special_token=False,
+                    use_bp16=use_bp16
                 )
                 '''
                 if model_args.trunc_type == "right":
@@ -685,7 +701,8 @@ def complete_embedding_matrix(
                     repr_layers=[-1],
                     truncation_seq_length=truncation_seq_length,
                     device=model_args.device if not use_cpu else torch.device("cpu"),
-                    matrix_add_special_token=False
+                    matrix_add_special_token=False,
+                    use_bp16=use_bp16
                 )
                 last_seg_emb = last_seg_emb[-really_len:, :]
                 complete_emb = np.concatenate((complete_emb, last_seg_emb), axis=0)
@@ -701,7 +718,8 @@ def complete_embedding_matrix(
                     repr_layers=[-1],
                     truncation_seq_length=truncation_seq_length,
                     device=model_args.device if not use_cpu else torch.device("cpu"),
-                    matrix_add_special_token=False
+                    matrix_add_special_token=False,
+                    use_bp16=use_bp16
                 )
                 first_seg_emb = first_seg_emb[:really_len, :]
                 complete_emb = np.concatenate((first_seg_emb, complete_emb), axis=0)
@@ -845,7 +863,11 @@ def get_args():
         default=None,
         help="the embedding fixed length of once inference for longer sequence."
     )
-
+    parser.add_argument(
+        "--use_bp16",
+        action="store_true",
+        help="whether to use bp16"
+    )
     parser.add_argument(
         '--gpu_id',
         type=int,
@@ -965,7 +987,8 @@ def main(model_args):
                             repr_layers=[-1],
                             truncation_seq_length=model_args.embedding_fixed_len_a_time,
                             device=model_args.device,
-                            matrix_add_special_token=model_args.matrix_add_special_token
+                            matrix_add_special_token=model_args.matrix_add_special_token,
+                            use_bp16=model_args.use_bp16
                         )
                         # 如果指定的设备运行失败，则使用CPU
                         use_cpu = False
@@ -978,7 +1001,8 @@ def main(model_args):
                                 repr_layers=[-1],
                                 truncation_seq_length=model_args.embedding_fixed_len_a_time,
                                 device=torch.device("cpu"),
-                                matrix_add_special_token=model_args.matrix_add_special_token
+                                matrix_add_special_token=model_args.matrix_add_special_token,
+                                use_bp16=False
                             )
                             use_cpu = True
                         if emb is not None and input_seq_len > model_args.embedding_fixed_len_a_time:
@@ -990,7 +1014,8 @@ def main(model_args):
                                 emb,
                                 model_args,
                                 embedding_type,
-                                use_cpu=use_cpu
+                                use_cpu=use_cpu,
+                                use_bp16=not use_cpu
                             )
                         if use_cpu:
                             print("use_cpu: %r" % use_cpu)
@@ -1003,7 +1028,8 @@ def main(model_args):
                             repr_layers=[-1],
                             truncation_seq_length=truncation_seq_length,
                             device=model_args.device,
-                            matrix_add_special_token=model_args.matrix_add_special_token
+                            matrix_add_special_token=model_args.matrix_add_special_token,
+                            use_bp16=model_args.use_bp16
                         )
                         use_cpu = False
                         if emb is None:
@@ -1015,7 +1041,8 @@ def main(model_args):
                                 repr_layers=[-1],
                                 truncation_seq_length=truncation_seq_length,
                                 device=torch.device("cpu"),
-                                matrix_add_special_token=model_args.matrix_add_special_token
+                                matrix_add_special_token=model_args.matrix_add_special_token,
+                                use_bp16=False
                             )
                             use_cpu = True
                         # embedding全
@@ -1028,7 +1055,8 @@ def main(model_args):
                                 emb,
                                 model_args,
                                 embedding_type,
-                                use_cpu=use_cpu
+                                use_cpu=use_cpu,
+                                use_bp16=not use_cpu
                             )
                         if use_cpu:
                             print("use_cpu: %r" % use_cpu)
@@ -1055,6 +1083,7 @@ def main(model_args):
             sys.exit(-1)
         use_cpu = False
         while True:
+            lucaone_global_args_info["use_bp16"] = not use_cpu
             emb, processed_seq_len = get_embedding(
                 lucaone_global_args_info,
                 lucaone_global_model_config,
@@ -1062,7 +1091,7 @@ def main(model_args):
                 lucaone_global_model,
                 model_args.seq,
                 model_args.seq_type,
-                model_args.device if not use_cpu else torch.device("cpu")
+                model_args.device if not use_cpu else torch.device("cpu"),
             )
             if emb is not None:
                 break

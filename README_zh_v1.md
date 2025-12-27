@@ -197,7 +197,6 @@ python get_embedding.py \
     --matrix_add_special_token \
     --embedding_complete \
     --embedding_complete_seg_overlap \
-    --use_bp16 \
     --gpu_id 0    
  
 # for DNA or RNA
@@ -221,7 +220,6 @@ python get_embedding.py \
     --matrix_add_special_token \
     --embedding_complete \
     --embedding_complete_seg_overlap \
-    --use_bp16 \
     --gpu_id 0   
 ```
 
@@ -249,7 +247,6 @@ python get_embedding.py \
     --matrix_add_special_token \
     --embedding_complete \
     --embedding_complete_seg_overlap \
-    --use_bp16 \
     --gpu_id 0    
 ```
 
@@ -274,7 +271,6 @@ python get_embedding.py \
     --matrix_add_special_token \
     --embedding_complete \
     --embedding_complete_seg_overlap \
-    --use_bp16 \
     --gpu_id 0   
 ```
 

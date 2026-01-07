@@ -1015,7 +1015,7 @@ def main(model_args):
                                 model_args,
                                 embedding_type,
                                 use_cpu=use_cpu,
-                                use_bp16=not use_cpu
+                                use_bp16=not use_cpu and model_args.use_bp16
                             )
                         if use_cpu:
                             print("use_cpu: %r" % use_cpu)
@@ -1056,7 +1056,7 @@ def main(model_args):
                                 model_args,
                                 embedding_type,
                                 use_cpu=use_cpu,
-                                use_bp16=not use_cpu
+                                use_bp16=not use_cpu and model_args.use_bp16
                             )
                         if use_cpu:
                             print("use_cpu: %r" % use_cpu)
@@ -1083,7 +1083,7 @@ def main(model_args):
             sys.exit(-1)
         use_cpu = False
         while True:
-            lucaone_global_args_info["use_bp16"] = not use_cpu
+            lucaone_global_args_info["use_bp16"] = not use_cpu  and model_args.use_bp16
             emb, processed_seq_len = get_embedding(
                 lucaone_global_args_info,
                 lucaone_global_model_config,

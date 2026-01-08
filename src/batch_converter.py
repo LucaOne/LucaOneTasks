@@ -562,41 +562,52 @@ class BatchConverter(object):
         :param express_list:
         :return:
         '''
-        max_len = max(len(express) for express in express_list)
-        if self.matrix_add_special_token:
-            max_len -= 2
-        if self.truncation_matrix_length:
-            max_len = min(max_len, self.truncation_matrix_length)
-        if self.matrix_add_special_token:
-            max_len += 2
+        if self.input_type == "matrix_vs_matrix_add_express_value":
+            express_input_ids = torch.empty(
+                (
+                    batch_size,
+                    1,
+                ),
+                dtype=torch.int64,
+            )
+            for idx, express_value in enumerate(express_list):
+                express_input_ids[idx, 0] = int(express_value) + 1
         else:
+            max_len = max(len(express) for express in express_list)
+            if self.matrix_add_special_token:
+                max_len -= 2
+            if self.truncation_matrix_length:
+                max_len = min(max_len, self.truncation_matrix_length)
+            if self.matrix_add_special_token:
+                max_len += 2
+            else:
+                max_len = max_len + int(self.prepend_bos) + int(self.append_eos)
+
+            express_encoded_list = express_list
+            # 该长度已经减去了需要增加的特殊字符的个数
+            if self.truncation_matrix_length:
+                express_encoded_list = [encoded[:self.truncation_matrix_length] for encoded in express_encoded_list]
+
             max_len = max_len + int(self.prepend_bos) + int(self.append_eos)
+            # for input
+            express_input_ids = torch.empty(
+                (
+                    batch_size,
+                    max_len,
+                ),
+                dtype=torch.int64,
+            )
+            express_input_ids.fill_(self.padding_idx)
+            for sample_idx in range(batch_size):
+                real_len = len(express_encoded_list[sample_idx])
+                cur_express_encoded = torch.tensor(express_encoded_list[sample_idx], dtype=torch.long)
+                if self.prepend_bos:
+                    express_input_ids[sample_idx, 0] = self.cls_idx
+                express_input_ids[sample_idx, int(self.prepend_bos):real_len + int(self.prepend_bos)] = cur_express_encoded
+                if self.append_eos:
+                    express_input_ids[sample_idx, real_len + int(self.prepend_bos)] = self.eos_idx
 
-        express_encoded_list = express_list
-        # 该长度已经减去了需要增加的特殊字符的个数
-        if self.truncation_matrix_length:
-            express_encoded_list = [encoded[:self.truncation_matrix_length] for encoded in express_encoded_list]
-
-        max_len = max_len + int(self.prepend_bos) + int(self.append_eos)
-        # for input
-        express_input_ids = torch.empty(
-            (
-                batch_size,
-                max_len,
-            ),
-            dtype=torch.int64,
-        )
-        express_input_ids.fill_(self.padding_idx)
-        for sample_idx in range(batch_size):
-            real_len = len(express_encoded_list[sample_idx])
-            cur_express_encoded = torch.tensor(express_encoded_list[sample_idx], dtype=torch.long)
-            if self.prepend_bos:
-                express_input_ids[sample_idx, 0] = self.cls_idx
-            express_input_ids[sample_idx, int(self.prepend_bos):real_len + int(self.prepend_bos)] = cur_express_encoded
-            if self.append_eos:
-                express_input_ids[sample_idx, real_len + int(self.prepend_bos)] = self.eos_idx
-
-        return express_input_ids
+            return express_input_ids
 
     def __variant_encode__(self, batch_size, variant_list):
         '''

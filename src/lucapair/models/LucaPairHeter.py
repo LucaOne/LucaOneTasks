@@ -40,7 +40,7 @@ class LucaPairHeter(BertPreTrainedModel):
     def __init__(self, config, args):
         super(LucaPairHeter, self).__init__(config)
         # seq_vs_seq, seq_vs_vector, seq_vs_matrix, vector_vs_vector, vector_vs_matrix,
-        # matrix_vs_matrix, matrix_express_vs_matrix, matrix_express_vs_matrix_express
+        # matrix_vs_matrix, matrix_express_vs_matrix, matrix_express_vs_matrix_express, matrix_vs_matrix_add_express_value
         self.input_type = args.input_type
         self.num_labels = config.num_labels
         self.fusion_type = args.fusion_type if hasattr(args, "fusion_type") and args.fusion_type else "concat"
@@ -360,6 +360,79 @@ class LucaPairHeter(BertPreTrainedModel):
             self.encoder_type_list_b[1] = True
             self.linear_idx_a[1] = 0
             self.linear_idx_b[1] = 0
+        elif self.input_type == "matrix_vs_matrix_add_express_value":
+            # matrix a has express
+            express_bin_size = args.express_bin_size
+            self.express_embeddings = nn.Embedding(express_bin_size + 1, config.embedding_input_size, padding_idx=config.pad_token_id)
+            # input_a and input_b both are embedding matrix
+            # emb matrix -> (encoder) - > (pooler) -> fc * -> classifier
+            if args.matrix_encoder:
+                matrix_encoder_config_a = copy.deepcopy(config)
+                matrix_encoder_config_a.no_position_embeddings = True
+                matrix_encoder_config_a.no_token_type_embeddings = True
+                matrix_encoder_config_a.embedding_input_size = config.embedding_input_size_a
+                matrix_encoder_config_a.max_position_embeddings = config.matrix_max_length_a
+                matrix_encoder_config_b = copy.deepcopy(config)
+                matrix_encoder_config_b.no_position_embeddings = True
+                matrix_encoder_config_b.no_token_type_embeddings = True
+                matrix_encoder_config_b.embedding_input_size = config.embedding_input_size_b
+                matrix_encoder_config_b.max_position_embeddings = config.matrix_max_length_b
+                if args.matrix_encoder_act:
+                    self.matrix_encoder_a = nn.ModuleList([
+                        nn.Linear(config.embedding_input_size_a, config.hidden_size),
+                        create_activate(config.emb_activate_func),
+                        LucaTransformer(
+                            matrix_encoder_config_a,
+                            use_pretrained_embedding=True,
+                            add_pooling_layer=(args.matrix_pooling_type is None or args.matrix_pooling_type == "none") and self.task_level_type in ["seq_level"]
+                        )
+                    ])
+                    self.matrix_encoder_b = nn.ModuleList([
+                        nn.Linear(config.embedding_input_size_b, config.hidden_size),
+                        create_activate(config.emb_activate_func),
+                        LucaTransformer(
+                            matrix_encoder_config_b,
+                            use_pretrained_embedding=True,
+                            add_pooling_layer=(args.matrix_pooling_type is None or args.matrix_pooling_type == "none") and self.task_level_type in ["seq_level"]
+                        )
+                    ])
+                else:
+                    self.matrix_encoder_a = nn.ModuleList([
+                        LucaTransformer(
+                            matrix_encoder_config_a,
+                            use_pretrained_embedding=True,
+                            add_pooling_layer=(args.matrix_pooling_type is None or args.matrix_pooling_type == "none") and self.task_level_type in ["seq_level"]
+                        )
+                    ])
+                    self.matrix_encoder_b = nn.ModuleList([
+                        LucaTransformer(
+                            matrix_encoder_config_b,
+                            use_pretrained_embedding=True,
+                            add_pooling_layer=(args.matrix_pooling_type is None or args.matrix_pooling_type == "none") and self.task_level_type in ["seq_level"]
+                        )
+                    ])
+                ori_embedding_input_size = config.embedding_input_size
+                config.embedding_input_size = config.hidden_size
+                if self.task_level_type in ["seq_level"]:
+                    self.matrix_pooler_a = create_pooler(pooler_type="matrix", config=config, args=args)
+                    self.matrix_pooler_b = create_pooler(pooler_type="matrix", config=config, args=args)
+                self.input_size_list_a[1] = config.embedding_input_size
+                self.input_size_list_b[1] = config.embedding_input_size
+                config.embedding_input_size = ori_embedding_input_size
+            else:
+                self.input_size_list_a[1] = config.embedding_input_size_a
+                self.input_size_list_b[1] = config.embedding_input_size_b
+                if self.task_level_type in ["seq_level"]:
+                    ori_embedding_input_size = config.embedding_input_size
+                    config.embedding_input_size = config.embedding_input_size_a
+                    self.matrix_pooler_a = create_pooler(pooler_type="matrix", config=config, args=args)
+                    config.embedding_input_size = config.embedding_input_size_b
+                    self.matrix_pooler_b = create_pooler(pooler_type="matrix", config=config, args=args)
+                    config.embedding_input_size = ori_embedding_input_size
+            self.encoder_type_list_a[1] = True
+            self.encoder_type_list_b[1] = True
+            self.linear_idx_a[1] = 0
+            self.linear_idx_b[1] = 0
         elif self.input_type == "matrix_express_vs_matrix_express":
             # matrix a has express
             express_bin_size_a = args.express_bin_size_a
@@ -495,6 +568,9 @@ class LucaPairHeter(BertPreTrainedModel):
         all_linear_list_b = [linear for linear in all_linear_list_b if linear is not None]
         if all_linear_list_a is not None and len(all_linear_list_a) > 0:
             self.linear_a = nn.ModuleList(all_linear_list_a)
+            if self.input_type == "matrix_vs_matrix_add_express_value":
+                self.linear_c = nn.ModuleList(all_linear_list_a)
+
         if all_linear_list_b is not None and len(all_linear_list_b) > 0:
             self.linear_b = nn.ModuleList(all_linear_list_b)
         if self.fusion_type == "add":
@@ -507,7 +583,10 @@ class LucaPairHeter(BertPreTrainedModel):
         else:
             last_hidden_size_a = sum(self.output_size_a)
             last_hidden_size_b = sum(self.output_size_b)
+
         last_hidden_size = last_hidden_size_a + last_hidden_size_b
+        if self.input_type == "matrix_vs_matrix_add_express_value":
+            last_hidden_size += last_hidden_size_a
         self.dropout, self.hidden_layer, self.hidden_act, self.classifier, self.output, self.loss_fct = \
             create_loss_function(
                 config,
@@ -635,7 +714,7 @@ class LucaPairHeter(BertPreTrainedModel):
             concat_vector = vector_vector
         elif self.input_type == "vector_vs_matrix":
             concat_vector = vector_vector
-        elif self.input_type in ["matrix_vs_matrix", "matrix_express_vs_matrix", "matrix_express_vs_matrix_express"]:
+        elif self.input_type in ["matrix_vs_matrix", "matrix_express_vs_matrix", "matrix_express_vs_matrix_express", "matrix_vs_matrix_add_express_value"]:
             concat_vector = matrix_vector
         else:
             raise Exception("Not support input_type=%s" % self.input_type)
@@ -753,7 +832,7 @@ class LucaPairHeter(BertPreTrainedModel):
             concat_vector = vector_vector
         elif self.input_type == "vector_vs_matrix":
             concat_vector = matrix_vector
-        elif self.input_type in ["matrix_vs_matrix", "matrix_express_vs_matrix", "matrix_express_vs_matrix_express"]:
+        elif self.input_type in ["matrix_vs_matrix", "matrix_express_vs_matrix", "matrix_express_vs_matrix_express", "matrix_vs_matrix_add_express_value"]:
             concat_vector = matrix_vector
         else:
             raise Exception("Not support input_type=%s" % self.input_type)
@@ -787,7 +866,7 @@ class LucaPairHeter(BertPreTrainedModel):
             sample_ids=sample_ids,
             attention_scores_savepath=attention_scores_savepath,
             attention_pooling_scores_savepath=attention_pooling_scores_savepath,
-            express_input_ids=express_input_ids_a
+            express_input_ids=None if self.input_type == "matrix_vs_matrix_add_express_value" else express_input_ids_a
         )
 
         representation_vector_b, seq_attentions_b, matrix_attentions_b = self.__forward_b__(
@@ -801,8 +880,14 @@ class LucaPairHeter(BertPreTrainedModel):
             sample_ids=sample_ids,
             attention_scores_savepath=attention_scores_savepath,
             attention_pooling_scores_savepath=attention_pooling_scores_savepath,
-            express_input_ids=express_input_ids_b
+            express_input_ids=None if self.input_type == "matrix_vs_matrix_add_express_value" else express_input_ids_b
         )
+        if self.input_type == "matrix_vs_matrix_add_express_value":
+            representation_vector_c = self.express_embeddings(express_input_ids_a)[:, 0, :]
+            linear_idx = self.linear_idx_a[1]
+            if linear_idx != -1:
+                for i, layer_module in enumerate(self.linear_c[linear_idx]):
+                    representation_vector_c = layer_module(representation_vector_c)
 
         if attention_scores_savepath and sample_ids:
             for sample_idx, sample_id in enumerate(sample_ids):
@@ -831,13 +916,18 @@ class LucaPairHeter(BertPreTrainedModel):
                     filepath = os.path.join(attention_scores_savepath, "%s_matrix_b_attention_scores.pt" % sample_id)
                     torch.save(new_matrix_attentions_b, filepath)
 
-        concat_vector = torch.cat([representation_vector_a, representation_vector_b], dim=-1)
+        if self.input_type == "matrix_vs_matrix_add_express_value":
+            concat_vector = torch.cat([representation_vector_a, representation_vector_b, representation_vector_c], dim=-1)
+        else:
+            concat_vector = torch.cat([representation_vector_a, representation_vector_b], dim=-1)
         if output_classification_vector_dirpath and sample_ids:
             for sample_idx, sample_id in enumerate(sample_ids):
                 output_classification_vector = {
                     "representation_vector_a": representation_vector_a[sample_idx].detach().cpu(),
                     "representation_vector_b": representation_vector_b[sample_idx].detach().cpu(),
                 }
+                if self.input_type == "matrix_vs_matrix_add_express_value":
+                    output_classification_vector["representation_vector_c"] = representation_vector_c[sample_idx].detach().cpu()
                 filepath = os.path.join(output_classification_vector_dirpath, "%s_classification_vector.pt" % sample_id)
                 torch.save(output_classification_vector, filepath)
         if self.dropout is not None:

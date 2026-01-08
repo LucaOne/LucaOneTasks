@@ -195,7 +195,8 @@ def get_args():
             "matrix_vs_express",
             "matrix_vs_matrix",
             "matrix_express_vs_matrix",
-            "matrix_express_vs_matrix_express"
+            "matrix_express_vs_matrix_express",
+            "matrix_vs_matrix_add_express_value",
         ],
         help="the input type of selected")
     parser.add_argument(
@@ -1070,6 +1071,8 @@ def get_input_cols(args):
         input_col_names = [args.dataset_type, "embedding_matrix_a", "embedding_matrix_b", "express_list_a"]
     elif args.input_mode == "pair" and args.input_type == "matrix_express_vs_matrix_express":
         input_col_names = [args.dataset_type, "embedding_matrix_a", "embedding_matrix_b", "express_list_a", "express_list_b"]
+    elif args.input_mode == "pair" and args.input_type == "matrix_vs_matrix_add_express_value":
+        input_col_names = [args.dataset_type, "embedding_matrix_a", "embedding_matrix_b", "express_value"]
     else:
         raise Exception("Not support input_mode=%s" % args.input_mode)
     return input_col_names

@@ -142,6 +142,9 @@ def transform_one_sample_2_feature(
             elif input_type == "matrix_express_vs_matrix_express":
                 batch_info.append([row[0], row[1], row[8], row[9]])
                 seq_lens = [en["matrix_a"].shape[0], en["matrix_b"].shape[0]]
+            elif input_type == "matrix_vs_matrix_add_express_value":
+                batch_info.append([row[0], row[1], row[8], row[9]])
+                seq_lens = [en["matrix_a"].shape[0], en["matrix_b"].shape[0]]
             elif "variant" in input_type:
                 batch_info.append([row[0], row[1], row[4], row[5]])
                 seq_lens = [len(row[4]), len(row[5])]
@@ -1362,7 +1365,8 @@ def create_run_args():
             "vector_vs_matrix",
             "matrix_vs_matrix",
             "matrix_express_vs_matrix",
-            "matrix_express_vs_matrix_express"
+            "matrix_express_vs_matrix_express",
+            "matrix_vs_matrix_add_express_value"
         ],
         help="the input type."
     )

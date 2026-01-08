@@ -71,9 +71,12 @@ def transform_one_sample_2_feature(
     sample_ids = []
     if input_mode == "pair":
         sample_ids.append(row[0] + "#" + row[1])
-        if input_type in ["seq_vs_seq", "seq_vs_vector", "seq_vs_matrix", "vector_vs_vector",
-                          "vector_vs_matrix", "matrix_vs_matrix", "matrix_express_vs_matrix", "matrix_express_vs_matrix_express"]:
-            if input_type == "matrix_express_vs_matrix":
+        if input_type in [
+            "seq_vs_seq", "seq_vs_vector", "seq_vs_matrix", "vector_vs_vector",
+            "vector_vs_matrix", "matrix_vs_matrix", "matrix_express_vs_matrix",
+            "matrix_express_vs_matrix_express", "matrix_vs_matrix_add_express_value"
+        ]:
+            if input_type in ["matrix_express_vs_matrix", "matrix_vs_matrix_add_express_value"]:
                 en = encoder.encode_pair(
                     row[0],
                     row[1],
@@ -141,6 +144,9 @@ def transform_one_sample_2_feature(
                 batch_info.append([row[0], row[1], row[8], row[9]])
                 seq_lens = [en["matrix_a"].shape[0], en["matrix_b"].shape[0]]
             elif input_type == "matrix_express_vs_matrix_express":
+                batch_info.append([row[0], row[1], row[8], row[9]])
+                seq_lens = [en["matrix_a"].shape[0], en["matrix_b"].shape[0]]
+            elif input_type == "matrix_vs_matrix_add_express_value":
                 batch_info.append([row[0], row[1], row[8], row[9]])
                 seq_lens = [en["matrix_a"].shape[0], en["matrix_b"].shape[0]]
             elif "variant" in input_type:
@@ -1297,7 +1303,8 @@ def create_run_args():
             "vector_vs_matrix",
             "matrix_vs_matrix",
             "matrix_express_vs_matrix",
-            "matrix_express_vs_matrix_express"
+            "matrix_express_vs_matrix_express",
+            "matrix_vs_matrix_add_express_value"
         ],
         help="the input type."
     )
@@ -1451,6 +1458,11 @@ def create_results_csv_header(run_args):
                 else:
                     header = ["seq_id_a", "seq_id_b", "matrix_filename_a", "matrix_filename_b", "express_list_a",  "prob", "label"]
             elif run_args.input_type == "matrix_express_vs_matrix_express":
+                if run_args.task_type == "multi_class" and run_args.topk is not None and run_args.topk > 1 and run_args.task_level_type == "seq_level":
+                    header = ["seq_id_a", "seq_id_b", "matrix_filename_a", "matrix_filename_b", "express_list_a", "express_list_b", "top1_prob", "top1_label", "top%d_probs" % run_args.topk, "top%d_labels" % run_args.topk]
+                else:
+                    header = ["seq_id_a", "seq_id_b", "matrix_filename_a", "matrix_filename_b", "express_list_a", "express_list_b", "prob", "label"]
+            elif run_args.input_type == "matrix_vs_matrix_add_express_value":
                 if run_args.task_type == "multi_class" and run_args.topk is not None and run_args.topk > 1 and run_args.task_level_type == "seq_level":
                     header = ["seq_id_a", "seq_id_b", "matrix_filename_a", "matrix_filename_b", "express_list_a", "express_list_b", "top1_prob", "top1_label", "top%d_probs" % run_args.topk, "top%d_labels" % run_args.topk]
                 else:

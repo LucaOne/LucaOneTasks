@@ -1508,8 +1508,11 @@ class Encoder(object):
         # case: the expression as a part of the input
         if "express" in self.input_type:
             if express_list_a is not None:
-                if not isinstance(express_list_a, list):
-                    express_list_a = eval(express_list_a)
+                if self.input_type == "matrix_vs_matrix_add_express_value":
+                    express_list_a = int(express_list_a)
+                else:
+                    if not isinstance(express_list_a, list):
+                        express_list_a = eval(express_list_a)
             if express_list_b is not None:
                 if not isinstance(express_list_b, list):
                     express_list_b = eval(express_list_b)

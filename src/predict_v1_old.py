@@ -738,7 +738,8 @@ def run_args():
             "vector_vs_matrix",
             "matrix_vs_matrix",
             "matrix_express_vs_matrix",
-            "matrix_express_vs_matrix_express"
+            "matrix_express_vs_matrix_express",
+            "matrix_vs_matrix_add_express_value"
         ],
         help="the input type."
     )

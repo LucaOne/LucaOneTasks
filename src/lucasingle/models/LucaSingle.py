@@ -342,6 +342,7 @@ class LucaSingle(BertPreTrainedModel):
         attention_pooling_scores_savepath = kwargs["attention_pooling_scores_savepath"] if "attention_pooling_scores_savepath" in kwargs else None
         output_matrix_dirpath = kwargs["output_matrix_dirpath"] if "output_matrix_dirpath" in kwargs else None
         output_classification_vector_dirpath = kwargs["output_classification_vector_dirpath"] if "output_classification_vector_dirpath" in kwargs else None
+        output_logits_dirpath = kwargs["output_logits_dirpath"] if "output_logits_dirpath" in kwargs else None
         return_attentions = sample_ids is not None and attention_scores_savepath is not None
         if input_ids is not None and self.seq_encoder is not None:
             seq_outputs = self.seq_encoder(
@@ -511,6 +512,12 @@ class LucaSingle(BertPreTrainedModel):
         else:
             output = logits
         outputs = [logits, output]
+        if output_logits_dirpath and sample_ids:
+            for sample_idx, sample_id in enumerate(sample_ids):
+                cur_logit = logits[sample_idx]
+                filepath = os.path.join(output_logits_dirpath, "%s_logit.pt" % sample_id)
+                torch.save(cur_logit, filepath)
+
         '''
         print("logits shape:")
         print(logits.shape)

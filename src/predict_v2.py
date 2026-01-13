@@ -302,6 +302,7 @@ def predict_probs(args, encoder, batch_convecter, model, row):
                 attention_scores_savepath=args.output_attention_scores_dirpath,
                 attention_pooling_scores_savepath=args.output_attention_pooling_scores_dirpath,
                 output_classification_vector_dirpath=args.output_classification_vector_dirpath,
+                output_logits_dirpath=args.output_logits_dirpath,
                 output_matrix_dirpath=args.output_matrix_dirpath
             )[1]
             if cur_probs.is_cuda:
@@ -315,6 +316,7 @@ def predict_probs(args, encoder, batch_convecter, model, row):
             sample_ids=sample_ids,
             attention_scores_savepath=args.output_attention_scores_dirpath,
             attention_pooling_scores_savepath=args.output_attention_pooling_scores_dirpath,
+            output_logits_dirpath=args.output_logits_dirpath,
             output_classification_vector_dirpath=args.output_classification_vector_dirpath,
             output_matrix_dirpath=args.output_matrix_dirpath
         )[1]
@@ -652,6 +654,7 @@ def run(
         output_attention_scores_dirpath,
         output_attention_pooling_scores_dirpath,
         output_classification_vector_dirpath,
+        output_logits_dirpath,
         output_matrix_dirpath,
         delete_emb=False
 ):
@@ -699,6 +702,7 @@ def run(
     model_args.output_attention_scores_dirpath = output_attention_scores_dirpath
     model_args.output_attention_pooling_scores_dirpath = output_attention_pooling_scores_dirpath
     model_args.output_classification_vector_dirpath = output_classification_vector_dirpath
+    model_args.output_logits_dirpath = output_logits_dirpath
     model_args.output_matrix_dirpath = output_matrix_dirpath
     model_args.llm_truncation_seq_length = llm_truncation_seq_length
     model_args.seq_max_length = max(model_args.seq_max_length, llm_truncation_seq_length)
@@ -1449,6 +1453,13 @@ def create_run_args():
         help="the save path output the attention pooling scores(one file for each one sample)"
     )
     parser.add_argument(
+        "--output_logits_dirpath",
+        default=None,
+        type=str,
+        help="the save path output the logits"
+    )
+
+    parser.add_argument(
         "--output_matrix_dirpath",
         default=None,
         type=str,
@@ -1903,6 +1914,9 @@ if __name__ == "__main__":
         args.output_classification_vectors = True
         if not os.path.exists(args.output_classification_vector_dirpath):
             os.makedirs(args.output_classification_vector_dirpath)
+    if args.output_logits_dirpath:
+        if not os.path.exists(args.output_logits_dirpath):
+            os.makedirs(args.output_logits_dirpath)
     if args.output_matrix_dirpath:
         args.output_matrix = True
         if not os.path.exists(args.output_matrix_dirpath):
@@ -1978,6 +1992,7 @@ if __name__ == "__main__":
                         output_attention_scores_dirpath=args.output_attention_scores_dirpath,
                         output_attention_pooling_scores_dirpath=args.output_attention_pooling_scores_dirpath,
                         output_classification_vector_dirpath=args.output_classification_vector_dirpath,
+                        output_logits_dirpath=args.output_logits_dirpath,
                         output_matrix_dirpath=args.output_matrix_dirpath,
                         delete_emb=args.delete_emb
                     )
@@ -2015,6 +2030,7 @@ if __name__ == "__main__":
                     output_attention_scores_dirpath=args.output_attention_scores_dirpath,
                     output_attention_pooling_scores_dirpath=args.output_attention_pooling_scores_dirpath,
                     output_classification_vector_dirpath=args.output_classification_vector_dirpath,
+                    output_logits_dirpath=args.output_logits_dirpath,
                     output_matrix_dirpath=args.output_matrix_dirpath,
                     delete_emb=args.delete_emb
                 )
@@ -2065,6 +2081,7 @@ if __name__ == "__main__":
             output_attention_scores_dirpath=args.output_attention_scores_dirpath,
             output_attention_pooling_scores_dirpath=args.output_attention_pooling_scores_dirpath,
             output_classification_vector_dirpath=args.output_classification_vector_dirpath,
+            output_logits_dirpath=args.output_logits_dirpath,
             output_matrix_dirpath=args.output_matrix_dirpath,
             delete_emb=args.delete_emb
         )
@@ -2138,6 +2155,7 @@ if __name__ == "__main__":
             output_attention_scores_dirpath=args.output_attention_scores_dirpath,
             output_attention_pooling_scores_dirpath=args.output_attention_pooling_scores_dirpath,
             output_classification_vector_dirpath=args.output_classification_vector_dirpath,
+            output_logits_dirpath=args.output_logits_dirpath,
             output_matrix_dirpath=args.output_matrix_dirpath,
             delete_emb=args.delete_emb
         )

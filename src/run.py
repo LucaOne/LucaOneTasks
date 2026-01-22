@@ -1383,6 +1383,7 @@ def main():
 
     if args.local_rank in [0, -1]:
         print("n_gpu: %d" % args.n_gpu)
+        '''
         args_dict = {}
         for attr, value in sorted(args.__dict__.items()):
             if attr != "device":
@@ -1390,6 +1391,9 @@ def main():
             else:
                 args_dict[attr] = str(value)
         log_fp.write(json.dumps(args_dict, ensure_ascii=False) + "\n")
+        '''
+        args_json = json.dumps(vars(args), indent=4, ensure_ascii=False)
+        log_fp.write(args_json + "\n")
         log_fp.write("#" * 50 + "\n")
         log_fp.write("n_gpu: %d\n" % args.n_gpu)
         log_fp.write("#" * 50 + "\n")

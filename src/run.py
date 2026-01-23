@@ -1389,7 +1389,7 @@ def main():
                 args_dict[attr] = value
             else:
                 args_dict[attr] = str(value)
-        log_fp.write(json.dumps(args_dict, ensure_ascii=False) + "\n")
+        log_fp.write(json.dumps(args_dict, ensure_ascii=False, indent=4) + "\n")
         log_fp.write("#" * 50 + "\n")
         log_fp.write("n_gpu: %d\n" % args.n_gpu)
         log_fp.write("#" * 50 + "\n")

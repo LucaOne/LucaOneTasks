@@ -1533,7 +1533,7 @@ def main():
                 args_dict[attr] = value
             else:
                 args_dict[attr] = str(value)
-        log_fp.write(json.dumps(args_dict, ensure_ascii=False) + "\n")
+        log_fp.write(json.dumps(args_dict, ensure_ascii=False, indent=4) + "\n")
         '''
         args_json = json.dumps(vars(args), indent=4, ensure_ascii=False)
         log_fp.write(args_json + "\n")

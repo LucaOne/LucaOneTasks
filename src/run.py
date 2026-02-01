@@ -723,22 +723,31 @@ def get_args():
         choices=[
             "none",
             "onehot",
+            "lucaone_gplm",
             "lucaone",
             "dnabert",
             "dnaberts",
             "esm",
             "dnabert-esm"
         ],
-        required=True, help="llm type."
+        required=True,
+        help="llm type."
+    )
+    parser.add_argument(
+        "--llm_task_level",
+        default="token_level,span_level,seq_level,structure_level",
+        type=str,
+        help="llm task level."
     )
     parser.add_argument(
         "--llm_version",
         type=str,
-        default="v2.0",
+        default="lucaone",
         choices=[
             "none",
             "onehot",
             "lucaone",
+            "v2.0",
             "lucaone-separated",
             "lucaone-gene",
             "lucaone-prot",
@@ -748,6 +757,12 @@ def get_args():
             "dnabert2-esm2"
         ],
         help="llm version"
+    )
+    parser.add_argument(
+        "--llm_time_str",
+        default=None,
+        type=str,
+        help="llm time str."
     )
     parser.add_argument(
         "--llm_step",
@@ -1252,6 +1267,9 @@ def main():
 
     # device
     args.device = create_device(args)
+
+    if args.llm_type == "lucaone_gplm":
+        args.llm_type = "lucaone"
 
     # create model
     model_config, model_class, model, seq_subword, seq_tokenizer_class, seq_tokenizer, label_list = get_model(args)

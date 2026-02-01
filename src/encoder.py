@@ -70,7 +70,7 @@ def complete_embedding_matrix(
         append_emb = None
         if embedding_complete_seg_overlap:
             sliding_window = init_cur_segment_len // 2
-            print("Embedding Complete Seg Overlap: %r, ori seq len: %d, segment len: %d, init sliding windown: %d" % (
+            print("Embedding Complete Seg Overlap: %r, ori seq len: %d, segment len: %d, init sliding window: %d" % (
                 embedding_complete_seg_overlap, ori_seq_len, init_cur_segment_len, sliding_window))
             while True:
                 print("updated window: %d" % sliding_window)

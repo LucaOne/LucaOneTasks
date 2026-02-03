@@ -91,7 +91,7 @@ class Alphabet(object):
         elif name.lower() in ["gene_prot", "prot_gene"]:
             standard_toks = gene_prot_standard_toks
         else:
-            raise Exception("Not support tokenizer name: %s" % name)
+            raise ValueError("Not support tokenizer name: %s" % name)
 
         prepend_toks = gene_prot_prepend_toks
         append_toks = gene_prot_append_toks
@@ -105,7 +105,8 @@ class Alphabet(object):
         import os, pickle
         try:
             return pickle.load(open(os.path.join(dir_path, "alphabet.pkl"), "rb"))
-        except Exception:
+        except Exception as e:
+            print(f"Warning {e}, using gene_prot tokenizer")
             return cls.from_predefined("gene_prot")
 
     def save_pretrained(self, save_dir):

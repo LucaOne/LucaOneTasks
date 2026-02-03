@@ -447,11 +447,13 @@ def save_check_point(args, model, model_config, optimizer, seq_tokenizer, output
         torch.save(model_to_save, os.path.join(output_dir, "pytorch.pt"))
         torch.save(model_to_save.state_dict(), os.path.join(output_dir, "pytorch.pth"))
     # torch.save(model_to_save, os.path.join(output_dir + "model.pth"))
+    '''
     if optimizer is not None:
         optimizer_dir = os.path.join(output_dir, "optimizer")
         if not os.path.exists(optimizer_dir):
             os.makedirs(optimizer_dir)
         torch.save({"optimizer": optimizer.state_dict()}, optimizer_dir)
+    '''
     if seq_tokenizer:
         tokenizer_dir = os.path.join(output_dir, "tokenizer")
         if not os.path.exists(tokenizer_dir):

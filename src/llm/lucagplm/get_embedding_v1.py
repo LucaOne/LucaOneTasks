@@ -974,7 +974,7 @@ def main(model_args):
                                 truncation_seq_length=model_args.embedding_fixed_len_a_time,
                                 device=torch.device("cpu"),
                                 matrix_add_special_token=model_args.matrix_add_special_token,
-                                use_bf16=False
+                                use_bf16=model_args.use_bf16
                             )
                             use_cpu = True
                         if emb is not None and input_seq_len > model_args.embedding_fixed_len_a_time:
@@ -987,7 +987,7 @@ def main(model_args):
                                 model_args,
                                 embedding_type,
                                 use_cpu=use_cpu,
-                                use_bf16=not use_cpu and model_args.use_bf16
+                                use_bf16=model_args.use_bf16
                             )
                         if use_cpu:
                             print("use_cpu: %r" % use_cpu)
@@ -1014,7 +1014,7 @@ def main(model_args):
                                 truncation_seq_length=truncation_seq_length,
                                 device=torch.device("cpu"),
                                 matrix_add_special_token=model_args.matrix_add_special_token,
-                                use_bf16=False
+                                use_bf16=model_args.use_bf16
                             )
                             use_cpu = True
                         # embedding全
@@ -1028,7 +1028,7 @@ def main(model_args):
                                 model_args,
                                 embedding_type,
                                 use_cpu=use_cpu,
-                                use_bf16=not use_cpu and model_args.use_bf16
+                                use_bf16=model_args.use_bf16
                             )
                         if use_cpu:
                             print("use_cpu: %r" % use_cpu)
@@ -1055,7 +1055,7 @@ def main(model_args):
             sys.exit(-1)
         use_cpu = False
         while True:
-            lucaone_global_args_info["use_bf16"] = not use_cpu and model_args.use_bf16
+            lucaone_global_args_info["use_bf16"] = model_args.use_bf16
             emb, processed_seq_len = get_embedding(
                 lucaone_global_args_info,
                 lucaone_global_model_config,

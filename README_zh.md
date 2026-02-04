@@ -243,7 +243,6 @@ python get_embedding.py \
     --matrix_add_special_token \
     --embedding_complete \
     --embedding_complete_seg_overlap \
-    --use_bf16 \
     --gpu_id 0  
 ```
 
@@ -266,7 +265,6 @@ python get_embedding.py \
     --matrix_add_special_token \
     --embedding_complete \
     --embedding_complete_seg_overlap \
-    --use_bf16 \
     --gpu_id 0  
 ```
 
@@ -291,7 +289,6 @@ python get_embedding.py \
     --matrix_add_special_token \
     --embedding_complete \
     --embedding_complete_seg_overlap \
-    --use_bf16 \
     --gpu_id 0  
  ```
 
@@ -313,7 +310,6 @@ python get_embedding.py \
     --matrix_add_special_token \
     --embedding_complete \
     --embedding_complete_seg_overlap \
-    --use_bf16 \
     --gpu_id 0  
 ```
 
@@ -340,7 +336,6 @@ python get_embedding.py \
     --matrix_add_special_token \
     --embedding_complete \
     --embedding_complete_seg_overlap \
-    --use_bf16 \
     --gpu_id 0  
 ```
 
@@ -360,7 +355,6 @@ python get_embedding.py \
     --matrix_add_special_token \
     --embedding_complete \
     --embedding_complete_seg_overlap \
-    --use_bf16 \
     --gpu_id 0  
 ```   
 
@@ -383,7 +377,6 @@ python get_embedding.py \
     --matrix_add_special_token \
     --embedding_complete \
     --embedding_complete_seg_overlap \
-    --use_bf16 \
     --gpu_id 0  
 ```
 
@@ -403,7 +396,6 @@ python get_embedding.py \
     --matrix_add_special_token \
     --embedding_complete \
     --embedding_complete_seg_overlap \
-    --use_bf16 \
     --gpu_id 0  
 ```
 

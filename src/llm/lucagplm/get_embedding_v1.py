@@ -369,7 +369,10 @@ def get_embedding(
     model.eval()
     try:
         with torch.no_grad():
-            with torch.autocast(device_type='cuda', dtype=torch.bfloat16):
+            if "use_bf16" in args_info and args_info["use_bf16"]:
+                with torch.autocast(device_type='cuda', dtype=torch.bfloat16):
+                    output = model(**batch)
+            else:
                 output = model(**batch)
             return output, processed_seq_len
     except Exception as e:

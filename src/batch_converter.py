@@ -611,7 +611,7 @@ class BatchConverter(object):
                     cur_seq_encoded_list.append(inputs)
                     if max_sentence_len < len(inputs):
                         max_sentence_len = len(inputs)
-            seq_encoded_list.append(cur_seq_encoded_list)
+                seq_encoded_list.append(cur_seq_encoded_list)
         # for input
         input_ids = torch.empty(
             (

@@ -551,7 +551,7 @@ def load_trained_model(model_config, args, model_class, model_dirpath):
     # load exists checkpoint
     print("load pretrained model: %s" % model_dirpath)
     try:
-        model = model_class.from_pretrained(model_dirpath, args=args)
+        model = model_class.from_pretrained(model_dirpath, config=model_config, args=args)
     except Exception as e:
         model = model_class(model_config, args=args)
         pretrained_net_dict = torch.load(

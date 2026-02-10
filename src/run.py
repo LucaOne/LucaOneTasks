@@ -1728,7 +1728,7 @@ def main():
         prefix = "checkpoint-{}".format(global_step)
         checkpoint = os.path.join(args.output_dir, prefix)
         if seq_tokenizer is None and seq_tokenizer_class:
-            seq_tokenizer = seq_tokenizer_class.from_pretrained(checkpoint, do_lower_case=args.do_lower_case)
+            seq_tokenizer = seq_tokenizer_class.from_pretrained(checkpoint)
 
         logger.info("checkpoint path: %s" % checkpoint)
         log_fp.write("checkpoint path: %s\n" % checkpoint)
@@ -1749,7 +1749,7 @@ def main():
         prefix = "checkpoint-{}".format(global_step)
         checkpoint = os.path.join(args.output_dir, prefix)
         if seq_tokenizer is None and seq_tokenizer_class:
-            seq_tokenizer = seq_tokenizer_class.from_pretrained(checkpoint, do_lower_case=args.do_lower_case)
+            seq_tokenizer = seq_tokenizer_class.from_pretrained(checkpoint)
         logger.info("checkpoint path: %s" % checkpoint)
         log_fp.write("checkpoint path: %s\n" % checkpoint)
         model = load_trained_model(model_config, args, model_class, checkpoint)

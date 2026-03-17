@@ -12,6 +12,7 @@
 '''
 import os
 import sys
+import ast
 import random
 import shutil
 import numpy as np
@@ -24,6 +25,34 @@ try:
 except ImportError:
     from src.file_operator import *
 csv.field_size_limit(sys.maxsize)
+
+def is_list_like(value):
+    """
+    判断一个值是单一值还是一个类似列表/元组/集合的结构。
+    - 如果输入本身就是 list, tuple, or set, 返回 True。
+    - 如果输入是一个字符串，它能被安全地解析成 list, tuple, or set, 返回 True。
+    - 其他所有情况（包括普通字符串、数字等）返回 False。
+    """
+    if value is None:
+        return False
+    if isinstance(value, (list, tuple, set)):
+        # 1. 首先处理输入本身就是列表/元组/集合的情况
+        return True
+
+    if not isinstance(value, str):
+        # 2. 如果不是以上三种，也不是字符串，那么它就是单一值
+        return False
+
+    # 3. 如果是字符串，尝试用 ast.literal_eval 解析
+    try:
+        # 去掉首尾空格，防止 " ['a', 'b'] " 这样的字符串解析失败
+        parsed_value = ast.literal_eval(value.strip())
+        # 判断解析后的结果是否是 list, tuple, or set
+        return isinstance(parsed_value, (list, tuple, set))
+    except (ValueError, SyntaxError):
+        # 如果字符串无法被解析（比如 "hello world"），
+        # ast.literal_eval 会抛出异常，说明它是一个单一的字符串值。
+        return False
 
 
 class MultiFilesStreamLoader(object):
@@ -215,7 +244,7 @@ class MultiFilesStreamLoader(object):
                         seq_id_a, seq_id_b, seq_type_a, seq_type_b, seq_a, seq_b, vector_filename_a, vector_filename_b, \
                         matrix_filename_a, matrix_filename_b, variant_list_a, variant_list_b, label = row[0:13]
                 else:
-                    raise Exception("the cols num not in [5, 7, 11, 13]")
+                    raise ValueError("the cols num not in [5, 7, 11, 13]")
                 res = {
                     "seq_id_a": seq_id_a,
                     "seq_id_b": seq_id_b,
@@ -240,8 +269,8 @@ class MultiFilesStreamLoader(object):
                     })
                 if "express" in self.input_type:
                     res.update({
-                        "express_list_a": eval(express_list_a) if express_list_a else None,
-                        "express_list_b": eval(express_list_b) if express_list_b else None
+                        "express_list_a": eval(express_list_a) if is_list_like(express_list_a) else express_list_a,
+                        "express_list_b": eval(express_list_b) if is_list_like(express_list_b) else express_list_b,
                     })
                 elif "variant" in self.input_type:
                     res.update({
@@ -295,7 +324,7 @@ class MultiFilesStreamLoader(object):
                     })
                 if "express" in self.input_type:
                     res.update({
-                        "express_list": eval(express_list) if express_list else None
+                        "express_list": eval(express_list) if is_list_like(express_list) else express_list,
                     })
                 elif "variant" in self.input_type:
                     res.update({

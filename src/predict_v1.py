@@ -570,7 +570,8 @@ def create_encoder_batch_convecter(
             "matrix_add_special_token": model_args.matrix_add_special_token,
             "embedding_fixed_len_a_time": model_args.embedding_fixed_len_a_time,
             "matrix_embedding_exists": model_args.matrix_embedding_exists,
-            "use_cpu": True if model_args.gpu_id < 0 else False
+            "use_cpu": True if model_args.gpu_id < 0 else False,
+            "buffer_size": 0
         }
     else:
         assert model_args.seq_max_length is not None
@@ -595,7 +596,8 @@ def create_encoder_batch_convecter(
             "matrix_add_special_token": model_args.matrix_add_special_token,
             "embedding_fixed_len_a_time": model_args.embedding_fixed_len_a_time,
             "matrix_embedding_exists": model_args.matrix_embedding_exists,
-            "use_cpu": True if model_args.gpu_id < 0 else False
+            "use_cpu": True if model_args.gpu_id < 0 else False,
+            "buffer_size": 0
         }
     encoder = Encoder(**encoder_config)
 
@@ -1365,7 +1367,7 @@ def create_run_args():
     # for print info
     parser.add_argument(
         "--print_per_num",
-        default=10000,
+        default=1024,
         type=int,
         help="per num to print"
     )

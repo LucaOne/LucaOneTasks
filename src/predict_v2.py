@@ -551,7 +551,7 @@ def load_model(args, model_name, model_dir):
     model_config = config_class(**json.load(open(os.path.join(model_dir, "config.json"), "r")))
 
     model = load_trained_model(model_config, args, model_class, model_dir)
-    print("the time for loading model:", time.time() - begin_time)
+    print("Loading model using time:", time.time() - begin_time)
 
     return model_config, seq_subword, seq_tokenizer, model
 
@@ -587,7 +587,8 @@ def create_encoder_batch_convecter(
             "matrix_add_special_token": model_args.matrix_add_special_token,
             "embedding_fixed_len_a_time": model_args.embedding_fixed_len_a_time,
             "matrix_embedding_exists": model_args.matrix_embedding_exists,
-            "use_cpu": True if model_args.gpu_id < 0 else False
+            "use_cpu": True if model_args.gpu_id < 0 else False,
+            "buffer_size": 0
         }
     else:
         assert model_args.seq_max_length is not None
@@ -612,7 +613,8 @@ def create_encoder_batch_convecter(
             "matrix_add_special_token": model_args.matrix_add_special_token,
             "embedding_fixed_len_a_time": model_args.embedding_fixed_len_a_time,
             "matrix_embedding_exists": model_args.matrix_embedding_exists,
-            "use_cpu": True if model_args.gpu_id < 0 else False
+            "use_cpu": True if model_args.gpu_id < 0 else False,
+            "buffer_size": 0
         }
     encoder = Encoder(**encoder_config)
 
@@ -798,12 +800,15 @@ def run(
 
     # embedding in advance
     print("matrix_embedding_exists: %r, gpu_id: %d, input_type: %s" % (matrix_embedding_exists, gpu_id, input_type))
-    if not matrix_embedding_exists and gpu_id > -1 and input_type != "seq":
+    if gpu_id > -1 and input_type != "seq":
+        if matrix_embedding_exists:
+            encoder.embedding_buffer_size = min(len(sequences), 1024)
         # 先to cpu
         trained_model.to(torch.device("cpu"))
         assert model_args.emb_dir is not None
         if not os.path.exists(model_args.emb_dir):
             os.makedirs(model_args.emb_dir)
+        start = time.time()
         for item in sequences:
             if input_mode == "pair":
                 seq_id_a = item[0]
@@ -849,6 +854,7 @@ def run(
                         embedding_type="matrix" if "matrix" in input_type else "vector"
                     )
             torch.cuda.empty_cache()
+        print(f"Total loading embedding matrices time (samples={len(sequences)}): {time.time() - start:.2f} seconds")
         encoder.matrix_embedding_exists = True
         # embedding 完之后to device
         trained_model.to(model_args.device)
@@ -1120,9 +1126,18 @@ def run(
                         cur_res[0][4],
                         cur_res[0][5]
                     ])
+            if "matrix" in input_type or "vector" in input_type:
+                if "variant" in model_args.input_type:
+                    emb_seq_id_a = "_".join(seq_id_a.split("_")[1:])
+                    emb_seq_id_b = "_".join(seq_id_b.split("_")[1:])
+                else:
+                    emb_seq_id_a = seq_id_a
+                    emb_seq_id_b = seq_id_b
+                encoder.delete_from_buffer(emb_seq_id_a)
+                encoder.delete_from_buffer(emb_seq_id_b)
     else:
+        start = time.time()
         for item in sequences:
-            start = time.time()
             seq_id = item[0]
             seq_type = item[1]
             seq = item[2]
@@ -1176,7 +1191,13 @@ def run(
                     predicted_results.append([
                         seq_id, seq, cur_res[0][2], cur_res[0][3]
                     ])
-            print(f"Total time: {time.time() - start:.2f} seconds")
+            if "matrix" in input_type or "vector" in input_type:
+                if "variant" in model_args.input_type:
+                    emb_seq_id = "_".join(seq_id.split("_")[1:])
+                else:
+                    emb_seq_id = seq_id
+                encoder.delete_from_buffer(emb_seq_id)
+        print(f"Total inference time(samples={len(sequences)}): {time.time() - start:.2f} seconds")
     # torch.cuda.empty_cache()
     # 删除embedding
     if not matrix_embedding_exists and os.path.exists(model_args.emb_dir) and delete_emb:
@@ -1493,7 +1514,7 @@ def create_run_args():
     # for print info
     parser.add_argument(
         "--print_per_num",
-        default=10000,
+        default=1024,
         type=int,
         help="per num to print"
     )
@@ -2036,6 +2057,8 @@ if __name__ == "__main__":
             had_done = 0
 
             reader = file_reader(args.input_file) if args.input_file.endswith(".csv") or args.input_file.endswith(".tsv") else fasta_reader(args.input_file)
+            if args.matrix_embedding_exists:
+                args.print_per_num = min(args.print_per_num, 1024)
             for row in reader:
                 create_batch_input(args, row, batch_data, batch_ground_truth, exists_ids)
                 if len(batch_data) % args.print_per_num == 0:

@@ -380,6 +380,9 @@ class Encoder(object):
                 # self.embedding_buffer = {}
             self.embedding_buffer[seq_id] = embedding_info
 
+    def delete_from_buffer(self, seq_id):
+        self.embedding_buffer.pop(seq_id)
+
     def __get_embedding__(self, seq_id, seq_type, seq, embedding_type):
         embedding_info = None
         if seq_id in self.embedding_buffer:
@@ -391,9 +394,9 @@ class Encoder(object):
                 for dirpath in dirpath_list:
                     emb_filepath = os.path.join(dirpath, emb_filename)
                     if os.path.exists(emb_filepath):
-                        start = time.time()
-                        embedding_info = torch.load(emb_filepath)
-                        print(f"Load time: {time.time() - start:.2f} seconds")
+                        # start = time.time()
+                        embedding_info = torch.load(emb_filepath, map_location='cpu', mmap=True)
+                        # print(f"Load time: {time.time() - start:.2f} seconds")
                         self.put_into_buffer(seq_id, embedding_info)
                         return embedding_info
             except Exception as e:
@@ -406,9 +409,9 @@ class Encoder(object):
                 for dirpath in dirpath_list:
                     emb_filepath = os.path.join(dirpath, emb_filename)
                     if os.path.exists(emb_filepath):
-                        start = time.time()
-                        embedding_info = torch.load(emb_filepath)
-                        print(f"Load time: {time.time() - start:.2f} seconds")
+                        # start = time.time()
+                        embedding_info = torch.load(emb_filepath, map_location='cpu', mmap=True)
+                        # print(f"Load time: {time.time() - start:.2f} seconds")
                         self.seq_id_2_emb_filename[seq_id] = emb_filename
                         self.put_into_buffer(seq_id, embedding_info)
                         return embedding_info

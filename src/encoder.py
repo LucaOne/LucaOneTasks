@@ -11,6 +11,7 @@
 @desc: encoder for LucaOneTasks
 '''
 import os
+import time
 import torch
 import sys
 import numpy as np
@@ -390,7 +391,9 @@ class Encoder(object):
                 for dirpath in dirpath_list:
                     emb_filepath = os.path.join(dirpath, emb_filename)
                     if os.path.exists(emb_filepath):
-                        embedding_info = torch.load(emb_filepath)
+                        start = time.time()
+                        embedding_info = torch.load(emb_filepath, weights_only=True)
+                        print(f"Load time: {time.time() - start:.2f} seconds")
                         self.put_into_buffer(seq_id, embedding_info)
                         return embedding_info
             except Exception as e:
@@ -403,7 +406,9 @@ class Encoder(object):
                 for dirpath in dirpath_list:
                     emb_filepath = os.path.join(dirpath, emb_filename)
                     if os.path.exists(emb_filepath):
-                        embedding_info = torch.load(emb_filepath)
+                        start = time.time()
+                        embedding_info = torch.load(emb_filepath, weights_only=True)
+                        print(f"Load time: {time.time() - start:.2f} seconds")
                         self.seq_id_2_emb_filename[seq_id] = emb_filename
                         self.put_into_buffer(seq_id, embedding_info)
                         return embedding_info
@@ -1113,7 +1118,7 @@ class Encoder(object):
                     for vector_dir in self.vector_dirpath:
                         vector_filepath = os.path.join(vector_dir, v)
                         if os.path.exists(vector_filepath):
-                            vector.append(torch.load(vector_filepath))
+                            vector.append(torch.load(vector_filepath, weights_only=True))
                             break
             elif isinstance(vector_filename, list):
                 vector_filename_list = vector_filename
@@ -1123,13 +1128,13 @@ class Encoder(object):
                     for vector_dir in self.vector_dirpath:
                         vector_filepath = os.path.join(vector_dir, v)
                         if os.path.exists(vector_filepath):
-                            vector.append(torch.load(vector_filepath))
+                            vector.append(torch.load(vector_filepath, weights_only=True))
                             break
             elif isinstance(vector_filename, str):
                 for vector_dir in self.vector_dirpath:
                     vector_filepath = os.path.join(vector_dir, vector_filename)
                     if os.path.exists(vector_filepath):
-                        vector = torch.load(vector_filepath)
+                        vector = torch.load(vector_filepath, weights_only=True)
                         break
             elif isinstance(vector_filename, np.ndarray) or isinstance(vector_filename, torch.Tensor):
                 vector = vector_filename
@@ -1169,7 +1174,7 @@ class Encoder(object):
                     for matrix_dir in self.matrix_dirpath:
                         matrix_filepath = os.path.join(matrix_dir, v)
                         if os.path.exists(matrix_filepath):
-                            matrix.append(torch.load(matrix_filepath))
+                            matrix.append(torch.load(matrix_filepath, weights_only=True))
                             break
             elif isinstance(matrix_filename, list):
                 matrix_filename_list = matrix_filename
@@ -1179,13 +1184,13 @@ class Encoder(object):
                     for matrix_dir in self.matrix_dirpath:
                         matrix_filepath = os.path.join(matrix_dir, v)
                         if os.path.exists(matrix_filepath):
-                            matrix.append(torch.load(matrix_filepath))
+                            matrix.append(torch.load(matrix_filepath, weights_only=True))
                             break
             elif isinstance(matrix_filename, str):
                 for matrix_dir in self.matrix_dirpath:
                     matrix_filepath = os.path.join(matrix_dir, matrix_filename)
                     if os.path.exists(matrix_filepath):
-                        matrix = torch.load(matrix_filepath)
+                        matrix = torch.load(matrix_filepath, weights_only=True)
                         break
 
             elif isinstance(matrix_filename, np.ndarray) or isinstance(matrix_filename, torch.Tensor):
@@ -1292,7 +1297,7 @@ class Encoder(object):
                     for vector_dir in self.vector_dirpath:
                         vector_filepath_a = os.path.join(vector_dir, v)
                         if os.path.exists(vector_filepath_a):
-                            vector_a.append(torch.load(vector_filepath_a))
+                            vector_a.append(torch.load(vector_filepath_a, weights_only=True))
                             break
             elif isinstance(vector_filename_a, list):
                 vector_filename_list_a = vector_filename_a
@@ -1302,13 +1307,13 @@ class Encoder(object):
                     for vector_dir in self.vector_dirpath:
                         vector_filepath_a = os.path.join(vector_dir, v)
                         if os.path.exists(vector_filepath_a):
-                            vector_a.append(torch.load(vector_filepath_a))
+                            vector_a.append(torch.load(vector_filepath_a, weights_only=True))
                             break
             elif isinstance(vector_filename_a, str):
                 for vector_dir in self.vector_dirpath:
                     vector_filepath_a = os.path.join(vector_dir, vector_filename_a)
                     if os.path.exists(vector_filepath_a):
-                        vector_a = torch.load(vector_filepath_a)
+                        vector_a = torch.load(vector_filepath_a, weights_only=True)
                         break
 
             elif isinstance(vector_filename_a, np.ndarray) or isinstance(vector_filename_a, torch.Tensor):
@@ -1343,7 +1348,7 @@ class Encoder(object):
                     for vector_dir in self.vector_dirpath:
                         vector_filepath_b = os.path.join(vector_dir, v)
                         if os.path.exists(vector_filepath_b):
-                            vector_b.append(torch.load(vector_filepath_b))
+                            vector_b.append(torch.load(vector_filepath_b, weights_only=True))
                             break
             elif isinstance(vector_filename_b, list):
                 vector_filename_list_b = vector_filename_b
@@ -1353,13 +1358,13 @@ class Encoder(object):
                     for vector_dir in self.vector_dirpath:
                         vector_filepath_b = os.path.join(vector_dir, v)
                         if os.path.exists(vector_filepath_b):
-                            vector_b.append(torch.load(vector_filepath_b))
+                            vector_b.append(torch.load(vector_filepath_b, weights_only=True))
                             break
             elif isinstance(vector_filename_b, str):
                 for vector_dir in self.vector_dirpath:
                     vector_filepath_b = os.path.join(vector_dir, vector_filename_b)
                     if os.path.exists(vector_filepath_b):
-                        vector_b = torch.load(vector_filepath_b)
+                        vector_b = torch.load(vector_filepath_b, weights_only=True)
                         break
 
             elif isinstance(vector_filename_b, np.ndarray) or isinstance(vector_filename_b, torch.Tensor):
@@ -1395,7 +1400,7 @@ class Encoder(object):
                     for matrix_dir in self.matrix_dirpath:
                         matrix_filepath_a = os.path.join(matrix_dir, v)
                         if os.path.exists(matrix_filepath_a):
-                            matrix_a.append(torch.load(matrix_filepath_a))
+                            matrix_a.append(torch.load(matrix_filepath_a, weights_only=True))
                             break
             elif isinstance(matrix_filename_a, list):
                 matrix_filename_list_a = matrix_filename_a
@@ -1405,13 +1410,13 @@ class Encoder(object):
                     for matrix_dir in self.matrix_dirpath:
                         matrix_filepath_a = os.path.join(matrix_dir, v)
                         if os.path.exists(matrix_filepath_a):
-                            matrix_a.append(torch.load(matrix_filepath_a))
+                            matrix_a.append(torch.load(matrix_filepath_a, weights_only=True))
                             break
             elif isinstance(matrix_filename_a, str):
                 for matrix_dir in self.matrix_dirpath:
                     matrix_filepath_a = os.path.join(matrix_dir, matrix_filename_a)
                     if os.path.exists(matrix_filepath_a):
-                        matrix_a = torch.load(matrix_filepath_a)
+                        matrix_a = torch.load(matrix_filepath_a, weights_only=True)
                         break
 
             elif isinstance(matrix_filename_a, np.ndarray) or isinstance(matrix_filename_a, torch.Tensor):
@@ -1444,7 +1449,7 @@ class Encoder(object):
                     for matrix_dir in self.matrix_dirpath:
                         matrix_filepath_b = os.path.join(matrix_dir, v)
                         if os.path.exists(matrix_filepath_b):
-                            matrix_b.append(torch.load(matrix_filepath_b))
+                            matrix_b.append(torch.load(matrix_filepath_b, weights_only=True))
                             break
             elif isinstance(matrix_filename_b, list):
                 matrix_filename_list_b = matrix_filename_b
@@ -1454,13 +1459,13 @@ class Encoder(object):
                     for matrix_dir in self.matrix_dirpath:
                         matrix_filepath_b = os.path.join(matrix_dir, v)
                         if os.path.exists(matrix_filepath_b):
-                            matrix_b.append(torch.load(matrix_filepath_b))
+                            matrix_b.append(torch.load(matrix_filepath_b, weights_only=True))
                             break
             elif isinstance(matrix_filename_b, str):
                 for matrix_dir in self.matrix_dirpath:
                     matrix_filepath_b = os.path.join(matrix_dir, matrix_filename_b)
                     if os.path.exists(matrix_filepath_b):
-                        matrix_b = torch.load(matrix_filepath_b)
+                        matrix_b = torch.load(matrix_filepath_b, weights_only=True)
                         break
             elif isinstance(matrix_filename_b, np.ndarray) or isinstance(matrix_filename_b, torch.Tensor):
                 matrix_b = matrix_filename_b

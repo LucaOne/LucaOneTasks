@@ -103,6 +103,22 @@ def transform_one_sample_2_feature(
                     express_list_b=row[11],
                     label=None
                 )
+            elif input_type == "matrix_vs_matrix_add_express_value":
+                en = encoder.encode_pair(
+                    row[0],
+                    row[1],
+                    row[2],
+                    row[3],
+                    row[4],
+                    row[5],
+                    vector_filename_a=row[6],
+                    vector_filename_b=row[7],
+                    matrix_filename_a=row[8],
+                    matrix_filename_b=row[9],
+                    express_list_a=row[10],
+                    express_list_b=row[11],
+                    label=None
+                )
             else:
                 en = encoder.encode_pair(
                     row[0],
@@ -802,8 +818,8 @@ def run(
                     else:
                         emb_seq_id_a = seq_id_a
                     encoder.__get_embedding__(
-                        seq_id=seq_id_a,
-                        seq_type=emb_seq_id_a,
+                        seq_id=emb_seq_id_a,
+                        seq_type=seq_type_a,
                         seq=seq_a,
                         embedding_type="matrix" if "matrix" in input_type else "vector"
                     )
@@ -893,6 +909,14 @@ def run(
                         express_list_a = item[6]
                         express_list_b = item[7]
                     row = row + [express_list_a, express_list_b]
+                elif input_type  == "matrix_vs_matrix_add_express_value":
+                    if len(item) >= 12:
+                        express_list_a = item[10]
+                        express_list_b = item[11]
+                    else:
+                        express_list_a = item[6]
+                        express_list_b = item[7]
+                    row = row + [express_list_a, express_list_b]
                 elif "variant" in input_type:
                     if len(item) >= 12:
                         variant_list_a = item[10]
@@ -945,6 +969,19 @@ def run(
                             cur_res[0][6],
                             cur_res[0][7]
                         ])
+                    elif input_type == "matrix_vs_matrix_add_express_value":
+                        predicted_results.append([
+                            cur_res[0][0],
+                            cur_res[0][1],
+                            cur_res[0][2],
+                            cur_res[0][3],
+                            row[-2],
+                            row[-1],
+                            cur_res[0][4],
+                            cur_res[0][5],
+                            cur_res[0][6],
+                            cur_res[0][7]
+                        ])
                     elif "variant" in input_type:
                         predicted_results.append([
                             cur_res[0][0],
@@ -981,6 +1018,17 @@ def run(
                             cur_res[0][5],
                         ])
                     elif input_type == "matrix_express_vs_matrix_express":
+                        predicted_results.append([
+                            cur_res[0][0],
+                            cur_res[0][1],
+                            cur_res[0][2],
+                            cur_res[0][3],
+                            row[-2],
+                            row[-1],
+                            cur_res[0][4],
+                            cur_res[0][5]
+                        ])
+                    elif input_type == "matrix_vs_matrix_add_express_value":
                         predicted_results.append([
                             cur_res[0][0],
                             cur_res[0][1],
@@ -1041,6 +1089,17 @@ def run(
                         cur_res[0][4],
                         cur_res[0][5]
                     ])
+                elif input_type == "matrix_vs_matrix_add_express_value":
+                    predicted_results.append([
+                        cur_res[0][0],
+                        cur_res[0][1],
+                        cur_res[0][2],
+                        cur_res[0][3],
+                        row[-2],
+                        row[-1],
+                        cur_res[0][4],
+                        cur_res[0][5]
+                    ])
                 elif "variant" in input_type:
                     predicted_results.append([
                         cur_res[0][0],
@@ -1063,6 +1122,7 @@ def run(
                     ])
     else:
         for item in sequences:
+            start = time.time()
             seq_id = item[0]
             seq_type = item[1]
             seq = item[2]
@@ -1116,6 +1176,7 @@ def run(
                     predicted_results.append([
                         seq_id, seq, cur_res[0][2], cur_res[0][3]
                     ])
+            print(f"Total time: {time.time() - start:.2f} seconds")
     # torch.cuda.empty_cache()
     # 删除embedding
     if not matrix_embedding_exists and os.path.exists(model_args.emb_dir) and delete_emb:
@@ -1537,6 +1598,11 @@ def create_results_csv_header(run_args):
                     header = ["seq_id_a", "seq_id_b", "matrix_filename_a", "matrix_filename_b", "express_list_a", "express_list_b", "top1_prob", "top1_label", "top%d_probs" % run_args.topk, "top%d_labels" % run_args.topk]
                 else:
                     header = ["seq_id_a", "seq_id_b", "matrix_filename_a", "matrix_filename_b", "express_list_a", "express_list_b", "prob", "label"]
+            elif run_args.input_type == "matrix_vs_matrix_add_express_value":
+                if run_args.task_type == "multi_class" and run_args.topk is not None and run_args.topk > 1 and run_args.task_level_type == "seq_level":
+                    header = ["seq_id_a", "seq_id_b", "matrix_filename_a", "matrix_filename_b", "express_value_a", "top1_prob", "top1_label", "top%d_probs" % run_args.topk, "top%d_labels" % run_args.topk]
+                else:
+                    header = ["seq_id_a", "seq_id_b", "matrix_filename_a", "matrix_filename_b", "express_value_a", "prob", "label"]
             elif "variant" in run_args.input_type:
                 if run_args.task_type == "multi_class" and run_args.topk is not None and run_args.topk > 1 and run_args.task_level_type == "seq_level":
                     header = ["seq_id_a", "seq_id_b", "seq_a", "seq_b", "variant_a", "variant_b", "top1_prob", "top1_label", "top%d_probs" % run_args.topk, "top%d_labels" % run_args.topk]

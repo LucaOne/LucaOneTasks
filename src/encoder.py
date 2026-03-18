@@ -383,6 +383,10 @@ class Encoder(object):
     def delete_from_buffer(self, seq_id):
         self.embedding_buffer.pop(seq_id)
 
+    def __get_embedding_v2__(self, args):
+        seq_id, seq_type, seq, embedding_type = args
+        return self.__get_embedding__(seq_id, seq_type, seq, embedding_type)
+
     def __get_embedding__(self, seq_id, seq_type, seq, embedding_type):
         embedding_info = None
         if seq_id in self.embedding_buffer:

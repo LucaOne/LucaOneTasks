@@ -22,6 +22,7 @@ import argparse
 from collections import OrderedDict
 from subword_nmt.apply_bpe import BPE
 from transformers import BertConfig
+from multiprocessing import Pool
 sys.path.append(".")
 sys.path.append("..")
 sys.path.append("../src")
@@ -588,7 +589,7 @@ def create_encoder_batch_convecter(
             "embedding_fixed_len_a_time": model_args.embedding_fixed_len_a_time,
             "matrix_embedding_exists": model_args.matrix_embedding_exists,
             "use_cpu": True if model_args.gpu_id < 0 else False,
-            "buffer_size": 0
+            "buffer_size": 2
         }
     else:
         assert model_args.seq_max_length is not None
@@ -614,7 +615,7 @@ def create_encoder_batch_convecter(
             "embedding_fixed_len_a_time": model_args.embedding_fixed_len_a_time,
             "matrix_embedding_exists": model_args.matrix_embedding_exists,
             "use_cpu": True if model_args.gpu_id < 0 else False,
-            "buffer_size": 0
+            "buffer_size": 1
         }
     encoder = Encoder(**encoder_config)
 
@@ -676,7 +677,8 @@ def run(
         output_classification_vector_dirpath,
         output_logits_dirpath,
         output_matrix_dirpath,
-        delete_emb=False
+        delete_emb=False,
+        loading_thread_num=1,
 ):
     global global_model_config, global_seq_subword, global_seq_tokenizer, global_trained_model
     model_dir = "%s/models/%s/%s/%s/%s/%s/%s/%s" % (
@@ -803,12 +805,16 @@ def run(
     if gpu_id > -1 and input_type != "seq":
         if matrix_embedding_exists:
             encoder.embedding_buffer_size = min(len(sequences), 1024)
+        else:
+            loading_thread_num = 1
         # 先to cpu
         trained_model.to(torch.device("cpu"))
         assert model_args.emb_dir is not None
         if not os.path.exists(model_args.emb_dir):
             os.makedirs(model_args.emb_dir)
         start = time.time()
+        if loading_thread_num > 1:
+            seq_id_list = set()
         for item in sequences:
             if input_mode == "pair":
                 seq_id_a = item[0]
@@ -822,22 +828,29 @@ def run(
                         emb_seq_id_a = "_".join(seq_id_a.split("_")[1:])
                     else:
                         emb_seq_id_a = seq_id_a
-                    encoder.__get_embedding__(
-                        seq_id=emb_seq_id_a,
-                        seq_type=seq_type_a,
-                        seq=seq_a,
-                        embedding_type="matrix" if "matrix" in input_type else "vector"
-                    )
+                    if loading_thread_num > 1:
+                        seq_id_list.add((emb_seq_id_a, seq_type_a, seq_a, "matrix" if "matrix" in input_type else "vector"))
+                    else:
+                        encoder.__get_embedding__(
+                            seq_id=emb_seq_id_a,
+                            seq_type=seq_type_a,
+                            seq=seq_a,
+                            embedding_type="matrix" if "matrix" in input_type else "vector"
+                        )
+
                     if "variant" in model_args.input_type:
                         emb_seq_id_b = "_".join(seq_id_b.split("_")[1:])
                     else:
                         emb_seq_id_b = seq_id_b
-                    encoder.__get_embedding__(
-                        seq_id=emb_seq_id_b,
-                        seq_type=seq_type_b,
-                        seq=seq_b,
-                        embedding_type="matrix" if "matrix" in input_type else "vector"
-                    )
+                    if loading_thread_num > 1:
+                        seq_id_list.add((emb_seq_id_b, seq_type_b, seq_b, "matrix" if "matrix" in input_type else "vector"))
+                    else:
+                        encoder.__get_embedding__(
+                            seq_id=emb_seq_id_b,
+                            seq_type=seq_type_b,
+                            seq=seq_b,
+                            embedding_type="matrix" if "matrix" in input_type else "vector"
+                        )
             else:
                 seq_id = item[0]
                 seq_type = item[1]
@@ -847,12 +860,21 @@ def run(
                         emb_seq_id = "_".join(seq_id.split("_")[1:])
                     else:
                         emb_seq_id = seq_id
-                    encoder.__get_embedding__(
-                        seq_id=emb_seq_id,
-                        seq_type=seq_type,
-                        seq=seq,
-                        embedding_type="matrix" if "matrix" in input_type else "vector"
-                    )
+                    if loading_thread_num > 1:
+                        seq_id_list.add((emb_seq_id, seq_type, seq, "matrix" if "matrix" in input_type else "vector"))
+                    else:
+                        encoder.__get_embedding__(
+                            seq_id=emb_seq_id,
+                            seq_type=seq_type,
+                            seq=seq,
+                            embedding_type="matrix" if "matrix" in input_type else "vector"
+                        )
+        if loading_thread_num > 1:
+            thread_num = min(len(seq_id_list), loading_thread_num)
+            print("Loading embedding using multi threads: %d(seq_id: %d)" % (thread_num, len(seq_id_list)))
+
+            with Pool(processes=thread_num) as p: # 根据 CPU 核心数设置
+                p.map(encoder.__get_embedding_v2__, list(seq_id_list))
             torch.cuda.empty_cache()
         print(f"Total loading embedding matrices time (samples={len(sequences)}): {time.time() - start:.2f} seconds")
         encoder.matrix_embedding_exists = True
@@ -1549,6 +1571,13 @@ def create_run_args():
         type=str,
         help="the save path output the matrix (one file for each one sample)"
     )
+    parser.add_argument(
+        "--loading_thread_num",
+        default=5,
+        type=str,
+        help="the thread num for loading embedding"
+    )
+
 
     parser.add_argument(
         "--gpu_id",
@@ -2085,7 +2114,8 @@ if __name__ == "__main__":
                         output_classification_vector_dirpath=args.output_classification_vector_dirpath,
                         output_logits_dirpath=args.output_logits_dirpath,
                         output_matrix_dirpath=args.output_matrix_dirpath,
-                        delete_emb=args.delete_emb
+                        delete_emb=args.delete_emb,
+                        loading_thread_num=args.loading_thread_num
                     )
                     for item_idx, item in enumerate(batch_results):
                         if args.ground_truth_idx is not None and args.ground_truth_idx >= 0:
@@ -2123,7 +2153,8 @@ if __name__ == "__main__":
                     output_classification_vector_dirpath=args.output_classification_vector_dirpath,
                     output_logits_dirpath=args.output_logits_dirpath,
                     output_matrix_dirpath=args.output_matrix_dirpath,
-                    delete_emb=args.delete_emb
+                    delete_emb=args.delete_emb,
+                    loading_thread_num=args.loading_thread_num
                 )
                 for item_idx, item in enumerate(batch_results):
                     if args.ground_truth_idx is not None and args.ground_truth_idx >= 0:
@@ -2174,7 +2205,8 @@ if __name__ == "__main__":
             output_classification_vector_dirpath=args.output_classification_vector_dirpath,
             output_logits_dirpath=args.output_logits_dirpath,
             output_matrix_dirpath=args.output_matrix_dirpath,
-            delete_emb=args.delete_emb
+            delete_emb=args.delete_emb,
+            loading_thread_num=args.loading_thread_num
         )
         print("Predicted Result:")
         print("seq_id=%s" % args.seq_id)
@@ -2248,7 +2280,8 @@ if __name__ == "__main__":
             output_classification_vector_dirpath=args.output_classification_vector_dirpath,
             output_logits_dirpath=args.output_logits_dirpath,
             output_matrix_dirpath=args.output_matrix_dirpath,
-            delete_emb=args.delete_emb
+            delete_emb=args.delete_emb,
+            loading_thread_num=args.loading_thread_num
         )
         print("Predicted Result:")
         print("seq_id_a=%s, seq_id_b=%s" % (args.seq_id_a, args.seq_id_b))

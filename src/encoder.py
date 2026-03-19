@@ -358,6 +358,7 @@ class Encoder(object):
             self.embedding_buffer_size = kwargs["buffer_size"]
         else:
             self.embedding_buffer_size = 0
+        print("Encoder: embedding_buffer_size=%d" % self.embedding_buffer_size)
         print("Encoder: prepend_bos=%r, append_eos=%r" % (self.prepend_bos, self.append_eos))
         print("Encoder: matrix_add_special_token=%r, "
               "embedding_complete=%r, "
@@ -385,11 +386,12 @@ class Encoder(object):
 
     def __get_embedding_v2__(self, args):
         seq_id, seq_type, seq, embedding_type = args
-        return self.__get_embedding__(seq_id, seq_type, seq, embedding_type)
+        return seq_id, self.__get_embedding__(seq_id, seq_type, seq, embedding_type)
 
     def __get_embedding__(self, seq_id, seq_type, seq, embedding_type):
         embedding_info = None
         if seq_id in self.embedding_buffer:
+            # print("seq_id: %s, type=0" % seq_id)
             return self.embedding_buffer[seq_id]
         elif seq_id in self.seq_id_2_emb_filename:
             emb_filename = self.seq_id_2_emb_filename[seq_id]
@@ -399,9 +401,10 @@ class Encoder(object):
                     emb_filepath = os.path.join(dirpath, emb_filename)
                     if os.path.exists(emb_filepath):
                         # start = time.time()
-                        embedding_info = torch.load(emb_filepath, map_location='cpu', mmap=True)
+                        embedding_info = torch.load(emb_filepath, map_location='cpu')
                         # print(f"Load time: {time.time() - start:.2f} seconds")
                         self.put_into_buffer(seq_id, embedding_info)
+                        # print("seq_id: %s, type=1" % seq_id)
                         return embedding_info
             except Exception as e:
                 print(e)
@@ -414,10 +417,11 @@ class Encoder(object):
                     emb_filepath = os.path.join(dirpath, emb_filename)
                     if os.path.exists(emb_filepath):
                         # start = time.time()
-                        embedding_info = torch.load(emb_filepath, map_location='cpu', mmap=True)
+                        embedding_info = torch.load(emb_filepath, map_location='cpu')
                         # print(f"Load time: {time.time() - start:.2f} seconds")
                         self.seq_id_2_emb_filename[seq_id] = emb_filename
                         self.put_into_buffer(seq_id, embedding_info)
+                        # print("seq_id: %s, type=2" % seq_id)
                         return embedding_info
             except Exception as e:
                 print(e)

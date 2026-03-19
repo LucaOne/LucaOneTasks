@@ -560,7 +560,8 @@ def load_model(args, model_name, model_dir):
 def create_encoder_batch_convecter(
         model_args,
         seq_subword,
-        seq_tokenizer
+        seq_tokenizer,
+        buffer_size
 ):
     if hasattr(model_args, "input_mode") and model_args.input_mode in ["pair"]:
         assert model_args.seq_max_length is not None or (model_args.seq_max_length_a is not None and model_args.seq_max_length_b is not None)
@@ -589,7 +590,7 @@ def create_encoder_batch_convecter(
             "embedding_fixed_len_a_time": model_args.embedding_fixed_len_a_time,
             "matrix_embedding_exists": model_args.matrix_embedding_exists,
             "use_cpu": True if model_args.gpu_id < 0 else False,
-            "buffer_size": 2
+            "buffer_size": buffer_size
         }
     else:
         assert model_args.seq_max_length is not None
@@ -615,7 +616,7 @@ def create_encoder_batch_convecter(
             "embedding_fixed_len_a_time": model_args.embedding_fixed_len_a_time,
             "matrix_embedding_exists": model_args.matrix_embedding_exists,
             "use_cpu": True if model_args.gpu_id < 0 else False,
-            "buffer_size": 1
+            "buffer_size": buffer_size
         }
     encoder = Encoder(**encoder_config)
 
@@ -679,6 +680,7 @@ def run(
         output_matrix_dirpath,
         delete_emb=False,
         loading_thread_num=1,
+        buffer_size=1
 ):
     global global_model_config, global_seq_subword, global_seq_tokenizer, global_trained_model
     model_dir = "%s/models/%s/%s/%s/%s/%s/%s/%s" % (
@@ -798,17 +800,15 @@ def run(
     print("------After loaded the model:------")
     
     device_memory(None if gpu_id == -1 else gpu_id)
-    encoder, batch_convecter = create_encoder_batch_convecter(model_args, seq_subword, seq_tokenizer)
+    encoder, batch_convecter = create_encoder_batch_convecter(model_args, seq_subword, seq_tokenizer, buffer_size)
 
     # embedding in advance
     print("matrix_embedding_exists: %r, gpu_id: %d, input_type: %s" % (matrix_embedding_exists, gpu_id, input_type))
-    if gpu_id > -1 and input_type != "seq":
-        if matrix_embedding_exists:
-            encoder.embedding_buffer_size = min(len(sequences), 1024)
-        else:
+    if input_type != "seq":
+        if not matrix_embedding_exists:
             loading_thread_num = 1
-        # 先to cpu
-        trained_model.to(torch.device("cpu"))
+            # 先to cpu
+            trained_model.to(torch.device("cpu"))
         assert model_args.emb_dir is not None
         if not os.path.exists(model_args.emb_dir):
             os.makedirs(model_args.emb_dir)
@@ -874,13 +874,17 @@ def run(
             print("Loading embedding using multi threads: %d(seq_id: %d)" % (thread_num, len(seq_id_list)))
 
             with Pool(processes=thread_num) as p: # 根据 CPU 核心数设置
-                p.map(encoder.__get_embedding_v2__, list(seq_id_list))
-            torch.cuda.empty_cache()
+                results = p.map(encoder.__get_embedding_v2__, list(seq_id_list))
+            # print("Buffer CP1: %d" % len(encoder.embedding_buffer))
+            for seq_id, embedding in results:
+                encoder.embedding_buffer[seq_id] = embedding
+            # torch.cuda.empty_cache()
+        if not matrix_embedding_exists:
+            encoder.matrix_embedding_exists = True
+            # embedding 完之后to device
+            trained_model.to(model_args.device)
         print(f"Total loading embedding matrices time (samples={len(sequences)}): {time.time() - start:.2f} seconds")
-        encoder.matrix_embedding_exists = True
-        # embedding 完之后to device
-        trained_model.to(model_args.device)
-
+    # print("Buffer CP2: %d" % len(encoder.embedding_buffer))
     label_list = load_labels(model_args.label_filepath)
     label_id_2_name = {idx: name for idx, name in enumerate(label_list)}
 
@@ -907,6 +911,7 @@ def run(
     predicted_results = []
     print()
     print("Device:", model_args.device)
+    print("Buffer: %d" % len(encoder.embedding_buffer))
     if input_mode == "pair":
         for item in sequences:
             seq_id_a = item[0]
@@ -1213,12 +1218,6 @@ def run(
                     predicted_results.append([
                         seq_id, seq, cur_res[0][2], cur_res[0][3]
                     ])
-            if "matrix" in input_type or "vector" in input_type:
-                if "variant" in model_args.input_type:
-                    emb_seq_id = "_".join(seq_id.split("_")[1:])
-                else:
-                    emb_seq_id = seq_id
-                encoder.delete_from_buffer(emb_seq_id)
         print(f"Total inference time(samples={len(sequences)}): {time.time() - start:.2f} seconds")
     # torch.cuda.empty_cache()
     # 删除embedding
@@ -2088,6 +2087,9 @@ if __name__ == "__main__":
             reader = file_reader(args.input_file) if args.input_file.endswith(".csv") or args.input_file.endswith(".tsv") else fasta_reader(args.input_file)
             if args.matrix_embedding_exists:
                 args.print_per_num = min(args.print_per_num, 1024)
+                buffer_size = args.print_per_num
+            else:
+                buffer_size = 1
             for row in reader:
                 create_batch_input(args, row, batch_data, batch_ground_truth, exists_ids)
                 if len(batch_data) % args.print_per_num == 0:
@@ -2115,7 +2117,8 @@ if __name__ == "__main__":
                         output_logits_dirpath=args.output_logits_dirpath,
                         output_matrix_dirpath=args.output_matrix_dirpath,
                         delete_emb=args.delete_emb,
-                        loading_thread_num=args.loading_thread_num
+                        loading_thread_num=args.loading_thread_num,
+                        buffer_size=buffer_size
                     )
                     for item_idx, item in enumerate(batch_results):
                         if args.ground_truth_idx is not None and args.ground_truth_idx >= 0:
@@ -2154,7 +2157,8 @@ if __name__ == "__main__":
                     output_logits_dirpath=args.output_logits_dirpath,
                     output_matrix_dirpath=args.output_matrix_dirpath,
                     delete_emb=args.delete_emb,
-                    loading_thread_num=args.loading_thread_num
+                    loading_thread_num=args.loading_thread_num,
+                    buffer_size=buffer_size
                 )
                 for item_idx, item in enumerate(batch_results):
                     if args.ground_truth_idx is not None and args.ground_truth_idx >= 0:
@@ -2206,7 +2210,8 @@ if __name__ == "__main__":
             output_logits_dirpath=args.output_logits_dirpath,
             output_matrix_dirpath=args.output_matrix_dirpath,
             delete_emb=args.delete_emb,
-            loading_thread_num=args.loading_thread_num
+            loading_thread_num=args.loading_thread_num,
+            buffer_size=1
         )
         print("Predicted Result:")
         print("seq_id=%s" % args.seq_id)
@@ -2281,7 +2286,8 @@ if __name__ == "__main__":
             output_logits_dirpath=args.output_logits_dirpath,
             output_matrix_dirpath=args.output_matrix_dirpath,
             delete_emb=args.delete_emb,
-            loading_thread_num=args.loading_thread_num
+            loading_thread_num=args.loading_thread_num,
+            buffer_size=1
         )
         print("Predicted Result:")
         print("seq_id_a=%s, seq_id_b=%s" % (args.seq_id_a, args.seq_id_b))

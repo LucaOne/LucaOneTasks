@@ -193,6 +193,10 @@ def train(args, train_dataloader, model_config, model, seq_tokenizer, parse_row_
                 print("Error, loss has NaN")
                 sys.exit(-1)
 
+            if args.n_gpu > 1:
+                reduced_loss = reduce_tensor(loss.data, dist.get_world_size()).item()
+            else:
+                reduced_loss = loss.item()
             if args.gradient_accumulation_steps > 1:
                 # The loss of each batch will be divided by gradient_accumulation_steps
                 loss = loss / args.gradient_accumulation_steps
@@ -202,13 +206,9 @@ def train(args, train_dataloader, model_config, model, seq_tokenizer, parse_row_
             else:
                 loss.backward()
             no_grad_gradient_accumulation_step = False
-            if args.n_gpu > 1:
-                reduced_loss = reduce_tensor(loss.data, dist.get_world_size())
-            else:
-                reduced_loss = loss
 
             if args.local_rank in [0, -1]:
-                cur_loss = reduced_loss.item()
+                cur_loss = reduced_loss
                 end_time = time.time()
                 cur_use_time = end_time - begin_time
                 total_use_time += cur_use_time
